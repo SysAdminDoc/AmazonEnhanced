@@ -10,6 +10,7 @@
 const DEFAULT_SETTINGS = {
   theme: 'dark',
   density: 'comfortable',
+  imageMode: 'tile',
   flags: {
     hideSponsored: true,
     shadeSponsored: false,

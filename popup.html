@@ -112,13 +112,12 @@
 <section class="amze-pane" data-pane="reviews">
   <h2>Reviews &amp; trust</h2>
   <label class="amze-row">
-    <span><strong>Local review-quality scoring</strong><small>On-device heuristic. No external API. Shows adjusted rating + polarization + verified-sample ratio on PDPs.</small></span>
+    <span><strong>Review-quality scoring</strong><small>Shows adjusted rating + polarization + verified-sample ratio on product pages.</small></span>
     <input type="checkbox" data-flag="reviewScore" class="amze-switch">
   </label>
   <p class="amze-info">
-    Since Fakespot and ReviewMeta shut down, AmazonEnhanced computes a local quality score using:
-    star-polarization (1+5 star spike), one-star share, verified-purchase ratio in the visible sample,
-    and total-review volume. Everything runs locally. No reviews leave your browser.
+    Computes a quality score from the review histogram: 1★/5★ polarization spike, one-star share,
+    verified-purchase ratio in the visible sample, and total volume. Heuristic only.
   </p>
 </section>
 
@@ -184,6 +183,20 @@
       <button type="button" data-density="compact" class="amze-seg-btn">Compact</button>
     </div>
   </div>
+
+  <div class="amze-field">
+    <label>Image dark-mode handling</label>
+    <div class="amze-seg amze-seg-image">
+      <button type="button" data-image="off" class="amze-seg-btn" title="No change to images">Off</button>
+      <button type="button" data-image="tile" class="amze-seg-btn" title="Wrap images in a light card (no color distortion)">Tile</button>
+      <button type="button" data-image="dim" class="amze-seg-btn" title="Dim brightness to soften harsh whites">Dim</button>
+      <button type="button" data-image="invert" class="amze-seg-btn" title="Invert every image (ruins photos, great for line art)">Invert</button>
+      <button type="button" data-image="smart" class="amze-seg-btn" title="Sample image corners via canvas — invert only if background looks white">Smart</button>
+    </div>
+    <p class="amze-info amze-info-small">
+      Amazon product images are white-background JPGs that look harsh on dark themes. <strong>Tile</strong> (default) wraps each in a soft light card — no color distortion. <strong>Dim</strong> softens without inverting. <strong>Invert</strong> flips every image (wrecks photos, great for icons/text). <strong>Smart</strong> samples corner pixels to detect white backgrounds and inverts only those; may fall back to tile if Amazon's CDN blocks canvas reads.
+    </p>
+  </div>
   <label class="amze-row">
     <span>Show toasts on changes<small>Small notification confirming applied settings.</small></span>
     <input type="checkbox" data-meta="toastsEnabled" class="amze-switch">
@@ -193,7 +206,7 @@
 </main>
 
 <footer class="amze-foot">
-  <span>Local &amp; private. No telemetry.</span>
+  <span>AmazonEnhanced</span>
   <a href="https://github.com/SysAdminDoc/AmazonEnhanced" target="_blank" rel="noreferrer noopener">GitHub</a>
 </footer>
 

@@ -21,9 +21,11 @@
     applied = true;
     const theme = (settings && settings.theme) || 'dark';
     const density = (settings && settings.density) || 'comfortable';
+    const imageMode = (settings && settings.imageMode) || 'tile';
     const html = document.documentElement;
     html.setAttribute('data-amze-theme', theme);
     html.setAttribute('data-amze-density', density);
+    html.setAttribute('data-amze-image-mode', imageMode);
 
     // Cluster feature flags into body-level attributes so theme.css can branch.
     const flags = (settings && settings.flags) || {};

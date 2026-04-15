@@ -9,6 +9,7 @@
   const DEFAULT_SETTINGS = {
     theme: 'dark',
     density: 'comfortable',
+    imageMode: 'tile',
     flags: {
       hideSponsored: true, shadeSponsored: false, hideVideoAds: true, hidePrimeNag: true,
       hideBanners: true, hideAmazonBrands: false, hideCustomBrands: false, hideCN: false,
@@ -43,8 +44,12 @@
       r.checked = r.value === current.theme;
     });
     // Density segmented
-    $$('.amze-seg-btn').forEach(b => {
+    $$('.amze-seg-btn[data-density]').forEach(b => {
       b.classList.toggle('amze-seg-active', b.dataset.density === current.density);
+    });
+    // Image mode segmented
+    $$('.amze-seg-btn[data-image]').forEach(b => {
+      b.classList.toggle('amze-seg-active', b.dataset.image === (current.imageMode || 'tile'));
     });
     // Flag switches
     $$('input[data-flag]').forEach(i => {
@@ -106,10 +111,19 @@
     });
 
     // Density segmented
-    $$('.amze-seg-btn').forEach(b => {
+    $$('.amze-seg-btn[data-density]').forEach(b => {
       b.addEventListener('click', () => {
         current.density = b.dataset.density;
-        $$('.amze-seg-btn').forEach(x => x.classList.toggle('amze-seg-active', x === b));
+        $$('.amze-seg-btn[data-density]').forEach(x => x.classList.toggle('amze-seg-active', x === b));
+        persistAndBroadcast();
+      });
+    });
+
+    // Image-mode segmented
+    $$('.amze-seg-btn[data-image]').forEach(b => {
+      b.addEventListener('click', () => {
+        current.imageMode = b.dataset.image;
+        $$('.amze-seg-btn[data-image]').forEach(x => x.classList.toggle('amze-seg-active', x === b));
         persistAndBroadcast();
       });
     });

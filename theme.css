@@ -543,6 +543,335 @@ html[data-amze-hidePadding="1"] .s-widget-spacing-small:empty { display: none !i
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* ----------------------------------------------------------------------
+ * 6. Image dark-mode (product photos, thumbnails, hero images).
+ *    Modes: off | tile | dim | invert | smart
+ *    Tile  = image sits on a light off-white card — no distortion
+ *    Dim   = brightness+contrast tweak, softens harsh white
+ *    Invert = Dark Reader-style filter, ruins photos but great on line art
+ *    Smart = invert only images with ~white backgrounds (canvas sampled)
+ * -------------------------------------------------------------------- */
+
+/* Image target selectors (shared across all non-off modes). */
+html[data-amze-theme="dark"] .s-image,
+html[data-amze-theme="amoled"] .s-image,
+html[data-amze-theme="dark"] #landingImage,
+html[data-amze-theme="amoled"] #landingImage,
+html[data-amze-theme="dark"] #imgTagWrapperId img,
+html[data-amze-theme="amoled"] #imgTagWrapperId img,
+html[data-amze-theme="dark"] .imgTagWrapper img,
+html[data-amze-theme="amoled"] .imgTagWrapper img,
+html[data-amze-theme="dark"] #altImages img,
+html[data-amze-theme="amoled"] #altImages img,
+html[data-amze-theme="dark"] .a-dynamic-image,
+html[data-amze-theme="amoled"] .a-dynamic-image,
+html[data-amze-theme="dark"] .sc-product-image,
+html[data-amze-theme="amoled"] .sc-product-image {
+  transition: filter .15s ease, background-color .15s ease;
+}
+
+/* Tile mode: wrap the image with a soft off-white card so white backgrounds blend */
+html[data-amze-image-mode="tile"][data-amze-theme="dark"] .s-image,
+html[data-amze-image-mode="tile"][data-amze-theme="amoled"] .s-image,
+html[data-amze-image-mode="tile"][data-amze-theme="dark"] #landingImage,
+html[data-amze-image-mode="tile"][data-amze-theme="amoled"] #landingImage,
+html[data-amze-image-mode="tile"][data-amze-theme="dark"] .imgTagWrapper img,
+html[data-amze-image-mode="tile"][data-amze-theme="amoled"] .imgTagWrapper img,
+html[data-amze-image-mode="tile"][data-amze-theme="dark"] #altImages img,
+html[data-amze-image-mode="tile"][data-amze-theme="amoled"] #altImages img,
+html[data-amze-image-mode="tile"][data-amze-theme="dark"] .a-dynamic-image,
+html[data-amze-image-mode="tile"][data-amze-theme="amoled"] .a-dynamic-image,
+html[data-amze-image-mode="tile"][data-amze-theme="dark"] .sc-product-image,
+html[data-amze-image-mode="tile"][data-amze-theme="amoled"] .sc-product-image {
+  background: #e8e8ee !important;
+  border-radius: 6px !important;
+  padding: 4px !important;
+  box-sizing: content-box !important;
+}
+
+/* Larger rounding for the landing image (PDP main photo) */
+html[data-amze-image-mode="tile"][data-amze-theme="dark"] #landingImage,
+html[data-amze-image-mode="tile"][data-amze-theme="amoled"] #landingImage,
+html[data-amze-image-mode="tile"][data-amze-theme="dark"] #imgTagWrapperId img,
+html[data-amze-image-mode="tile"][data-amze-theme="amoled"] #imgTagWrapperId img {
+  border-radius: 12px !important;
+  padding: 8px !important;
+}
+
+/* Dim mode: soften the harsh white without touching colors */
+html[data-amze-image-mode="dim"][data-amze-theme="dark"] .s-image,
+html[data-amze-image-mode="dim"][data-amze-theme="amoled"] .s-image,
+html[data-amze-image-mode="dim"][data-amze-theme="dark"] #landingImage,
+html[data-amze-image-mode="dim"][data-amze-theme="amoled"] #landingImage,
+html[data-amze-image-mode="dim"][data-amze-theme="dark"] .imgTagWrapper img,
+html[data-amze-image-mode="dim"][data-amze-theme="amoled"] .imgTagWrapper img,
+html[data-amze-image-mode="dim"][data-amze-theme="dark"] #altImages img,
+html[data-amze-image-mode="dim"][data-amze-theme="amoled"] #altImages img,
+html[data-amze-image-mode="dim"][data-amze-theme="dark"] .a-dynamic-image,
+html[data-amze-image-mode="dim"][data-amze-theme="amoled"] .a-dynamic-image,
+html[data-amze-image-mode="dim"][data-amze-theme="dark"] .sc-product-image,
+html[data-amze-image-mode="dim"][data-amze-theme="amoled"] .sc-product-image {
+  filter: brightness(0.85) contrast(1.05) !important;
+}
+
+/* Invert mode: Dark Reader-style, inverts every targeted image */
+html[data-amze-image-mode="invert"][data-amze-theme="dark"] .s-image,
+html[data-amze-image-mode="invert"][data-amze-theme="amoled"] .s-image,
+html[data-amze-image-mode="invert"][data-amze-theme="dark"] #landingImage,
+html[data-amze-image-mode="invert"][data-amze-theme="amoled"] #landingImage,
+html[data-amze-image-mode="invert"][data-amze-theme="dark"] .imgTagWrapper img,
+html[data-amze-image-mode="invert"][data-amze-theme="amoled"] .imgTagWrapper img,
+html[data-amze-image-mode="invert"][data-amze-theme="dark"] #altImages img,
+html[data-amze-image-mode="invert"][data-amze-theme="amoled"] #altImages img,
+html[data-amze-image-mode="invert"][data-amze-theme="dark"] .a-dynamic-image,
+html[data-amze-image-mode="invert"][data-amze-theme="amoled"] .a-dynamic-image,
+html[data-amze-image-mode="invert"][data-amze-theme="dark"] .sc-product-image,
+html[data-amze-image-mode="invert"][data-amze-theme="amoled"] .sc-product-image {
+  filter: invert(0.92) hue-rotate(180deg) contrast(1.05) !important;
+}
+
+/* Smart mode: content.js marks each image with data-amze-invert.
+ * - "1"    → has near-white background, apply invert
+ * - "0"    → real photo, leave alone
+ * - "cors" → canvas was tainted, fall back to tile
+ * - absent → not yet evaluated, treat as tile (safe default)
+ */
+html[data-amze-image-mode="smart"][data-amze-theme="dark"] img[data-amze-invert="1"],
+html[data-amze-image-mode="smart"][data-amze-theme="amoled"] img[data-amze-invert="1"] {
+  filter: invert(0.92) hue-rotate(180deg) contrast(1.05) !important;
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+html[data-amze-image-mode="smart"][data-amze-theme="dark"] .s-image:not([data-amze-invert="1"]),
+html[data-amze-image-mode="smart"][data-amze-theme="amoled"] .s-image:not([data-amze-invert="1"]),
+html[data-amze-image-mode="smart"][data-amze-theme="dark"] .imgTagWrapper img:not([data-amze-invert="1"]),
+html[data-amze-image-mode="smart"][data-amze-theme="amoled"] .imgTagWrapper img:not([data-amze-invert="1"]),
+html[data-amze-image-mode="smart"][data-amze-theme="dark"] #altImages img:not([data-amze-invert="1"]),
+html[data-amze-image-mode="smart"][data-amze-theme="amoled"] #altImages img:not([data-amze-invert="1"]),
+html[data-amze-image-mode="smart"][data-amze-theme="dark"] .a-dynamic-image:not([data-amze-invert="1"]),
+html[data-amze-image-mode="smart"][data-amze-theme="amoled"] .a-dynamic-image:not([data-amze-invert="1"]) {
+  background: #e8e8ee !important;
+  border-radius: 6px !important;
+  padding: 4px !important;
+  box-sizing: content-box !important;
+}
+
+/* CORS-tainted fallback — tile with a subtle tint so user sees it's different */
+html[data-amze-image-mode="smart"][data-amze-theme="dark"] img[data-amze-invert="cors"],
+html[data-amze-image-mode="smart"][data-amze-theme="amoled"] img[data-amze-invert="cors"] {
+  background: #e8e8ee !important;
+  border-radius: 6px !important;
+  padding: 4px !important;
+  box-sizing: content-box !important;
+}
+
+/* Off mode: no rules — Amazon images stay as-is. */
+
+/* ----------------------------------------------------------------------
+ * 7. Theme polish: autocomplete, modals, stars, selection, tables,
+ *    checkout, account pages, orders list.
+ * -------------------------------------------------------------------- */
+
+/* Search autocomplete dropdown */
+html[data-amze-theme="dark"] .nav-search-dropdown-list,
+html[data-amze-theme="amoled"] .nav-search-dropdown-list,
+html[data-amze-theme="dark"] .s-suggestion-container,
+html[data-amze-theme="amoled"] .s-suggestion-container,
+html[data-amze-theme="dark"] .s-suggestion,
+html[data-amze-theme="amoled"] .s-suggestion,
+html[data-amze-theme="dark"] .auto-complete-list,
+html[data-amze-theme="amoled"] .auto-complete-list,
+html[data-amze-theme="dark"] .nav-sprite,
+html[data-amze-theme="amoled"] .nav-sprite {
+  background: var(--amze-bg-alt) !important;
+  color: var(--amze-text) !important;
+  border-color: var(--amze-border) !important;
+}
+
+html[data-amze-theme="dark"] .s-suggestion:hover,
+html[data-amze-theme="amoled"] .s-suggestion:hover,
+html[data-amze-theme="dark"] .s-suggestion-selected,
+html[data-amze-theme="amoled"] .s-suggestion-selected {
+  background: var(--amze-bg-raise) !important;
+  color: var(--amze-accent) !important;
+}
+
+/* Modal / popover dark coverage */
+html[data-amze-theme="dark"] .a-popover,
+html[data-amze-theme="amoled"] .a-popover,
+html[data-amze-theme="dark"] .a-popover-inner,
+html[data-amze-theme="amoled"] .a-popover-inner,
+html[data-amze-theme="dark"] .a-popover-header,
+html[data-amze-theme="amoled"] .a-popover-header,
+html[data-amze-theme="dark"] .a-popover-wrapper,
+html[data-amze-theme="amoled"] .a-popover-wrapper,
+html[data-amze-theme="dark"] .a-modal-scroller,
+html[data-amze-theme="amoled"] .a-modal-scroller,
+html[data-amze-theme="dark"] .a-modal,
+html[data-amze-theme="amoled"] .a-modal,
+html[data-amze-theme="dark"] .a-dropdown,
+html[data-amze-theme="amoled"] .a-dropdown,
+html[data-amze-theme="dark"] .a-list-item,
+html[data-amze-theme="amoled"] .a-list-item {
+  background: var(--amze-bg-alt) !important;
+  color: var(--amze-text) !important;
+  border-color: var(--amze-border) !important;
+  box-shadow: var(--amze-shadow) !important;
+}
+
+/* Star rating — keep warm gold in dark */
+html[data-amze-theme="dark"] .a-icon-star,
+html[data-amze-theme="amoled"] .a-icon-star,
+html[data-amze-theme="dark"] .a-icon-star-medium,
+html[data-amze-theme="amoled"] .a-icon-star-medium,
+html[data-amze-theme="dark"] .a-icon-star-small,
+html[data-amze-theme="amoled"] .a-icon-star-small {
+  filter: brightness(1.15) saturate(1.1);
+}
+
+/* Text selection */
+html[data-amze-theme="dark"] ::selection,
+html[data-amze-theme="amoled"] ::selection {
+  background: var(--amze-accent);
+  color: #11111b;
+}
+
+/* Tables (cart, orders, account) */
+html[data-amze-theme="dark"] table,
+html[data-amze-theme="amoled"] table,
+html[data-amze-theme="dark"] .a-row,
+html[data-amze-theme="amoled"] .a-row {
+  background: transparent !important;
+}
+
+html[data-amze-theme="dark"] .a-table,
+html[data-amze-theme="amoled"] .a-table,
+html[data-amze-theme="dark"] .a-row-padding,
+html[data-amze-theme="amoled"] .a-row-padding {
+  background: var(--amze-bg-alt) !important;
+  border-color: var(--amze-border-soft) !important;
+}
+
+html[data-amze-theme="dark"] tr:nth-child(even),
+html[data-amze-theme="amoled"] tr:nth-child(even) {
+  background: transparent !important;
+}
+
+html[data-amze-theme="dark"] td,
+html[data-amze-theme="amoled"] td,
+html[data-amze-theme="dark"] th,
+html[data-amze-theme="amoled"] th {
+  border-color: var(--amze-border-soft) !important;
+  color: var(--amze-text) !important;
+}
+
+/* Checkout page */
+html[data-amze-theme="dark"] #checkoutDisplayPage,
+html[data-amze-theme="amoled"] #checkoutDisplayPage,
+html[data-amze-theme="dark"] .a-box-group,
+html[data-amze-theme="amoled"] .a-box-group,
+html[data-amze-theme="dark"] .a-box-inner,
+html[data-amze-theme="amoled"] .a-box-inner {
+  background: var(--amze-bg-alt) !important;
+  color: var(--amze-text) !important;
+  border-color: var(--amze-border-soft) !important;
+}
+
+/* Account page + orders */
+html[data-amze-theme="dark"] .your-account,
+html[data-amze-theme="amoled"] .your-account,
+html[data-amze-theme="dark"] .ya-card,
+html[data-amze-theme="amoled"] .ya-card,
+html[data-amze-theme="dark"] .order-card,
+html[data-amze-theme="amoled"] .order-card,
+html[data-amze-theme="dark"] .a-fixed-right-grid,
+html[data-amze-theme="amoled"] .a-fixed-right-grid,
+html[data-amze-theme="dark"] .order,
+html[data-amze-theme="amoled"] .order,
+html[data-amze-theme="dark"] .shipment,
+html[data-amze-theme="amoled"] .shipment {
+  background: var(--amze-bg-alt) !important;
+  border-color: var(--amze-border-soft) !important;
+  color: var(--amze-text) !important;
+}
+
+/* Price variant tiles (size/color swatches) */
+html[data-amze-theme="dark"] .a-button-toggle,
+html[data-amze-theme="amoled"] .a-button-toggle,
+html[data-amze-theme="dark"] .twister-swatch-wrapper,
+html[data-amze-theme="amoled"] .twister-swatch-wrapper {
+  background: var(--amze-bg-raise) !important;
+  border-color: var(--amze-border) !important;
+  color: var(--amze-text) !important;
+}
+
+html[data-amze-theme="dark"] .a-button-selected,
+html[data-amze-theme="amoled"] .a-button-selected {
+  border-color: var(--amze-accent) !important;
+  background: var(--amze-bg-elev) !important;
+}
+
+/* Reviews: review card backgrounds */
+html[data-amze-theme="dark"] [data-hook="review"],
+html[data-amze-theme="amoled"] [data-hook="review"],
+html[data-amze-theme="dark"] .review,
+html[data-amze-theme="amoled"] .review {
+  background: var(--amze-bg-alt) !important;
+  border: 1px solid var(--amze-border-soft) !important;
+  border-radius: 8px !important;
+  padding: 14px !important;
+  margin-bottom: 10px !important;
+}
+
+/* Side panel categories (left filter column) */
+html[data-amze-theme="dark"] #s-refinements,
+html[data-amze-theme="amoled"] #s-refinements,
+html[data-amze-theme="dark"] .s-refinements,
+html[data-amze-theme="amoled"] .s-refinements,
+html[data-amze-theme="dark"] #departments,
+html[data-amze-theme="amoled"] #departments,
+html[data-amze-theme="dark"] .s-navigation-indent-2,
+html[data-amze-theme="amoled"] .s-navigation-indent-2 {
+  background: var(--amze-bg-alt) !important;
+  border-color: var(--amze-border-soft) !important;
+  color: var(--amze-text) !important;
+}
+
+/* Price strikethrough — dim but still legible */
+html[data-amze-theme="dark"] .a-price[data-a-strike="true"] .a-offscreen,
+html[data-amze-theme="amoled"] .a-price[data-a-strike="true"] .a-offscreen,
+html[data-amze-theme="dark"] .a-text-price .a-offscreen,
+html[data-amze-theme="amoled"] .a-text-price .a-offscreen {
+  color: var(--amze-text-muted) !important;
+}
+
+/* Horizontal rules */
+html[data-amze-theme="dark"] hr,
+html[data-amze-theme="amoled"] hr,
+html[data-amze-theme="dark"] .a-divider,
+html[data-amze-theme="amoled"] .a-divider {
+  border-color: var(--amze-border-soft) !important;
+  background: var(--amze-border-soft) !important;
+}
+
+/* Focus ring — more visible on dark */
+html[data-amze-theme="dark"] *:focus-visible,
+html[data-amze-theme="amoled"] *:focus-visible {
+  outline: 2px solid var(--amze-accent) !important;
+  outline-offset: 2px !important;
+}
+
+/* Badges / labels (Bestseller, Amazon's Choice, etc.) */
+html[data-amze-theme="dark"] .a-badge,
+html[data-amze-theme="amoled"] .a-badge,
+html[data-amze-theme="dark"] .a-badge-text,
+html[data-amze-theme="amoled"] .a-badge-text {
+  background: var(--amze-bg-raise) !important;
+  color: var(--amze-warn) !important;
+  border-color: var(--amze-border) !important;
+}
+
 /* Hide page until theme is applied, anti-FOUC. */
 html[data-amze-theme="dark"][data-amze-ready="0"] body,
 html[data-amze-theme="amoled"][data-amze-ready="0"] body {

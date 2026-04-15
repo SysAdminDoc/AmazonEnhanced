@@ -12,11 +12,10 @@ Thumbs.db
 *.swp
 *~
 
-# Extension packaging
+# Extension packaging — release artifacts, not tracked in-tree
 *.zip
 *.crx
 *.pem
-!AmazonEnhanced-*.zip
 
 # Signing key — NEVER commit. Losing this changes the extension ID.
 build/amazonenhanced.pem

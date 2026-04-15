@@ -265,6 +265,11 @@ textarea:focus { outline: 2px solid var(--amze-accent); border-color: var(--amze
   line-height: 1.5;
   margin: 6px 0 0;
 }
+.amze-info-small { font-size: 10.5px; line-height: 1.45; }
+.amze-info-small strong { color: var(--amze-text); }
+
+/* 5-button seg for image-mode needs tighter padding */
+.amze-seg-image .amze-seg-btn { padding: 6px 4px; font-size: 11px; }
 
 /* Footer */
 .amze-foot {

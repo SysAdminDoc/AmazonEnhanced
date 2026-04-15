@@ -17,7 +17,6 @@
  *   - Declutter sections (handled in theme.css via flag attrs)
  *
  * Runs at document_end; reapplies on DOM mutations for infinite scroll.
- * No telemetry. No external APIs. All logic local.
  */
 
 (function () {
@@ -30,6 +29,7 @@
   const DEFAULT_SETTINGS = {
     theme: 'dark',               // 'dark' | 'amoled' | 'light'
     density: 'comfortable',      // 'comfortable' | 'compact'
+    imageMode: 'tile',           // 'off' | 'tile' | 'dim' | 'invert' | 'smart'
     flags: {
       hideSponsored:      true,
       shadeSponsored:     false,
@@ -91,6 +91,7 @@
     const html = document.documentElement;
     html.setAttribute('data-amze-theme', settings.theme);
     html.setAttribute('data-amze-density', settings.density);
+    html.setAttribute('data-amze-image-mode', settings.imageMode || 'tile');
     for (const key of Object.keys(DEFAULT_SETTINGS.flags)) {
       if (settings.flags[key]) {
         html.setAttribute('data-amze-' + key, '1');
@@ -484,6 +485,83 @@
   }
 
   // -------------------------------------------------------------------
+  // 7b. Smart image dark-mode
+  //     Samples four corner pixels of each product image on a canvas.
+  //     If >= 3 of 4 corners are near-white, mark image for inversion.
+  //     Fails silently on CORS (Amazon CDN sometimes blocks). In that
+  //     case the fallback is the default tile treatment from theme.css.
+  // -------------------------------------------------------------------
+
+  const IMAGE_SELECTORS = [
+    '.s-image',
+    '#landingImage',
+    '#imgTagWrapperId img',
+    '.imgTagWrapper img',
+    '#altImages img',
+    '.a-dynamic-image',
+    '.item-view-left-col-inner img',
+    '.sc-product-image'
+  ].join(',');
+
+  function isNearWhite(r, g, b) {
+    return r > 235 && g > 235 && b > 235;
+  }
+
+  function processImageForSmartInvert(img) {
+    if (!img || img.dataset.amzeImg === '1') return;
+    if (!img.complete || img.naturalWidth < 32) return;
+    img.dataset.amzeImg = '1';
+
+    try {
+      const w = Math.min(img.naturalWidth, 80);
+      const h = Math.min(img.naturalHeight, 80);
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      // Draw at reduced size — we only need corner sampling.
+      ctx.drawImage(img, 0, 0, w, h);
+      // This throws DOMException on CORS tainted canvas.
+      const d = ctx.getImageData(0, 0, w, h).data;
+
+      const points = [
+        [0, 0],
+        [w - 1, 0],
+        [0, h - 1],
+        [w - 1, h - 1],
+        [Math.floor(w / 2), 0],
+        [Math.floor(w / 2), h - 1]
+      ];
+      let whiteCount = 0;
+      for (const [x, y] of points) {
+        const i = (y * w + x) * 4;
+        if (isNearWhite(d[i], d[i + 1], d[i + 2])) whiteCount++;
+      }
+      if (whiteCount >= 4) {
+        img.setAttribute('data-amze-invert', '1');
+      } else {
+        img.setAttribute('data-amze-invert', '0');
+      }
+    } catch (e) {
+      // CORS tainted — mark as unknown so theme.css falls back to tile.
+      img.setAttribute('data-amze-invert', 'cors');
+    }
+  }
+
+  function scanImagesForSmart() {
+    if (settings.imageMode !== 'smart') return;
+    // Add crossorigin hint BEFORE the image loads to maximize canvas readability.
+    const imgs = document.querySelectorAll(IMAGE_SELECTORS);
+    imgs.forEach(img => {
+      if (img.complete && img.naturalWidth > 0) {
+        processImageForSmartInvert(img);
+      } else {
+        img.addEventListener('load', () => processImageForSmartInvert(img), { once: true });
+      }
+    });
+  }
+
+  // -------------------------------------------------------------------
   // 8. Affiliate / tracking link stripper
   // -------------------------------------------------------------------
 
@@ -537,6 +615,7 @@
     scanTiles(document);
     stripAffiliate(document);
     scoreReviews();
+    scanImagesForSmart();
   }, 180);
 
   function startObserver() {
@@ -565,6 +644,11 @@
         // Re-scan fresh tiles under new rules.
         document.querySelectorAll('[data-amze-processed]').forEach(el => delete el.dataset.amzeProcessed);
         document.querySelectorAll('.amze-hidden-by-brand').forEach(el => el.classList.remove('amze-hidden-by-brand'));
+        // Reset image-smart markers so the new mode re-evaluates.
+        document.querySelectorAll('[data-amze-img]').forEach(el => {
+          delete el.dataset.amzeImg;
+          el.removeAttribute('data-amze-invert');
+        });
         schedule();
         toast('AmazonEnhanced settings updated');
         sendResponse({ ok: true });
