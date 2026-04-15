@@ -297,6 +297,141 @@ html[data-amze-theme="amoled"] *::-webkit-scrollbar-thumb {
 }
 
 /* ----------------------------------------------------------------------
+ * 2b. Card & widget coverage (homepage feeds, cart upsells, promo strips).
+ *     Amazon's widget markup is inconsistent — hitting class fragments
+ *     matches more variants than exact class names.
+ * -------------------------------------------------------------------- */
+
+/* Homepage feed & cardui cards */
+html[data-amze-theme="dark"] .a-cardui,
+html[data-amze-theme="amoled"] .a-cardui,
+html[data-amze-theme="dark"] .a-cardui-body,
+html[data-amze-theme="amoled"] .a-cardui-body,
+html[data-amze-theme="dark"] .a-cardui-header,
+html[data-amze-theme="amoled"] .a-cardui-header,
+html[data-amze-theme="dark"] .gw-card,
+html[data-amze-theme="amoled"] .gw-card,
+html[data-amze-theme="dark"] #gridItemRoot,
+html[data-amze-theme="amoled"] #gridItemRoot,
+html[data-amze-theme="dark"] .feed-carousel,
+html[data-amze-theme="amoled"] .feed-carousel,
+html[data-amze-theme="dark"] [class*="FluidCard"],
+html[data-amze-theme="amoled"] [class*="FluidCard"],
+html[data-amze-theme="dark"] [class*="fs-desktop-card"],
+html[data-amze-theme="amoled"] [class*="fs-desktop-card"],
+html[data-amze-theme="dark"] [class*="cardRoot"],
+html[data-amze-theme="amoled"] [class*="cardRoot"] {
+  background: var(--amze-bg-alt) !important;
+  color: var(--amze-text) !important;
+  border-color: var(--amze-border-soft) !important;
+  box-shadow: none !important;
+}
+
+/* Text inside hero cards — Amazon sometimes inlines color:#fff for
+   dark-over-image layouts; force readable on our dark bg. */
+html[data-amze-theme="dark"] .a-cardui h2,
+html[data-amze-theme="amoled"] .a-cardui h2,
+html[data-amze-theme="dark"] .a-cardui h3,
+html[data-amze-theme="amoled"] .a-cardui h3,
+html[data-amze-theme="dark"] .a-cardui h4,
+html[data-amze-theme="amoled"] .a-cardui h4,
+html[data-amze-theme="dark"] .a-cardui span,
+html[data-amze-theme="amoled"] .a-cardui span,
+html[data-amze-theme="dark"] .a-cardui p,
+html[data-amze-theme="amoled"] .a-cardui p,
+html[data-amze-theme="dark"] .gw-card span,
+html[data-amze-theme="amoled"] .gw-card span,
+html[data-amze-theme="dark"] [class*="FluidCard"] span,
+html[data-amze-theme="amoled"] [class*="FluidCard"] span,
+html[data-amze-theme="dark"] [class*="FluidCard"] p,
+html[data-amze-theme="amoled"] [class*="FluidCard"] p {
+  color: var(--amze-text) !important;
+}
+
+/* Cart upsells, Prime Visa strip, subtotal buy-box, related-products sidebar */
+html[data-amze-theme="dark"] #hlb-message,
+html[data-amze-theme="amoled"] #hlb-message,
+html[data-amze-theme="dark"] #hlb-subcart,
+html[data-amze-theme="amoled"] #hlb-subcart,
+html[data-amze-theme="dark"] #sw-subtotal,
+html[data-amze-theme="amoled"] #sw-subtotal,
+html[data-amze-theme="dark"] #sw-atc-confirmation,
+html[data-amze-theme="amoled"] #sw-atc-confirmation,
+html[data-amze-theme="dark"] #sw-hsa-rcx-upsell,
+html[data-amze-theme="amoled"] #sw-hsa-rcx-upsell,
+html[data-amze-theme="dark"] #sw-gtc,
+html[data-amze-theme="amoled"] #sw-gtc,
+html[data-amze-theme="dark"] #nav-hsa-rcx-upsell,
+html[data-amze-theme="amoled"] #nav-hsa-rcx-upsell,
+html[data-amze-theme="dark"] .sc-buybox,
+html[data-amze-theme="amoled"] .sc-buybox,
+html[data-amze-theme="dark"] .sc-buybox-ptc-summary,
+html[data-amze-theme="amoled"] .sc-buybox-ptc-summary,
+html[data-amze-theme="dark"] #sc-buy-box,
+html[data-amze-theme="amoled"] #sc-buy-box,
+html[data-amze-theme="dark"] #sc-buy-box-ptc-button,
+html[data-amze-theme="amoled"] #sc-buy-box-ptc-button,
+html[data-amze-theme="dark"] [id*="upsell"],
+html[data-amze-theme="amoled"] [id*="upsell"],
+html[data-amze-theme="dark"] [class*="upsell-widget"],
+html[data-amze-theme="amoled"] [class*="upsell-widget"],
+html[data-amze-theme="dark"] [class*="buy-box"],
+html[data-amze-theme="amoled"] [class*="buy-box"],
+html[data-amze-theme="dark"] #desktop-breadcrumbs_feature_div,
+html[data-amze-theme="amoled"] #desktop-breadcrumbs_feature_div {
+  background: var(--amze-bg-alt) !important;
+  color: var(--amze-text) !important;
+  border-color: var(--amze-border-soft) !important;
+}
+
+/* Cart subtotal "Proceed to checkout" block on the right */
+html[data-amze-theme="dark"] #activeCartViewForm,
+html[data-amze-theme="amoled"] #activeCartViewForm,
+html[data-amze-theme="dark"] .sc-subtotal,
+html[data-amze-theme="amoled"] .sc-subtotal,
+html[data-amze-theme="dark"] #sc-buy-box-ptc-button-announce,
+html[data-amze-theme="amoled"] #sc-buy-box-ptc-button-announce {
+  background: var(--amze-bg-alt) !important;
+  color: var(--amze-text) !important;
+  border-color: var(--amze-border-soft) !important;
+}
+
+/* Related-products sidebar ("Related products with fast delivery") */
+html[data-amze-theme="dark"] #rcx_container,
+html[data-amze-theme="amoled"] #rcx_container,
+html[data-amze-theme="dark"] #rhf-frame,
+html[data-amze-theme="amoled"] #rhf-frame,
+html[data-amze-theme="dark"] .rcx-carousel-card,
+html[data-amze-theme="amoled"] .rcx-carousel-card {
+  background: var(--amze-bg-alt) !important;
+  color: var(--amze-text) !important;
+  border-color: var(--amze-border-soft) !important;
+}
+
+/* Force text readable on all white-intent backgrounds we just overrode */
+html[data-amze-theme="dark"] [id*="upsell"] *,
+html[data-amze-theme="amoled"] [id*="upsell"] *,
+html[data-amze-theme="dark"] #hlb-message *,
+html[data-amze-theme="amoled"] #hlb-message *,
+html[data-amze-theme="dark"] .sc-subtotal *,
+html[data-amze-theme="amoled"] .sc-subtotal * {
+  color: var(--amze-text) !important;
+}
+
+/* But preserve prices and links inside */
+html[data-amze-theme="dark"] [id*="upsell"] .a-price *,
+html[data-amze-theme="amoled"] [id*="upsell"] .a-price *,
+html[data-amze-theme="dark"] .sc-subtotal .a-price *,
+html[data-amze-theme="amoled"] .sc-subtotal .a-price * {
+  color: var(--amze-price) !important;
+}
+
+html[data-amze-theme="dark"] [id*="upsell"] a,
+html[data-amze-theme="amoled"] [id*="upsell"] a {
+  color: var(--amze-link) !important;
+}
+
+/* ----------------------------------------------------------------------
  * 3. Sponsored/ad removal rules (flag: hideSponsored)
  *    Covers result tiles, video ads, banner strips.
  * -------------------------------------------------------------------- */
@@ -553,8 +688,8 @@ html[data-amze-hidePadding="1"] .s-widget-spacing-small:empty { display: none !i
  * -------------------------------------------------------------------- */
 
 /* Image target selectors (shared across all non-off modes). */
-html[data-amze-theme="dark"] .s-image,
-html[data-amze-theme="amoled"] .s-image,
+html[data-amze-theme="dark"] img.s-image,
+html[data-amze-theme="amoled"] img.s-image,
 html[data-amze-theme="dark"] #landingImage,
 html[data-amze-theme="amoled"] #landingImage,
 html[data-amze-theme="dark"] #imgTagWrapperId img,
@@ -563,26 +698,26 @@ html[data-amze-theme="dark"] .imgTagWrapper img,
 html[data-amze-theme="amoled"] .imgTagWrapper img,
 html[data-amze-theme="dark"] #altImages img,
 html[data-amze-theme="amoled"] #altImages img,
-html[data-amze-theme="dark"] .a-dynamic-image,
-html[data-amze-theme="amoled"] .a-dynamic-image,
-html[data-amze-theme="dark"] .sc-product-image,
-html[data-amze-theme="amoled"] .sc-product-image {
+html[data-amze-theme="dark"] img.a-dynamic-image,
+html[data-amze-theme="amoled"] img.a-dynamic-image,
+html[data-amze-theme="dark"] img.sc-product-image,
+html[data-amze-theme="amoled"] img.sc-product-image {
   transition: filter .15s ease, background-color .15s ease;
 }
 
 /* Tile mode: wrap the image with a soft off-white card so white backgrounds blend */
-html[data-amze-image-mode="tile"][data-amze-theme="dark"] .s-image,
-html[data-amze-image-mode="tile"][data-amze-theme="amoled"] .s-image,
+html[data-amze-image-mode="tile"][data-amze-theme="dark"] img.s-image,
+html[data-amze-image-mode="tile"][data-amze-theme="amoled"] img.s-image,
 html[data-amze-image-mode="tile"][data-amze-theme="dark"] #landingImage,
 html[data-amze-image-mode="tile"][data-amze-theme="amoled"] #landingImage,
 html[data-amze-image-mode="tile"][data-amze-theme="dark"] .imgTagWrapper img,
 html[data-amze-image-mode="tile"][data-amze-theme="amoled"] .imgTagWrapper img,
 html[data-amze-image-mode="tile"][data-amze-theme="dark"] #altImages img,
 html[data-amze-image-mode="tile"][data-amze-theme="amoled"] #altImages img,
-html[data-amze-image-mode="tile"][data-amze-theme="dark"] .a-dynamic-image,
-html[data-amze-image-mode="tile"][data-amze-theme="amoled"] .a-dynamic-image,
-html[data-amze-image-mode="tile"][data-amze-theme="dark"] .sc-product-image,
-html[data-amze-image-mode="tile"][data-amze-theme="amoled"] .sc-product-image {
+html[data-amze-image-mode="tile"][data-amze-theme="dark"] img.a-dynamic-image,
+html[data-amze-image-mode="tile"][data-amze-theme="amoled"] img.a-dynamic-image,
+html[data-amze-image-mode="tile"][data-amze-theme="dark"] img.sc-product-image,
+html[data-amze-image-mode="tile"][data-amze-theme="amoled"] img.sc-product-image {
   background: #e8e8ee !important;
   border-radius: 6px !important;
   padding: 4px !important;
@@ -599,34 +734,34 @@ html[data-amze-image-mode="tile"][data-amze-theme="amoled"] #imgTagWrapperId img
 }
 
 /* Dim mode: soften the harsh white without touching colors */
-html[data-amze-image-mode="dim"][data-amze-theme="dark"] .s-image,
-html[data-amze-image-mode="dim"][data-amze-theme="amoled"] .s-image,
+html[data-amze-image-mode="dim"][data-amze-theme="dark"] img.s-image,
+html[data-amze-image-mode="dim"][data-amze-theme="amoled"] img.s-image,
 html[data-amze-image-mode="dim"][data-amze-theme="dark"] #landingImage,
 html[data-amze-image-mode="dim"][data-amze-theme="amoled"] #landingImage,
 html[data-amze-image-mode="dim"][data-amze-theme="dark"] .imgTagWrapper img,
 html[data-amze-image-mode="dim"][data-amze-theme="amoled"] .imgTagWrapper img,
 html[data-amze-image-mode="dim"][data-amze-theme="dark"] #altImages img,
 html[data-amze-image-mode="dim"][data-amze-theme="amoled"] #altImages img,
-html[data-amze-image-mode="dim"][data-amze-theme="dark"] .a-dynamic-image,
-html[data-amze-image-mode="dim"][data-amze-theme="amoled"] .a-dynamic-image,
-html[data-amze-image-mode="dim"][data-amze-theme="dark"] .sc-product-image,
-html[data-amze-image-mode="dim"][data-amze-theme="amoled"] .sc-product-image {
+html[data-amze-image-mode="dim"][data-amze-theme="dark"] img.a-dynamic-image,
+html[data-amze-image-mode="dim"][data-amze-theme="amoled"] img.a-dynamic-image,
+html[data-amze-image-mode="dim"][data-amze-theme="dark"] img.sc-product-image,
+html[data-amze-image-mode="dim"][data-amze-theme="amoled"] img.sc-product-image {
   filter: brightness(0.85) contrast(1.05) !important;
 }
 
 /* Invert mode: Dark Reader-style, inverts every targeted image */
-html[data-amze-image-mode="invert"][data-amze-theme="dark"] .s-image,
-html[data-amze-image-mode="invert"][data-amze-theme="amoled"] .s-image,
+html[data-amze-image-mode="invert"][data-amze-theme="dark"] img.s-image,
+html[data-amze-image-mode="invert"][data-amze-theme="amoled"] img.s-image,
 html[data-amze-image-mode="invert"][data-amze-theme="dark"] #landingImage,
 html[data-amze-image-mode="invert"][data-amze-theme="amoled"] #landingImage,
 html[data-amze-image-mode="invert"][data-amze-theme="dark"] .imgTagWrapper img,
 html[data-amze-image-mode="invert"][data-amze-theme="amoled"] .imgTagWrapper img,
 html[data-amze-image-mode="invert"][data-amze-theme="dark"] #altImages img,
 html[data-amze-image-mode="invert"][data-amze-theme="amoled"] #altImages img,
-html[data-amze-image-mode="invert"][data-amze-theme="dark"] .a-dynamic-image,
-html[data-amze-image-mode="invert"][data-amze-theme="amoled"] .a-dynamic-image,
-html[data-amze-image-mode="invert"][data-amze-theme="dark"] .sc-product-image,
-html[data-amze-image-mode="invert"][data-amze-theme="amoled"] .sc-product-image {
+html[data-amze-image-mode="invert"][data-amze-theme="dark"] img.a-dynamic-image,
+html[data-amze-image-mode="invert"][data-amze-theme="amoled"] img.a-dynamic-image,
+html[data-amze-image-mode="invert"][data-amze-theme="dark"] img.sc-product-image,
+html[data-amze-image-mode="invert"][data-amze-theme="amoled"] img.sc-product-image {
   filter: invert(0.92) hue-rotate(180deg) contrast(1.05) !important;
 }
 
@@ -643,14 +778,14 @@ html[data-amze-image-mode="smart"][data-amze-theme="amoled"] img[data-amze-inver
   padding: 0 !important;
 }
 
-html[data-amze-image-mode="smart"][data-amze-theme="dark"] .s-image:not([data-amze-invert="1"]),
-html[data-amze-image-mode="smart"][data-amze-theme="amoled"] .s-image:not([data-amze-invert="1"]),
+html[data-amze-image-mode="smart"][data-amze-theme="dark"] img.s-image:not([data-amze-invert="1"]),
+html[data-amze-image-mode="smart"][data-amze-theme="amoled"] img.s-image:not([data-amze-invert="1"]),
 html[data-amze-image-mode="smart"][data-amze-theme="dark"] .imgTagWrapper img:not([data-amze-invert="1"]),
 html[data-amze-image-mode="smart"][data-amze-theme="amoled"] .imgTagWrapper img:not([data-amze-invert="1"]),
 html[data-amze-image-mode="smart"][data-amze-theme="dark"] #altImages img:not([data-amze-invert="1"]),
 html[data-amze-image-mode="smart"][data-amze-theme="amoled"] #altImages img:not([data-amze-invert="1"]),
-html[data-amze-image-mode="smart"][data-amze-theme="dark"] .a-dynamic-image:not([data-amze-invert="1"]),
-html[data-amze-image-mode="smart"][data-amze-theme="amoled"] .a-dynamic-image:not([data-amze-invert="1"]) {
+html[data-amze-image-mode="smart"][data-amze-theme="dark"] img.a-dynamic-image:not([data-amze-invert="1"]),
+html[data-amze-image-mode="smart"][data-amze-theme="amoled"] img.a-dynamic-image:not([data-amze-invert="1"]) {
   background: #e8e8ee !important;
   border-radius: 6px !important;
   padding: 4px !important;

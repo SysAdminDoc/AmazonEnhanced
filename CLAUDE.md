@@ -3,7 +3,7 @@
 ## Overview
 Chrome MV3 extension for Amazon UX: ad/sponsor removal, section declutter, local review-quality scoring, price-per-unit tools, Amazon-brand filtering, and theming.
 
-## Version: v1.1.0 (2026-04-14)
+## Version: v1.1.1 (2026-04-14)
 
 ## Stack
 - Manifest V3 (service worker, no background page).
@@ -73,5 +73,6 @@ gh release create vX.Y.Z --title "vX.Y.Z" AmazonEnhanced-vX.Y.Z.zip AmazonEnhanc
 `Amazon.com Shopping Cart.mhtml`, `Amazon.com. Spend less. Smile more..mhtml`, `Amazon.com_ Treadmill ... Product Types.mhtml`, `Your Account.mhtml`.
 
 ## Status
+- v1.1.1 — bugfix: `.a-dynamic-image` was hitting container divs. All image-mode selectors now `img`-qualified. Added coverage for `.a-cardui`, `.gw-card`, `[class*="FluidCard"]`, cart upsells, Prime Visa strip, subtotal buy-box, related-products sidebar (`#rcx_container`).
 - v1.1.0 — image dark-mode system (5 modes); broader theme coverage (modals, stars, tables, checkout, account, reviews, side panel, badges, focus, selection).
 - v1.0.0 — initial release.

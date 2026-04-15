@@ -5,7 +5,7 @@
 <h1 align="center">AmazonEnhanced</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.1.0-89b4fa?style=flat-square" alt="version" />
+  <img src="https://img.shields.io/badge/version-1.1.1-89b4fa?style=flat-square" alt="version" />
   <img src="https://img.shields.io/badge/license-MIT-a6e3a1?style=flat-square" alt="license" />
   <img src="https://img.shields.io/badge/platform-Chrome%20MV3-f9e2af?style=flat-square" alt="platform" />
 </p>
@@ -64,7 +64,7 @@ The adjusted rating is shown alongside Amazon's displayed rating. Runs locally o
 - Comfortable or Compact density
 - Anti-FOUC via `document_start`
 
-#### Image dark-mode (v1.1.0)
+#### Image dark-mode (v1.1.1)
 Amazon product images are white-background JPGs which look harsh against a dark page. Four handling modes:
 
 | Mode | Behavior |
@@ -85,8 +85,8 @@ There is no way to make photo backgrounds literally transparent — product shot
 
 From the [Releases page](https://github.com/SysAdminDoc/AmazonEnhanced/releases), grab either:
 
-- `AmazonEnhanced-v1.1.0.zip` — extract and load unpacked in `chrome://extensions/` (Developer mode).
-- `AmazonEnhanced-v1.1.0.crx` — drag-and-drop into `chrome://extensions/`.
+- `AmazonEnhanced-v1.1.1.zip` — extract and load unpacked in `chrome://extensions/` (Developer mode).
+- `AmazonEnhanced-v1.1.1.crx` — drag-and-drop into `chrome://extensions/`.
 
 ## Settings
 

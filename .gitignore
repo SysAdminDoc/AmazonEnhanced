@@ -20,8 +20,11 @@ Thumbs.db
 # Signing key — NEVER commit. Losing this changes the extension ID.
 build/amazonenhanced.pem
 
-# MHTML reference snapshots
+# MHTML reference snapshots + debug screenshots
 *.mhtml
+1.png
+2.png
+3.png
 
 # Local private settings
 local-settings.json

@@ -493,14 +493,14 @@
   // -------------------------------------------------------------------
 
   const IMAGE_SELECTORS = [
-    '.s-image',
-    '#landingImage',
+    'img.s-image',
+    'img#landingImage',
     '#imgTagWrapperId img',
     '.imgTagWrapper img',
     '#altImages img',
-    '.a-dynamic-image',
+    'img.a-dynamic-image',
     '.item-view-left-col-inner img',
-    '.sc-product-image'
+    'img.sc-product-image'
   ].join(',');
 
   function isNearWhite(r, g, b) {

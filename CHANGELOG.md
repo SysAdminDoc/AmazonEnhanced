@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1] - 2026-04-14
+
+### Fixed
+- **Lavender-card bug on homepage:** image-mode `tile` rules targeted `.a-dynamic-image` which Amazon also applies to container `<div>`s, causing huge light-grey rectangles on homepage feed cards. Scoped all image-mode selectors to `img.*` only (`img.a-dynamic-image`, `img.s-image`, `img.sc-product-image`).
+- **Light Prime Visa promo strip and cart subtotal sidebar:** added coverage for `.a-cardui`, `.gw-card`, `[class*="FluidCard"]`, `#hlb-message`, `#hlb-subcart`, `#sw-subtotal`, `#sw-hsa-rcx-upsell`, `#sc-buy-box`, `.sc-subtotal`, `#rcx_container`, `.rcx-carousel-card`.
+- **Unreadable text on hero cards:** Amazon sometimes inlines `color: #fff` for dark-over-image layouts; force readable `--amze-text` on card text while preserving `.a-price` and link coloring.
+
 ## [1.1.0] - 2026-04-14
 
 ### Added
