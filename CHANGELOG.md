@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.0.1] - 2026-04-14
+
+### Fixed
+- **Persistent white widgets on PDP and homepage.** Investigation of raw MHTML snapshots showed the problem: `rgb(255, 255, 255)` values are declared in Amazon's embedded `<style>` blocks (not inline `style=""` attributes), so CSS attribute-selectors can't reach them. The runtime JS sweep (`killWhiteBackgrounds`) is now the primary defense.
+- **Expanded JS sweep coverage** to cover the 200+ `*_feature_div` ids on a typical PDP via `[id$="_feature_div"]`, plus `#buybox`, `#desktop_buybox`, `#apex_*`, `#corePrice*`, cart/orders containers, review blocks, table rows, homepage `.a-carousel*` and `.a-cardui*` patterns.
+- **Dropped once-only check gate** — Amazon's own JS paints backgrounds after our first sweep; elements now remain eligible until they're marked dark.
+- **Raised per-sweep cap** from 400 to 800 elements (modern PDPs have 200+ feature_divs alone).
+- **Lowered near-white threshold** from 230 to 235 across all RGB channels — catches `#fff`, `#f7f7f7`, `#eaeded`, and Amazon's common off-whites while leaving genuine grey tones alone.
+- **Delayed re-sweeps** at 1.5s, 4s, and 8s post-init to catch elements styled by Amazon's late-running JS (carousel widgets, lazy-loaded sections).
+- **Explicit CSS pre-paint** for 25 common PDP widget ids so they're dark on first paint, avoiding flash-of-white before the sweep runs.
+
 ## [2.0.0] - 2026-04-14
 
 Major feature release. 15 new features across dark-pattern protection, transparency tools, data portability, and accessibility.

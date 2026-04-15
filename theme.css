@@ -397,6 +397,80 @@ html[data-amze-theme="amoled"] [data-amze-kw="1"] {
   color: var(--amze-text) !important;
 }
 
+/* Generic coverage for every Amazon PDP widget id (pattern: *_feature_div).
+ * There are 200+ of these on a typical PDP. Paint them dark on first paint
+ * so we don't flash white before the JS sweep catches them. */
+html[data-amze-theme="dark"] [id$="_feature_div"],
+html[data-amze-theme="amoled"] [id$="_feature_div"] {
+  background-color: transparent !important;
+  color: var(--amze-text) !important;
+  border-color: var(--amze-border-soft) !important;
+}
+
+/* PDP buybox, apex, core-price containers — force dark */
+html[data-amze-theme="dark"] #buybox,
+html[data-amze-theme="amoled"] #buybox,
+html[data-amze-theme="dark"] #buyBoxAccordion,
+html[data-amze-theme="amoled"] #buyBoxAccordion,
+html[data-amze-theme="dark"] #desktop_buybox,
+html[data-amze-theme="amoled"] #desktop_buybox,
+html[data-amze-theme="dark"] #desktop_buybox_group_1,
+html[data-amze-theme="amoled"] #desktop_buybox_group_1,
+html[data-amze-theme="dark"] #desktop_buybox_group_2,
+html[data-amze-theme="amoled"] #desktop_buybox_group_2,
+html[data-amze-theme="dark"] #apex_desktop,
+html[data-amze-theme="amoled"] #apex_desktop,
+html[data-amze-theme="dark"] #apex_desktop_newAccordion,
+html[data-amze-theme="amoled"] #apex_desktop_newAccordion,
+html[data-amze-theme="dark"] #apex_dp_center_column,
+html[data-amze-theme="amoled"] #apex_dp_center_column,
+html[data-amze-theme="dark"] #apex_dp_offer_display,
+html[data-amze-theme="amoled"] #apex_dp_offer_display,
+html[data-amze-theme="dark"] #apex_offerDisplay_desktop,
+html[data-amze-theme="amoled"] #apex_offerDisplay_desktop,
+html[data-amze-theme="dark"] #corePrice_feature_div,
+html[data-amze-theme="amoled"] #corePrice_feature_div,
+html[data-amze-theme="dark"] #corePriceDisplay_desktop_feature_div,
+html[data-amze-theme="amoled"] #corePriceDisplay_desktop_feature_div,
+html[data-amze-theme="dark"] #productOverview_feature_div,
+html[data-amze-theme="amoled"] #productOverview_feature_div,
+html[data-amze-theme="dark"] #featurebullets_feature_div,
+html[data-amze-theme="amoled"] #featurebullets_feature_div,
+html[data-amze-theme="dark"] #productDescription_feature_div,
+html[data-amze-theme="amoled"] #productDescription_feature_div,
+html[data-amze-theme="dark"] #productDetails_feature_div,
+html[data-amze-theme="amoled"] #productDetails_feature_div,
+html[data-amze-theme="dark"] #qualifiedBuybox,
+html[data-amze-theme="amoled"] #qualifiedBuybox,
+html[data-amze-theme="dark"] #offerDisplay_feature_div,
+html[data-amze-theme="amoled"] #offerDisplay_feature_div,
+html[data-amze-theme="dark"] #availability_feature_div,
+html[data-amze-theme="amoled"] #availability_feature_div,
+html[data-amze-theme="dark"] #shippingMessageInsideBuyBox_feature_div,
+html[data-amze-theme="amoled"] #shippingMessageInsideBuyBox_feature_div,
+html[data-amze-theme="dark"] #shipsFromSoldBy_feature_div,
+html[data-amze-theme="amoled"] #shipsFromSoldBy_feature_div,
+html[data-amze-theme="dark"] #HLCXComparisonWidgetContainer,
+html[data-amze-theme="amoled"] #HLCXComparisonWidgetContainer,
+html[data-amze-theme="dark"] #bylineInfo_feature_div,
+html[data-amze-theme="amoled"] #bylineInfo_feature_div,
+html[data-amze-theme="dark"] #averageCustomerReviews_feature_div,
+html[data-amze-theme="amoled"] #averageCustomerReviews_feature_div,
+html[data-amze-theme="dark"] #acBadge_feature_div,
+html[data-amze-theme="amoled"] #acBadge_feature_div,
+html[data-amze-theme="dark"] #title_feature_div,
+html[data-amze-theme="amoled"] #title_feature_div {
+  background-color: var(--amze-bg-alt) !important;
+  color: var(--amze-text) !important;
+  border-color: var(--amze-border-soft) !important;
+}
+
+/* Force text children readable inside these widgets */
+html[data-amze-theme="dark"] [id$="_feature_div"] *:not(a):not(.a-icon):not(.a-price):not(.a-price *):not(img):not(svg):not(path),
+html[data-amze-theme="amoled"] [id$="_feature_div"] *:not(a):not(.a-icon):not(.a-price):not(.a-price *):not(img):not(svg):not(path) {
+  color: inherit !important;
+}
+
 /* ----------------------------------------------------------------------
  * 2b. Card & widget coverage (homepage feeds, cart upsells, promo strips).
  *     Amazon's widget markup is inconsistent — hitting class fragments

@@ -598,11 +598,48 @@
   // -------------------------------------------------------------------
 
   const KW_SELECTORS = [
+    // Amazon utility classes
     '.a-box', '.a-box-inner', '.a-section', '.a-cardui', '.a-cardui-body',
     '.a-container', '.a-row', '.a-popover', '.a-popover-inner',
-    'div[role="main"]', '.a-padding-medium', '.a-padding-small',
-    '.a-padding-large', '.a-fixed-left-grid', '.a-fixed-right-grid',
-    '.a-fixed-right-grid-col', '.a-fixed-left-grid-col'
+    '.a-padding-none', '.a-padding-mini', '.a-padding-small',
+    '.a-padding-medium', '.a-padding-large',
+    '.a-fixed-left-grid', '.a-fixed-right-grid',
+    '.a-fixed-right-grid-col', '.a-fixed-left-grid-col',
+    '.a-tab-content', '.a-box-group', '.a-column',
+    '.a-spacing-top-base', '.a-spacing-top-medium', '.a-spacing-top-large',
+    // Every Amazon PDP widget id uses this suffix
+    '[id$="_feature_div"]',
+    // ARIA landmarks
+    'div[role="main"]', 'div[role="region"]', 'div[role="complementary"]',
+    '[role="navigation"]', '[role="contentinfo"]', '[role="article"]',
+    // PDP-specific containers
+    '#dp', '#dp-container', '#ppd', '#centerCol', '#leftCol', '#rightCol',
+    '#apex_desktop', '#apex_desktop_newAccordion', '#buybox', '#buyBoxAccordion',
+    '#desktop_buybox', '#desktop_buybox_group_1', '#desktop_buybox_group_2',
+    '#corePriceDisplay_desktop_feature_div', '#corePrice_feature_div',
+    '#qualifiedBuybox', '#tradeInWidget_feature_div',
+    '#bylineInfo_feature_div', '#availability_feature_div',
+    '#offerDisplay_feature_div', '#shippingMessageInsideBuyBox_feature_div',
+    '#shipsFromSoldBy_feature_div', '#HLCXComparisonWidgetContainer',
+    '#productOverview_feature_div', '#featurebullets_feature_div',
+    '#productDescription_feature_div', '#productDetails_feature_div',
+    '#imageBlock_feature_div', '#imgTagWrapperId',
+    // Cart/checkout
+    '#sc-active-cart', '#activeCartViewForm', '#sc-buy-box',
+    '#hlb-content', '#hlb-container', '#hlb-2',
+    '#yourOrdersContainer', '.order-card', '.order',
+    // Reviews block
+    '#reviewsMedley', '#cm_cr-review_list', '[data-hook="review"]',
+    // Tables + rows
+    'table', 'tbody', 'tr', 'td', 'th',
+    // Generic containers Amazon loves
+    '[class*="card-root"]', '[class*="CardRoot"]',
+    '[class*="Card__body"]', '[class*="gridItem"]',
+    // Homepage carousels and shovelers
+    '.a-carousel', '.a-carousel-card', '.a-carousel-viewport',
+    '.a-carousel-container', '.a-cardui-footer', '.a-cardui-header',
+    '.a-cardui-title', '.a-cardui-link-footer',
+    '[class*="fluidCard"]', '[class*="cardContainer"]', '[class*="ImageLink"]'
   ].join(',');
 
   const WHITE_RGBS = [
@@ -619,35 +656,33 @@
     const nodes = document.querySelectorAll(KW_SELECTORS);
     let processed = 0;
     for (const el of nodes) {
-      if (el.dataset.amzeKwChecked === '1') continue;
-      el.dataset.amzeKwChecked = '1';
-      // Skip tiny elements (icons, spacers).
+      // Skip if already marked dark in a previous sweep — no need to re-check
+      // because the theme won't change it back. But DON'T skip unmarked
+      // elements: Amazon's own stylesheets may paint them white on load
+      // after our first pass.
+      if (el.getAttribute('data-amze-kw') === '1') continue;
+      // Skip tiny elements (icons, spacers, decorative divs).
       const rect = el.getBoundingClientRect();
-      if (rect.width < 40 || rect.height < 20) continue;
+      if (rect.width < 30 || rect.height < 16) continue;
       // Skip form controls & media.
       if (/^(INPUT|TEXTAREA|SELECT|BUTTON|IMG|SVG|VIDEO|IFRAME|CANVAS)$/i.test(el.tagName)) continue;
       let bg;
       try { bg = getComputedStyle(el).backgroundColor; } catch (e) { continue; }
       if (!bg) continue;
-      // Normalize: ignore transparent/no-bg.
+      // Ignore transparent / no-bg — these inherit and don't need overriding.
       if (bg === 'rgba(0, 0, 0, 0)' || bg === 'transparent') continue;
-      // Quick match against known whites.
-      const normalized = bg.replace(/\s+/g, '').toLowerCase();
-      let white = false;
-      if (normalized === 'rgb(255,255,255)' || normalized === 'rgba(255,255,255,1)') {
-        white = true;
-      } else {
-        // Near-white threshold (Amazon uses #eaeded, #f7f7f7, etc. for some panels).
-        const m = bg.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
-        if (m) {
-          const r = +m[1], g = +m[2], b = +m[3];
-          if (r >= 230 && g >= 230 && b >= 230) white = true;
-        }
-      }
-      if (white) {
+      // Near-white threshold covers #fff, #eaeded, #f5f5f5, #f7f7f7, rgba whites.
+      const m = bg.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+      if (!m) continue;
+      const r = +m[1], g = +m[2], b = +m[3];
+      const a = m[4] !== undefined ? parseFloat(m[4]) : 1;
+      // Transparent-ish backgrounds don't cause visual issues.
+      if (a < 0.3) continue;
+      // "Near white" = all channels >= 235 (catches #fff, #f7f7f7, #eaeded, and Amazon's common off-whites).
+      if (r >= 235 && g >= 235 && b >= 235) {
         el.setAttribute('data-amze-kw', '1');
         processed++;
-        if (processed > 400) break; // safety cap per sweep
+        if (processed > 800) break;
       }
     }
   }
@@ -1440,6 +1475,10 @@
     applyAccessibilityAttrs();
     // Mark ready so anti-FOUC releases (body opacity 1)
     document.documentElement.setAttribute('data-amze-ready', '1');
+    // Catch elements styled late by Amazon's own JS (after our initial pass).
+    setTimeout(() => { try { killWhiteBackgrounds(); } catch (e) {} }, 1500);
+    setTimeout(() => { try { killWhiteBackgrounds(); } catch (e) {} }, 4000);
+    setTimeout(() => { try { killWhiteBackgrounds(); } catch (e) {} }, 8000);
   }
 
   function applyAccessibilityAttrs() {
