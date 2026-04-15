@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.4] - 2026-04-14
+
+### Fixed (regression from v2.0.3)
+- **Products not loading** on some pages. Root cause: over-broad catch-all selectors in the image-mode rules (`.a-cardui img`, `.gw-card img`, `[class*="p13n-sc-"] img`, `[class*="octopus-"] img`) matched too many non-product images, and some of the stonecrusher-derived sponsored selectors (`#sidebar-top`, `#sidebar-bottom`, `#masrw-top > #skippedLink ~ div[cel_widget_id^="desktop-dp-atf_"]`) potentially hid legitimate content on certain Amazon locales.
+- Tightened image-mode selectors to **explicit class names only** — no wildcard container-descendant matches.
+- Kept only the stonecrusher sponsored selectors that are both specific and verified safe (`#pdagEncapsulated`, `.sponsoredBy`, `.adFeedback__text`, `.bit-aa-install-widget-contents`, `#cs-app-prompt`).
+
 ## [2.0.3] - 2026-04-14
 
 ### Fixed

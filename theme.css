@@ -651,23 +651,12 @@ html[data-amze-hideSponsored="1"] [data-gwi*="btf-grid"][data-gwi*="active"],
 html[data-amze-hideSponsored="1"] iframe[title="Sponsored ad"],
 html[data-amze-hideSponsored="1"] iframe[src*="amazon-adsystem.com"],
 html[data-amze-hideSponsored="1"] iframe[src*="sash/"][src*=".html"],
-/* Additional sponsored selectors from stonecrusher/stylus-UserCSS */
+/* Additional sponsored selectors — verified specific-only */
 html[data-amze-hideSponsored="1"] #pdagEncapsulated,
-html[data-amze-hideSponsored="1"] #atfResults h5[class*="sponsored"],
 html[data-amze-hideSponsored="1"] .sponsoredBy,
 html[data-amze-hideSponsored="1"] .adFeedback__text,
-html[data-amze-hideSponsored="1"] #sidebar-top,
-html[data-amze-hideSponsored="1"] #sidebar-bottom,
-html[data-amze-hideSponsored="1"] [id^="image-map_image-map-ns_"].a-section.shogun-widget,
-html[data-amze-hideSponsored="1"] #masrw-top > #skippedLink ~ div[cel_widget_id^="desktop-dp-atf_"],
 html[data-amze-hideSponsored="1"] .bit-aa-install-widget-contents,
-html[data-amze-hideSponsored="1"] #cs-app-prompt,
-/* Prime Video self-ads */
-html[data-amze-hideSponsored="1"] .tancaccept,
-html[data-amze-hideSponsored="1"] .dv-dp-top-banner,
-html[data-amze-hideSponsored="1"] .a-section.a-spacing-small.dv-hero-carousel,
-html[data-amze-hideSponsored="1"] .a-section.a-spacing-none.dv-hero-carousel.dv-superhero-carousel,
-html[data-amze-hideSponsored="1"] .av-detail-section > article.av-hql-container {
+html[data-amze-hideSponsored="1"] #cs-app-prompt {
   display: none !important;
 }
 
@@ -926,8 +915,7 @@ html[data-amze-theme="dark"] :is(
   img.recs-carousel-element-img-outer,
   #landingImage, #imgTagWrapperId img, .imgTagWrapper img,
   #altImages img, .item-view-left-col-inner img,
-  .cr-lightbox-image img, .gw-card img, .a-cardui img,
-  [class*="p13n-sc-"] img, [class*="octopus-"] img
+  img.p13n-sc-carousel-image, img.p13n-sc-lazy-loaded
 ),
 html[data-amze-theme="amoled"] :is(
   img.s-image, img.a-dynamic-image, img.sc-product-image,
@@ -939,8 +927,7 @@ html[data-amze-theme="amoled"] :is(
   img.recs-carousel-element-img-outer,
   #landingImage, #imgTagWrapperId img, .imgTagWrapper img,
   #altImages img, .item-view-left-col-inner img,
-  .cr-lightbox-image img, .gw-card img, .a-cardui img,
-  [class*="p13n-sc-"] img, [class*="octopus-"] img
+  img.p13n-sc-carousel-image, img.p13n-sc-lazy-loaded
 ) {
   transition: filter .15s ease, background-color .15s ease, opacity .15s ease;
 }
@@ -953,7 +940,7 @@ html[data-amze-image-mode="tile"][data-amze-theme="dark"] :is(
   img.sims-fbt-image, img.asin-image, img.g-itemImage,
   img.s-access-image, img.bxc-grid__image,
   #landingImage, .imgTagWrapper img, #altImages img,
-  [class*="p13n-sc-"] img, [class*="octopus-"] img
+  img.p13n-sc-carousel-image, img.p13n-sc-lazy-loaded
 ),
 html[data-amze-image-mode="tile"][data-amze-theme="amoled"] :is(
   img.s-image, img.a-dynamic-image, img.sc-product-image,
@@ -962,7 +949,7 @@ html[data-amze-image-mode="tile"][data-amze-theme="amoled"] :is(
   img.sims-fbt-image, img.asin-image, img.g-itemImage,
   img.s-access-image, img.bxc-grid__image,
   #landingImage, .imgTagWrapper img, #altImages img,
-  [class*="p13n-sc-"] img, [class*="octopus-"] img
+  img.p13n-sc-carousel-image, img.p13n-sc-lazy-loaded
 ) {
   background: #f5f5f7 !important;
   border-radius: 10px !important;
@@ -986,7 +973,7 @@ html[data-amze-image-mode="dim"][data-amze-theme="dark"] :is(
   img.sims-fbt-image, img.asin-image, img.g-itemImage,
   img.s-access-image, img.bxc-grid__image,
   #landingImage, .imgTagWrapper img, #altImages img,
-  [class*="p13n-sc-"] img, [class*="octopus-"] img
+  img.p13n-sc-carousel-image, img.p13n-sc-lazy-loaded
 ),
 html[data-amze-image-mode="dim"][data-amze-theme="amoled"] :is(
   img.s-image, img.a-dynamic-image, img.sc-product-image,
@@ -995,7 +982,7 @@ html[data-amze-image-mode="dim"][data-amze-theme="amoled"] :is(
   img.sims-fbt-image, img.asin-image, img.g-itemImage,
   img.s-access-image, img.bxc-grid__image,
   #landingImage, .imgTagWrapper img, #altImages img,
-  [class*="p13n-sc-"] img, [class*="octopus-"] img
+  img.p13n-sc-carousel-image, img.p13n-sc-lazy-loaded
 ) {
   filter: brightness(0.85) contrast(1.05) !important;
 }
@@ -1008,7 +995,7 @@ html[data-amze-image-mode="darken"][data-amze-theme="dark"] :is(
   img.sims-fbt-image, img.asin-image, img.g-itemImage,
   img.s-access-image, img.bxc-grid__image,
   #landingImage, .imgTagWrapper img, #altImages img,
-  [class*="p13n-sc-"] img, [class*="octopus-"] img
+  img.p13n-sc-carousel-image, img.p13n-sc-lazy-loaded
 ),
 html[data-amze-image-mode="darken"][data-amze-theme="amoled"] :is(
   img.s-image, img.a-dynamic-image, img.sc-product-image,
@@ -1017,7 +1004,7 @@ html[data-amze-image-mode="darken"][data-amze-theme="amoled"] :is(
   img.sims-fbt-image, img.asin-image, img.g-itemImage,
   img.s-access-image, img.bxc-grid__image,
   #landingImage, .imgTagWrapper img, #altImages img,
-  [class*="p13n-sc-"] img, [class*="octopus-"] img
+  img.p13n-sc-carousel-image, img.p13n-sc-lazy-loaded
 ) {
   opacity: 0.75 !important;
   background: transparent !important;
@@ -1035,8 +1022,8 @@ html[data-amze-image-mode="invert"][data-amze-theme="dark"] :is(
   img.octopus-quick-look-product-image,
   #landingImage, .imgTagWrapper img, #altImages img,
   .item-view-left-col-inner img,
-  [class*="p13n-sc-"] img, [class*="octopus-"] img,
-  .a-cardui img, .gw-card img
+  img.p13n-sc-carousel-image, img.p13n-sc-lazy-loaded,
+  img.octopus-pc-item-image-small
 ),
 html[data-amze-image-mode="invert"][data-amze-theme="amoled"] :is(
   img.s-image, img.a-dynamic-image, img.sc-product-image,
@@ -1049,8 +1036,8 @@ html[data-amze-image-mode="invert"][data-amze-theme="amoled"] :is(
   img.octopus-quick-look-product-image,
   #landingImage, .imgTagWrapper img, #altImages img,
   .item-view-left-col-inner img,
-  [class*="p13n-sc-"] img, [class*="octopus-"] img,
-  .a-cardui img, .gw-card img
+  img.p13n-sc-carousel-image, img.p13n-sc-lazy-loaded,
+  img.octopus-pc-item-image-small
 ) {
   filter: invert(0.92) hue-rotate(180deg) contrast(1.05) !important;
   background: transparent !important;
