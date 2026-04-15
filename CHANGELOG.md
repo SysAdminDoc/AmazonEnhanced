@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.0.2] - 2026-04-14
+
+### Fixed
+- **Block Amazon APE / Javelin SafeFrame sponsored ads.** The homepage/gateway "Featured in Video Games"-style sponsored cards render through a different system than the `sp-sponsored-result` tiles on search pages. They use `cel_widget_id="adplacements:..."`, `data-csa-c-painter="JavelinRenderingService"`, `[class*="ad-placements"]`, and `ape_*_placement`/`ape_*_iframe` IDs. All of these are now covered by both the CSS `hideSponsored`/`shadeSponsored` rules and the JS sponsored detector.
+
 ## [2.0.1] - 2026-04-14
 
 ### Fixed

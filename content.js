@@ -192,7 +192,17 @@
     '[data-component-type="sp-sponsored-result"]',
     '.AdHolder',
     '[data-cel-widget*="MAIN-SPONSORED"]',
-    '[cel_widget_id*="MAIN-SPONSORED"]'
+    '[cel_widget_id*="MAIN-SPONSORED"]',
+    // APE / Javelin SafeFrame ad slots (homepage, gateway cards)
+    '[cel_widget_id^="adplacements:"]',
+    '[data-cel-widget^="adplacements:"]',
+    '[data-csa-c-painter="JavelinRenderingService"]',
+    '[class*="ad-placements"]',
+    '[class*="gateway-btf_ad"]',
+    '[class*="gateway-atf_ad"]',
+    '[id*="desktop-homepage-btf-card"]',
+    '[id*="desktop-homepage-atf-card"]',
+    '.ape-placement'
   ].join(',');
 
   function isSponsoredTile(el) {

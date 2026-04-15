@@ -627,8 +627,41 @@ html[data-amze-hideSponsored="1"] #sp_detail_thematic,
 html[data-amze-hideSponsored="1"] #sp_detail2,
 html[data-amze-hideSponsored="1"] #sp_hqp_shared_inline,
 html[data-amze-hideSponsored="1"] div[data-csa-c-content-id*="sponsored"],
-html[data-amze-hideSponsored="1"] div[data-csa-c-content-id*="Sponsored"] {
+html[data-amze-hideSponsored="1"] div[data-csa-c-content-id*="Sponsored"],
+/* Amazon APE / Javelin / SafeFrame ads (homepage & gateway btf/atf cards) */
+html[data-amze-hideSponsored="1"] [cel_widget_id^="adplacements:"],
+html[data-amze-hideSponsored="1"] [data-cel-widget^="adplacements:"],
+html[data-amze-hideSponsored="1"] [cel_widget_id*="adplacements:"],
+html[data-amze-hideSponsored="1"] [data-cel-widget*="adplacements:"],
+html[data-amze-hideSponsored="1"] [id^="ape_"][id$="_placement"],
+html[data-amze-hideSponsored="1"] [id^="ape_"][id$="_iframe"],
+html[data-amze-hideSponsored="1"] [id^="ape_"][id$="_Feedback"],
+html[data-amze-hideSponsored="1"] [id^="ape_"][id$="_ClickTracking"],
+html[data-amze-hideSponsored="1"] [id^="sf-host-load_"],
+html[data-amze-hideSponsored="1"] .ape-placement,
+html[data-amze-hideSponsored="1"] .ape-feedback,
+html[data-amze-hideSponsored="1"] [data-csa-c-painter="JavelinRenderingService"],
+html[data-amze-hideSponsored="1"] [class*="ad-placements"],
+html[data-amze-hideSponsored="1"] [class*="csm-placement-id-"],
+html[data-amze-hideSponsored="1"] [class*="gateway-btf_ad"],
+html[data-amze-hideSponsored="1"] [class*="gateway-atf_ad"],
+html[data-amze-hideSponsored="1"] [id*="desktop-homepage-btf-card"],
+html[data-amze-hideSponsored="1"] [id*="desktop-homepage-atf-card"],
+html[data-amze-hideSponsored="1"] [data-gwi*="btf-grid"][data-gwi*="active"],
+html[data-amze-hideSponsored="1"] iframe[title="Sponsored ad"],
+html[data-amze-hideSponsored="1"] iframe[src*="amazon-adsystem.com"],
+html[data-amze-hideSponsored="1"] iframe[src*="sash/"][src*=".html"] {
   display: none !important;
+}
+
+/* Shade variants for the APE/Javelin ads */
+html[data-amze-shadeSponsored="1"] [cel_widget_id^="adplacements:"],
+html[data-amze-shadeSponsored="1"] [data-cel-widget^="adplacements:"],
+html[data-amze-shadeSponsored="1"] [data-csa-c-painter="JavelinRenderingService"],
+html[data-amze-shadeSponsored="1"] .ape-placement {
+  background: var(--amze-sponsor-tint) !important;
+  outline: 1px dashed var(--amze-danger) !important;
+  opacity: 0.55 !important;
 }
 
 html[data-amze-shadeSponsored="1"] .s-result-item[data-component-type="sp-sponsored-result"],
