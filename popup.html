@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en" data-amze-theme="dark">
+<head>
+<meta charset="utf-8" />
+<title>AmazonEnhanced</title>
+<link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+
+<header class="amze-head">
+  <div class="amze-logo">
+    <img src="icons/48.png" alt="" width="28" height="28" />
+    <div>
+      <h1>AmazonEnhanced</h1>
+      <span id="amze-version">v1.0.0</span>
+    </div>
+  </div>
+  <button id="amze-reset" title="Restore defaults" class="amze-btn amze-btn-ghost">Reset</button>
+</header>
+
+<nav class="amze-tabs">
+  <button class="amze-tab amze-tab-active" data-tab="ads">Ads</button>
+  <button class="amze-tab" data-tab="declutter">Declutter</button>
+  <button class="amze-tab" data-tab="reviews">Reviews</button>
+  <button class="amze-tab" data-tab="price">Price</button>
+  <button class="amze-tab" data-tab="brands">Brands</button>
+  <button class="amze-tab" data-tab="theme">Theme</button>
+</nav>
+
+<main>
+
+<section class="amze-pane amze-pane-active" data-pane="ads">
+  <h2>Ad &amp; sponsored removal</h2>
+  <label class="amze-row">
+    <span><strong>Hide sponsored results</strong><small>Removes sponsored tiles in search + PDP carousels.</small></span>
+    <input type="checkbox" data-flag="hideSponsored" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Shade instead of hide<small>Keeps sponsored tiles visible but dimmed with a red dashed outline.</small></span>
+    <input type="checkbox" data-flag="shadeSponsored" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Hide video ads on product pages<small>Shoppable videos, sponsored video carousels.</small></span>
+    <input type="checkbox" data-flag="hideVideoAds" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Hide Prime trial/upsell nags<small>"Try Prime free" popovers + upsell ads.</small></span>
+    <input type="checkbox" data-flag="hidePrimeNag" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Hide hero banners &amp; promo strips<small>Top-of-page promo banners, announcement strips.</small></span>
+    <input type="checkbox" data-flag="hideBanners" class="amze-switch">
+  </label>
+</section>
+
+<section class="amze-pane" data-pane="declutter">
+  <h2>Section declutter</h2>
+  <label class="amze-row">
+    <span>"Brands related to this category"<small></small></span>
+    <input type="checkbox" data-flag="hideBrandsRelated" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>"Inspired by your browsing"<small></small></span>
+    <input type="checkbox" data-flag="hideInspired" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>"Customers also bought / viewed"<small></small></span>
+    <input type="checkbox" data-flag="hideAlsoBought" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>"Buy it again" rails<small></small></span>
+    <input type="checkbox" data-flag="hideBuyAgain" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>"Climate Pledge Friendly" widgets<small></small></span>
+    <input type="checkbox" data-flag="hideClimate" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Editorial recommendations<small></small></span>
+    <input type="checkbox" data-flag="hideEditorial" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>"From the manufacturer" A+ content<small>Heavyweight marketing blocks, autoplay videos.</small></span>
+    <input type="checkbox" data-flag="hideManufacturer" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>"Compare with similar items" widget<small></small></span>
+    <input type="checkbox" data-flag="hideCompare" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Hide "Subscribe &amp; Save" default upsell<small>Stops S&amp;S from being pre-selected on PDPs.</small></span>
+    <input type="checkbox" data-flag="hideSubSave" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Cart upsell / saved-for-later clutter<small>"Frequently bought together" noise in cart.</small></span>
+    <input type="checkbox" data-flag="hideCartUpsell" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Homepage clutter (carousels, hero)<small>Strips the cluttered homepage to search + essentials.</small></span>
+    <input type="checkbox" data-flag="hideHomeClutter" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Hide footer<small></small></span>
+    <input type="checkbox" data-flag="hideFooter" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Remove search-result padding/whitespace<small></small></span>
+    <input type="checkbox" data-flag="hidePadding" class="amze-switch">
+  </label>
+</section>
+
+<section class="amze-pane" data-pane="reviews">
+  <h2>Reviews &amp; trust</h2>
+  <label class="amze-row">
+    <span><strong>Local review-quality scoring</strong><small>On-device heuristic. No external API. Shows adjusted rating + polarization + verified-sample ratio on PDPs.</small></span>
+    <input type="checkbox" data-flag="reviewScore" class="amze-switch">
+  </label>
+  <p class="amze-info">
+    Since Fakespot and ReviewMeta shut down, AmazonEnhanced computes a local quality score using:
+    star-polarization (1+5 star spike), one-star share, verified-purchase ratio in the visible sample,
+    and total-review volume. Everything runs locally. No reviews leave your browser.
+  </p>
+</section>
+
+<section class="amze-pane" data-pane="price">
+  <h2>Price tools</h2>
+  <label class="amze-row">
+    <span><strong>Inline price-per-unit badges</strong><small>Auto-computes $/oz, $/kg, $/ct on search-result tiles when Amazon doesn't show it.</small></span>
+    <input type="checkbox" data-flag="pricePerUnit" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Flag suspicious MSRPs<small>Warns when strikethrough list price is &gt;70% higher than actual.</small></span>
+    <input type="checkbox" data-flag="listPriceWarn" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Strip affiliate / tracking URL params<small>Removes tag, ref_, pd_rd_*, pf_rd_*, etc. Shortens /dp/ links.</small></span>
+    <input type="checkbox" data-flag="stripAffiliate" class="amze-switch">
+  </label>
+</section>
+
+<section class="amze-pane" data-pane="brands">
+  <h2>Brand &amp; seller filters</h2>
+  <label class="amze-row">
+    <span>Hide Amazon in-house brands<small>Amazon Basics, Essentials, Solimo, Pinzon, Goodthreads, etc.</small></span>
+    <input type="checkbox" data-flag="hideAmazonBrands" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Hide "gibberish brand" tiles<small>Heuristic: 5–8 all-caps random letter brand names typical of drop-shippers.</small></span>
+    <input type="checkbox" data-flag="hideCN" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Hide custom brands<small>Enable to use the blocklist below. One regex per line.</small></span>
+    <input type="checkbox" data-flag="hideCustomBrands" class="amze-switch">
+  </label>
+  <div class="amze-field">
+    <label for="amze-brands">Custom brand blocklist (regex, one per line)</label>
+    <textarea id="amze-brands" rows="6" spellcheck="false" placeholder="^AOEUFG$&#10;Brand Name 1&#10;^[A-Z]{5,8}$"></textarea>
+  </div>
+</section>
+
+<section class="amze-pane" data-pane="theme">
+  <h2>Theme &amp; density</h2>
+  <div class="amze-theme-picker">
+    <label>
+      <input type="radio" name="amze-theme" value="dark" />
+      <span class="amze-swatch amze-swatch-dark"></span>
+      <span>Mocha (default)</span>
+    </label>
+    <label>
+      <input type="radio" name="amze-theme" value="amoled" />
+      <span class="amze-swatch amze-swatch-amoled"></span>
+      <span>AMOLED</span>
+    </label>
+    <label>
+      <input type="radio" name="amze-theme" value="light" />
+      <span class="amze-swatch amze-swatch-light"></span>
+      <span>Light (Amazon native)</span>
+    </label>
+  </div>
+  <div class="amze-field">
+    <label>Density</label>
+    <div class="amze-seg">
+      <button type="button" data-density="comfortable" class="amze-seg-btn">Comfortable</button>
+      <button type="button" data-density="compact" class="amze-seg-btn">Compact</button>
+    </div>
+  </div>
+  <label class="amze-row">
+    <span>Show toasts on changes<small>Small notification confirming applied settings.</small></span>
+    <input type="checkbox" data-meta="toastsEnabled" class="amze-switch">
+  </label>
+</section>
+
+</main>
+
+<footer class="amze-foot">
+  <span>Local &amp; private. No telemetry.</span>
+  <a href="https://github.com/SysAdminDoc/AmazonEnhanced" target="_blank" rel="noreferrer noopener">GitHub</a>
+</footer>
+
+<script src="popup.js"></script>
+</body>
+</html>

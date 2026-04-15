@@ -1,0 +1,26 @@
+# Node / build
+node_modules/
+dist/
+build/
+*.log
+npm-debug.log*
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# Extension packaging
+*.zip
+*.crx
+*.pem
+!AmazonEnhanced-*.zip
+
+# MHTML reference snapshots
+*.mhtml
+
+# Local private settings
+local-settings.json

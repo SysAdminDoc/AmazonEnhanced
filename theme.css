@@ -1,0 +1,555 @@
+/*
+ * AmazonEnhanced — theme.css
+ * Injected at document_start. Catppuccin Mocha dark (default) + AMOLED + light.
+ * All selectors are scoped by a data-amze-theme attribute on <html>.
+ * Declutter rules live here too, gated by data-amze-<flag> attributes.
+ *
+ * CSS namespace: amze-*
+ * Never use backdrop-filter: blur() (CLAUDE.md).
+ */
+
+/* ----------------------------------------------------------------------
+ * 1. Color tokens
+ * -------------------------------------------------------------------- */
+
+html[data-amze-theme="dark"] {
+  --amze-bg:            #1e1e2e;  /* Catppuccin base */
+  --amze-bg-alt:        #181825;  /* mantle */
+  --amze-bg-raise:      #313244;  /* surface0 */
+  --amze-bg-elev:       #45475a;  /* surface1 */
+  --amze-border:        #45475a;
+  --amze-border-soft:   #313244;
+  --amze-text:          #cdd6f4;
+  --amze-text-dim:      #bac2de;
+  --amze-text-muted:    #9399b2;
+  --amze-accent:        #89b4fa;  /* blue */
+  --amze-accent-hov:    #74c7ec;
+  --amze-success:       #a6e3a1;
+  --amze-warn:          #f9e2af;
+  --amze-danger:        #f38ba8;
+  --amze-link:          #89dceb;
+  --amze-price:         #a6e3a1;
+  --amze-sponsor-tint:  rgba(243, 139, 168, 0.10);
+  --amze-shadow:        0 4px 18px rgba(0,0,0,0.50);
+}
+
+html[data-amze-theme="amoled"] {
+  --amze-bg:            #000000;
+  --amze-bg-alt:        #050505;
+  --amze-bg-raise:      #0c0c0f;
+  --amze-bg-elev:       #17171c;
+  --amze-border:        #222227;
+  --amze-border-soft:   #141418;
+  --amze-text:          #e6e6ea;
+  --amze-text-dim:      #c4c4c8;
+  --amze-text-muted:    #8b8b93;
+  --amze-accent:        #7aa2f7;
+  --amze-accent-hov:    #9ab8ff;
+  --amze-success:       #73daca;
+  --amze-warn:          #e0af68;
+  --amze-danger:        #f7768e;
+  --amze-link:          #7dcfff;
+  --amze-price:         #9ece6a;
+  --amze-sponsor-tint:  rgba(247, 118, 142, 0.10);
+  --amze-shadow:        0 4px 18px rgba(0,0,0,0.80);
+}
+
+html[data-amze-theme="light"] {
+  --amze-bg:            #eff1f5;
+  --amze-bg-alt:        #e6e9ef;
+  --amze-bg-raise:      #ffffff;
+  --amze-bg-elev:       #f5f6f9;
+  --amze-border:        #bcc0cc;
+  --amze-border-soft:   #dce0e8;
+  --amze-text:          #4c4f69;
+  --amze-text-dim:      #5c5f77;
+  --amze-text-muted:    #6c6f85;
+  --amze-accent:        #1e66f5;
+  --amze-accent-hov:    #04a5e5;
+  --amze-success:       #40a02b;
+  --amze-warn:          #df8e1d;
+  --amze-danger:        #d20f39;
+  --amze-link:          #1e66f5;
+  --amze-price:         #40a02b;
+  --amze-sponsor-tint:  rgba(210, 15, 57, 0.06);
+  --amze-shadow:        0 2px 10px rgba(0,0,0,0.10);
+}
+
+/* ----------------------------------------------------------------------
+ * 2. Dark/AMOLED Amazon re-skin (native-feel, not inverted).
+ *    Only scope to dark + amoled. Light stays Amazon stock.
+ * -------------------------------------------------------------------- */
+
+html[data-amze-theme="dark"] body,
+html[data-amze-theme="amoled"] body,
+html[data-amze-theme="dark"] body #a-page,
+html[data-amze-theme="amoled"] body #a-page {
+  background-color: var(--amze-bg) !important;
+  color: var(--amze-text) !important;
+}
+
+html[data-amze-theme="dark"] body,
+html[data-amze-theme="amoled"] body {
+  color-scheme: dark;
+}
+
+/* Universal text correction within scoped pages */
+html[data-amze-theme="dark"] body *:not(svg):not(path):not(img):not(video):not(iframe):not(input):not(textarea):not(select):not(button):not(.a-button-inner):not(.a-button-text):not([class*="a-color-price"]):not([class*="a-price"]):not([class*="a-icon"]):not(.a-star-medium-4):not(.a-star-medium-5),
+html[data-amze-theme="amoled"] body *:not(svg):not(path):not(img):not(video):not(iframe):not(input):not(textarea):not(select):not(button):not(.a-button-inner):not(.a-button-text):not([class*="a-color-price"]):not([class*="a-price"]):not([class*="a-icon"]):not(.a-star-medium-4):not(.a-star-medium-5) {
+  /* Scope color overrides only to elements with explicit white or near-white background. Conservative. */
+}
+
+/* Top nav */
+html[data-amze-theme="dark"] #navbar,
+html[data-amze-theme="amoled"] #navbar,
+html[data-amze-theme="dark"] #nav-belt,
+html[data-amze-theme="amoled"] #nav-belt,
+html[data-amze-theme="dark"] #nav-main,
+html[data-amze-theme="amoled"] #nav-main,
+html[data-amze-theme="dark"] #navbar-main,
+html[data-amze-theme="amoled"] #navbar-main {
+  background: var(--amze-bg-alt) !important;
+  border-color: var(--amze-border) !important;
+}
+
+html[data-amze-theme="dark"] #nav-belt,
+html[data-amze-theme="amoled"] #nav-belt {
+  box-shadow: 0 1px 0 var(--amze-border) !important;
+}
+
+html[data-amze-theme="dark"] #nav-search .nav-search-dropdown,
+html[data-amze-theme="amoled"] #nav-search .nav-search-dropdown,
+html[data-amze-theme="dark"] #nav-search .nav-search-field,
+html[data-amze-theme="amoled"] #nav-search .nav-search-field {
+  background: var(--amze-bg-raise) !important;
+  border-color: var(--amze-border) !important;
+}
+
+html[data-amze-theme="dark"] #nav-search .nav-search-field input,
+html[data-amze-theme="amoled"] #nav-search .nav-search-field input {
+  background: var(--amze-bg-raise) !important;
+  color: var(--amze-text) !important;
+}
+
+html[data-amze-theme="dark"] #nav-search .nav-search-submit,
+html[data-amze-theme="amoled"] #nav-search .nav-search-submit {
+  background: var(--amze-accent) !important;
+}
+
+html[data-amze-theme="dark"] a, html[data-amze-theme="amoled"] a { color: var(--amze-link); }
+html[data-amze-theme="dark"] a:hover, html[data-amze-theme="amoled"] a:hover { color: var(--amze-accent-hov); }
+
+html[data-amze-theme="dark"] .a-color-base,
+html[data-amze-theme="amoled"] .a-color-base,
+html[data-amze-theme="dark"] .a-text-normal,
+html[data-amze-theme="amoled"] .a-text-normal,
+html[data-amze-theme="dark"] h1, html[data-amze-theme="amoled"] h1,
+html[data-amze-theme="dark"] h2, html[data-amze-theme="amoled"] h2,
+html[data-amze-theme="dark"] h3, html[data-amze-theme="amoled"] h3,
+html[data-amze-theme="dark"] h4, html[data-amze-theme="amoled"] h4,
+html[data-amze-theme="dark"] h5, html[data-amze-theme="amoled"] h5,
+html[data-amze-theme="dark"] span.a-size-base, html[data-amze-theme="amoled"] span.a-size-base,
+html[data-amze-theme="dark"] span.a-size-medium, html[data-amze-theme="amoled"] span.a-size-medium,
+html[data-amze-theme="dark"] span.a-size-large, html[data-amze-theme="amoled"] span.a-size-large {
+  color: var(--amze-text) !important;
+}
+
+html[data-amze-theme="dark"] .a-color-secondary,
+html[data-amze-theme="amoled"] .a-color-secondary,
+html[data-amze-theme="dark"] .a-color-tertiary,
+html[data-amze-theme="amoled"] .a-color-tertiary {
+  color: var(--amze-text-muted) !important;
+}
+
+html[data-amze-theme="dark"] .a-color-price,
+html[data-amze-theme="amoled"] .a-color-price,
+html[data-amze-theme="dark"] span.a-price .a-offscreen,
+html[data-amze-theme="amoled"] span.a-price .a-offscreen,
+html[data-amze-theme="dark"] .a-price-whole,
+html[data-amze-theme="amoled"] .a-price-whole,
+html[data-amze-theme="dark"] .a-price-fraction,
+html[data-amze-theme="amoled"] .a-price-fraction,
+html[data-amze-theme="dark"] .a-price-symbol,
+html[data-amze-theme="amoled"] .a-price-symbol {
+  color: var(--amze-price) !important;
+}
+
+/* Cards, tiles, panels */
+html[data-amze-theme="dark"] .s-card-container,
+html[data-amze-theme="amoled"] .s-card-container,
+html[data-amze-theme="dark"] .s-result-item,
+html[data-amze-theme="amoled"] .s-result-item,
+html[data-amze-theme="dark"] .a-box,
+html[data-amze-theme="amoled"] .a-box,
+html[data-amze-theme="dark"] .a-box-inner,
+html[data-amze-theme="amoled"] .a-box-inner,
+html[data-amze-theme="dark"] .a-section,
+html[data-amze-theme="amoled"] .a-section,
+html[data-amze-theme="dark"] #centerCol,
+html[data-amze-theme="amoled"] #centerCol,
+html[data-amze-theme="dark"] #leftCol,
+html[data-amze-theme="amoled"] #leftCol,
+html[data-amze-theme="dark"] #rightCol,
+html[data-amze-theme="amoled"] #rightCol {
+  background-color: transparent !important;
+  border-color: var(--amze-border-soft) !important;
+}
+
+html[data-amze-theme="dark"] .s-result-item[data-component-type="s-search-result"],
+html[data-amze-theme="amoled"] .s-result-item[data-component-type="s-search-result"] {
+  background: var(--amze-bg-alt) !important;
+  border: 1px solid var(--amze-border-soft) !important;
+  border-radius: 10px !important;
+  padding: 12px !important;
+  margin-bottom: 10px !important;
+  transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+
+html[data-amze-theme="dark"] .s-result-item[data-component-type="s-search-result"]:hover,
+html[data-amze-theme="amoled"] .s-result-item[data-component-type="s-search-result"]:hover {
+  transform: translateY(-1px);
+  border-color: var(--amze-accent) !important;
+  box-shadow: var(--amze-shadow);
+}
+
+/* Inputs, buttons */
+html[data-amze-theme="dark"] input[type="text"],
+html[data-amze-theme="amoled"] input[type="text"],
+html[data-amze-theme="dark"] input[type="email"],
+html[data-amze-theme="amoled"] input[type="email"],
+html[data-amze-theme="dark"] input[type="password"],
+html[data-amze-theme="amoled"] input[type="password"],
+html[data-amze-theme="dark"] input[type="search"],
+html[data-amze-theme="amoled"] input[type="search"],
+html[data-amze-theme="dark"] input[type="number"],
+html[data-amze-theme="amoled"] input[type="number"],
+html[data-amze-theme="dark"] textarea,
+html[data-amze-theme="amoled"] textarea,
+html[data-amze-theme="dark"] select,
+html[data-amze-theme="amoled"] select {
+  background: var(--amze-bg-raise) !important;
+  color: var(--amze-text) !important;
+  border-color: var(--amze-border) !important;
+}
+
+html[data-amze-theme="dark"] .a-button,
+html[data-amze-theme="amoled"] .a-button,
+html[data-amze-theme="dark"] .a-button-inner,
+html[data-amze-theme="amoled"] .a-button-inner {
+  background: var(--amze-bg-raise) !important;
+  border-color: var(--amze-border) !important;
+}
+
+html[data-amze-theme="dark"] .a-button-primary,
+html[data-amze-theme="amoled"] .a-button-primary,
+html[data-amze-theme="dark"] .a-button-primary .a-button-inner,
+html[data-amze-theme="amoled"] .a-button-primary .a-button-inner {
+  background: var(--amze-accent) !important;
+  border-color: var(--amze-accent) !important;
+}
+
+html[data-amze-theme="dark"] .a-button-primary .a-button-text,
+html[data-amze-theme="amoled"] .a-button-primary .a-button-text {
+  color: #11111b !important;
+}
+
+html[data-amze-theme="dark"] .a-button-text,
+html[data-amze-theme="amoled"] .a-button-text {
+  color: var(--amze-text) !important;
+}
+
+/* Table rows, shopping cart */
+html[data-amze-theme="dark"] .sc-list-item,
+html[data-amze-theme="amoled"] .sc-list-item,
+html[data-amze-theme="dark"] .sc-list-item-content,
+html[data-amze-theme="amoled"] .sc-list-item-content,
+html[data-amze-theme="dark"] #sc-active-cart,
+html[data-amze-theme="amoled"] #sc-active-cart {
+  background: var(--amze-bg-alt) !important;
+  border-color: var(--amze-border-soft) !important;
+}
+
+html[data-amze-theme="dark"] .sc-proceed-to-checkout,
+html[data-amze-theme="amoled"] .sc-proceed-to-checkout {
+  background: var(--amze-accent) !important;
+  color: #11111b !important;
+}
+
+/* Footer */
+html[data-amze-theme="dark"] #navFooter,
+html[data-amze-theme="amoled"] #navFooter,
+html[data-amze-theme="dark"] #rhf,
+html[data-amze-theme="amoled"] #rhf {
+  background: var(--amze-bg-alt) !important;
+  color: var(--amze-text-dim) !important;
+  border-top: 1px solid var(--amze-border) !important;
+}
+
+/* Scrollbar */
+html[data-amze-theme="dark"] *::-webkit-scrollbar,
+html[data-amze-theme="amoled"] *::-webkit-scrollbar { width: 10px; height: 10px; }
+html[data-amze-theme="dark"] *::-webkit-scrollbar-track,
+html[data-amze-theme="amoled"] *::-webkit-scrollbar-track { background: var(--amze-bg-alt); }
+html[data-amze-theme="dark"] *::-webkit-scrollbar-thumb,
+html[data-amze-theme="amoled"] *::-webkit-scrollbar-thumb {
+  background: var(--amze-accent);
+  border-radius: 6px;
+}
+
+/* ----------------------------------------------------------------------
+ * 3. Sponsored/ad removal rules (flag: hideSponsored)
+ *    Covers result tiles, video ads, banner strips.
+ * -------------------------------------------------------------------- */
+
+html[data-amze-hideSponsored="1"] .AdHolder,
+html[data-amze-hideSponsored="1"] .s-sponsored-label-info-icon,
+html[data-amze-hideSponsored="1"] [data-component-type="sp-sponsored-result"],
+html[data-amze-hideSponsored="1"] [data-ad-feedback-container],
+html[data-amze-hideSponsored="1"] [data-cel-widget*="MAIN-SPONSORED"],
+html[data-amze-hideSponsored="1"] [cel_widget_id*="MAIN-SPONSORED"],
+html[data-amze-hideSponsored="1"] [data-cel-widget*="TOP-SLOT_SPONSORED"],
+html[data-amze-hideSponsored="1"] [cel_widget_id*="TOP-SLOT_SPONSORED"],
+html[data-amze-hideSponsored="1"] [data-cel-widget*="LEFT-SAFE-FRAME"],
+html[data-amze-hideSponsored="1"] #sponsoredProducts2_feature_div,
+html[data-amze-hideSponsored="1"] #sims-consolidated-2_feature_div,
+html[data-amze-hideSponsored="1"] #sp_detail,
+html[data-amze-hideSponsored="1"] #sp_detail_thematic,
+html[data-amze-hideSponsored="1"] #sp_detail2,
+html[data-amze-hideSponsored="1"] #sp_hqp_shared_inline,
+html[data-amze-hideSponsored="1"] div[data-csa-c-content-id*="sponsored"],
+html[data-amze-hideSponsored="1"] div[data-csa-c-content-id*="Sponsored"] {
+  display: none !important;
+}
+
+html[data-amze-shadeSponsored="1"] .s-result-item[data-component-type="sp-sponsored-result"],
+html[data-amze-shadeSponsored="1"] [data-cel-widget*="MAIN-SPONSORED"] {
+  background: var(--amze-sponsor-tint) !important;
+  outline: 1px dashed var(--amze-danger) !important;
+  opacity: 0.55 !important;
+}
+
+/* Video ads on PDP */
+html[data-amze-hideVideoAds="1"] #vse-related-videos_feature_div,
+html[data-amze-hideVideoAds="1"] #vse-vsx_feature_div,
+html[data-amze-hideVideoAds="1"] #videoBlock_feature_div,
+html[data-amze-hideVideoAds="1"] [data-cel-widget*="shoppable-videos"],
+html[data-amze-hideVideoAds="1"] [data-cel-widget*="VIDEOS"] {
+  display: none !important;
+}
+
+/* Prime trial nags */
+html[data-amze-hidePrimeNag="1"] #prime-signup-popover,
+html[data-amze-hidePrimeNag="1"] #rhf-upsell-ad,
+html[data-amze-hidePrimeNag="1"] [data-cel-widget*="prime_signup"],
+html[data-amze-hidePrimeNag="1"] [data-cel-widget*="prime-benefit"],
+html[data-amze-hidePrimeNag="1"] .prime-try-now-hook,
+html[data-amze-hidePrimeNag="1"] #primeTryBeforeYouBuy_feature_div {
+  display: none !important;
+}
+
+/* Banner/billboard strips */
+html[data-amze-hideBanners="1"] #desktop-banner,
+html[data-amze-hideBanners="1"] #nav-upnav,
+html[data-amze-hideBanners="1"] .dp-alert-feature,
+html[data-amze-hideBanners="1"] #desktop-dp-ads_feature_div,
+html[data-amze-hideBanners="1"] [data-cel-widget*="hero-quick-promo"],
+html[data-amze-hideBanners="1"] [data-cel-widget*="Announcement"] {
+  display: none !important;
+}
+
+/* ----------------------------------------------------------------------
+ * 4. Declutter rules (per-section flags).
+ * -------------------------------------------------------------------- */
+
+html[data-amze-hideBrandsRelated="1"] [data-cel-widget*="brands_related"],
+html[data-amze-hideBrandsRelated="1"] [data-cel-widget*="BRANDS_RELATED"],
+html[data-amze-hideBrandsRelated="1"] #hero-quick-promo .hero-widget,
+html[data-amze-hideBrandsRelated="1"] #brandCarousel_feature_div { display: none !important; }
+
+html[data-amze-hideInspired="1"] [data-cel-widget*="inspired"],
+html[data-amze-hideInspired="1"] [data-cel-widget*="RECOMMENDATIONS"],
+html[data-amze-hideInspired="1"] #sims-themis-wbr_feature_div { display: none !important; }
+
+html[data-amze-hideAlsoBought="1"] #purchase-sims-feature,
+html[data-amze-hideAlsoBought="1"] #sims-consolidated-1_feature_div,
+html[data-amze-hideAlsoBought="1"] [data-cel-widget*="sims-feature"] { display: none !important; }
+
+html[data-amze-hideBuyAgain="1"] #rhf,
+html[data-amze-hideBuyAgain="1"] #RhfCart_feature_div,
+html[data-amze-hideBuyAgain="1"] [data-cel-widget*="buy-again"] { display: none !important; }
+
+html[data-amze-hideClimate="1"] #climatePledgeFriendly_feature_div,
+html[data-amze-hideClimate="1"] [data-cel-widget*="climate"],
+html[data-amze-hideClimate="1"] [data-cel-widget*="Climate"] { display: none !important; }
+
+html[data-amze-hideEditorial="1"] #editorial-recommendations_feature_div,
+html[data-amze-hideEditorial="1"] [data-cel-widget*="EditorialReviews"],
+html[data-amze-hideEditorial="1"] [data-cel-widget*="editorial_recommendations"] { display: none !important; }
+
+html[data-amze-hideManufacturer="1"] #aplus,
+html[data-amze-hideManufacturer="1"] #aplus_feature_div,
+html[data-amze-hideManufacturer="1"] #aplusBrandStory_feature_div,
+html[data-amze-hideManufacturer="1"] #aplus3p_feature_div { display: none !important; }
+
+html[data-amze-hideCompare="1"] #HLCXComparisonWidget_feature_div,
+html[data-amze-hideCompare="1"] [data-cel-widget*="CompareWidget"] { display: none !important; }
+
+html[data-amze-hideSubSave="1"] #snsAccordionRowMiddle,
+html[data-amze-hideSubSave="1"] #snsSubPopover,
+html[data-amze-hideSubSave="1"] #rcmBody,
+html[data-amze-hideSubSave="1"] #oneTimePurchase_feature_div + #snsAccordionRow,
+html[data-amze-hideSubSave="1"] input[name="subscribeAndSave"][value="1"] { display: none !important; }
+
+html[data-amze-hideCartUpsell="1"] #sc-upsell,
+html[data-amze-hideCartUpsell="1"] #sw-pickup-locker-feature,
+html[data-amze-hideCartUpsell="1"] #sc-saved-cart,
+html[data-amze-hideCartUpsell="1"] .sc-badging-widget,
+html[data-amze-hideCartUpsell="1"] #sc-rec-feature,
+html[data-amze-hideCartUpsell="1"] [data-cel-widget*="saved-for-later"] { display: none !important; }
+
+html[data-amze-hideHomeClutter="1"] #gw-desktop-herotator,
+html[data-amze-hideHomeClutter="1"] #gw-card-layout,
+html[data-amze-hideHomeClutter="1"] .GW-DESKTOP #nav-upnav,
+html[data-amze-hideHomeClutter="1"] #desktop-1,
+html[data-amze-hideHomeClutter="1"] #desktop-2,
+html[data-amze-hideHomeClutter="1"] #anonCarousel1,
+html[data-amze-hideHomeClutter="1"] #navCrossshop,
+html[data-amze-hideHomeClutter="1"] #navSwmSlot,
+html[data-amze-hideHomeClutter="1"] #nav-xshop { display: none !important; }
+
+html[data-amze-hideFooter="1"] #navFooter,
+html[data-amze-hideFooter="1"] #navBackToTop { display: none !important; }
+
+/* Result padding squeeze */
+html[data-amze-density="compact"] .s-result-item[data-component-type="s-search-result"] {
+  padding: 6px !important;
+  margin-bottom: 4px !important;
+}
+
+html[data-amze-density="compact"] .s-main-slot > .s-result-item .s-card-container {
+  padding: 4px !important;
+}
+
+html[data-amze-hidePadding="1"] .s-result-item.AdHolder,
+html[data-amze-hidePadding="1"] .s-result-item[data-empty="true"],
+html[data-amze-hidePadding="1"] .s-main-slot > div:empty,
+html[data-amze-hidePadding="1"] .s-widget-spacing-small:empty { display: none !important; }
+
+/* ----------------------------------------------------------------------
+ * 5. Injected UI chrome (badges, panels)
+ * -------------------------------------------------------------------- */
+
+.amze-badge {
+  display: inline-block;
+  padding: 2px 7px;
+  margin-left: 6px;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .2px;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  vertical-align: middle;
+  line-height: 1.4;
+}
+.amze-badge-price {
+  background: var(--amze-bg-raise, #313244);
+  color: var(--amze-text, #cdd6f4);
+  border: 1px solid var(--amze-border, #45475a);
+}
+.amze-badge-review-good  { background: #1f3a1f; color: #a6e3a1; border: 1px solid #3d603d; }
+.amze-badge-review-mixed { background: #3a341f; color: #f9e2af; border: 1px solid #5a4d2d; }
+.amze-badge-review-bad   { background: #3a1f2a; color: #f38ba8; border: 1px solid #603d4a; }
+.amze-badge-warn         { background: #3a341f; color: #f9e2af; border: 1px solid #5a4d2d; }
+
+.amze-sponsor-marker {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: var(--amze-danger, #f38ba8);
+  color: #11111b;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.amze-hidden-by-brand {
+  display: none !important;
+}
+
+/* Review panel on PDP */
+#amze-review-panel {
+  background: var(--amze-bg-alt, #181825);
+  border: 1px solid var(--amze-border, #45475a);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin: 12px 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  color: var(--amze-text, #cdd6f4);
+  box-shadow: var(--amze-shadow, 0 2px 10px rgba(0,0,0,0.4));
+}
+#amze-review-panel h3 {
+  margin: 0 0 8px 0 !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  color: var(--amze-text, #cdd6f4) !important;
+  letter-spacing: .2px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+#amze-review-panel .amze-score {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+}
+#amze-review-panel .amze-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px 14px;
+  font-size: 12px;
+  color: var(--amze-text-dim, #bac2de);
+  margin-top: 8px;
+}
+#amze-review-panel .amze-metric strong {
+  color: var(--amze-text, #cdd6f4);
+  font-weight: 600;
+}
+#amze-review-panel .amze-score-good  { color: var(--amze-success, #a6e3a1); }
+#amze-review-panel .amze-score-mixed { color: var(--amze-warn, #f9e2af); }
+#amze-review-panel .amze-score-bad   { color: var(--amze-danger, #f38ba8); }
+
+/* Toast */
+#amze-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--amze-bg-alt, #181825);
+  color: var(--amze-text, #cdd6f4);
+  border: 1px solid var(--amze-accent, #89b4fa);
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  font-size: 13px;
+  z-index: 2147483647;
+  box-shadow: var(--amze-shadow, 0 4px 18px rgba(0,0,0,.5));
+  animation: amze-toast-in .25s ease;
+}
+
+@keyframes amze-toast-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Hide page until theme is applied, anti-FOUC. */
+html[data-amze-theme="dark"][data-amze-ready="0"] body,
+html[data-amze-theme="amoled"][data-amze-ready="0"] body {
+  opacity: 0;
+}
+
+html[data-amze-ready="1"] body {
+  opacity: 1;
+  transition: opacity .15s ease;
+}
