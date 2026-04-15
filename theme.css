@@ -297,6 +297,107 @@ html[data-amze-theme="amoled"] *::-webkit-scrollbar-thumb {
 }
 
 /* ----------------------------------------------------------------------
+ * 2a. Nuclear white-background overrides.
+ *     Amazon inlines style="background:#fff" / background-color:white on
+ *     dozens of widgets that have no distinctive class. Beat inline style
+ *     with !important attribute selectors. Covers the most common forms.
+ * -------------------------------------------------------------------- */
+
+html[data-amze-theme="dark"] [style*="background:#fff"],
+html[data-amze-theme="amoled"] [style*="background:#fff"],
+html[data-amze-theme="dark"] [style*="background: #fff"],
+html[data-amze-theme="amoled"] [style*="background: #fff"],
+html[data-amze-theme="dark"] [style*="background:#FFF"],
+html[data-amze-theme="amoled"] [style*="background:#FFF"],
+html[data-amze-theme="dark"] [style*="background: #FFF"],
+html[data-amze-theme="amoled"] [style*="background: #FFF"],
+html[data-amze-theme="dark"] [style*="background-color:#fff"],
+html[data-amze-theme="amoled"] [style*="background-color:#fff"],
+html[data-amze-theme="dark"] [style*="background-color: #fff"],
+html[data-amze-theme="amoled"] [style*="background-color: #fff"],
+html[data-amze-theme="dark"] [style*="background-color:#FFF"],
+html[data-amze-theme="amoled"] [style*="background-color:#FFF"],
+html[data-amze-theme="dark"] [style*="background-color: #FFF"],
+html[data-amze-theme="amoled"] [style*="background-color: #FFF"],
+html[data-amze-theme="dark"] [style*="background:white"],
+html[data-amze-theme="amoled"] [style*="background:white"],
+html[data-amze-theme="dark"] [style*="background: white"],
+html[data-amze-theme="amoled"] [style*="background: white"],
+html[data-amze-theme="dark"] [style*="background-color:white"],
+html[data-amze-theme="amoled"] [style*="background-color:white"],
+html[data-amze-theme="dark"] [style*="background-color: white"],
+html[data-amze-theme="amoled"] [style*="background-color: white"],
+html[data-amze-theme="dark"] [style*="background-color:rgb(255"],
+html[data-amze-theme="amoled"] [style*="background-color:rgb(255"],
+html[data-amze-theme="dark"] [style*="background-color: rgb(255"],
+html[data-amze-theme="amoled"] [style*="background-color: rgb(255"],
+html[data-amze-theme="dark"] [bgcolor="#FFFFFF"],
+html[data-amze-theme="amoled"] [bgcolor="#FFFFFF"],
+html[data-amze-theme="dark"] [bgcolor="#ffffff"],
+html[data-amze-theme="amoled"] [bgcolor="#ffffff"],
+html[data-amze-theme="dark"] [bgcolor="white"],
+html[data-amze-theme="amoled"] [bgcolor="white"] {
+  background-color: var(--amze-bg-alt) !important;
+  background-image: none !important;
+  color: var(--amze-text) !important;
+}
+
+/* Broader Amazon container IDs / classes that Amazon uses as white canvas. */
+html[data-amze-theme="dark"] #a-page,
+html[data-amze-theme="amoled"] #a-page,
+html[data-amze-theme="dark"] #pageContent,
+html[data-amze-theme="amoled"] #pageContent,
+html[data-amze-theme="dark"] #dp,
+html[data-amze-theme="amoled"] #dp,
+html[data-amze-theme="dark"] #dp-container,
+html[data-amze-theme="amoled"] #dp-container,
+html[data-amze-theme="dark"] #ppd,
+html[data-amze-theme="amoled"] #ppd,
+html[data-amze-theme="dark"] #imageBlock_feature_div,
+html[data-amze-theme="amoled"] #imageBlock_feature_div,
+html[data-amze-theme="dark"] #title_feature_div,
+html[data-amze-theme="amoled"] #title_feature_div,
+html[data-amze-theme="dark"] #centerCol,
+html[data-amze-theme="amoled"] #centerCol,
+html[data-amze-theme="dark"] #leftCol,
+html[data-amze-theme="amoled"] #leftCol,
+html[data-amze-theme="dark"] #rightCol,
+html[data-amze-theme="amoled"] #rightCol,
+html[data-amze-theme="dark"] .a-container,
+html[data-amze-theme="amoled"] .a-container,
+html[data-amze-theme="dark"] .a-padding-none,
+html[data-amze-theme="amoled"] .a-padding-none,
+html[data-amze-theme="dark"] .a-padding-mini,
+html[data-amze-theme="amoled"] .a-padding-mini,
+html[data-amze-theme="dark"] .a-padding-small,
+html[data-amze-theme="amoled"] .a-padding-small,
+html[data-amze-theme="dark"] .a-padding-medium,
+html[data-amze-theme="amoled"] .a-padding-medium,
+html[data-amze-theme="dark"] .a-padding-large,
+html[data-amze-theme="amoled"] .a-padding-large,
+html[data-amze-theme="dark"] .a-fixed-left-grid,
+html[data-amze-theme="amoled"] .a-fixed-left-grid,
+html[data-amze-theme="dark"] .a-fixed-right-grid,
+html[data-amze-theme="amoled"] .a-fixed-right-grid,
+html[data-amze-theme="dark"] .a-fixed-right-grid-col,
+html[data-amze-theme="amoled"] .a-fixed-right-grid-col,
+html[data-amze-theme="dark"] .a-fixed-left-grid-col,
+html[data-amze-theme="amoled"] .a-fixed-left-grid-col,
+html[data-amze-theme="dark"] .a-spacing-none,
+html[data-amze-theme="amoled"] .a-spacing-none {
+  background-color: transparent !important;
+  color: var(--amze-text);
+}
+
+/* Normalized elements marked by JS sweep (see content.js killWhiteBackgrounds). */
+html[data-amze-theme="dark"] [data-amze-kw="1"],
+html[data-amze-theme="amoled"] [data-amze-kw="1"] {
+  background-color: var(--amze-bg-alt) !important;
+  background-image: none !important;
+  color: var(--amze-text) !important;
+}
+
+/* ----------------------------------------------------------------------
  * 2b. Card & widget coverage (homepage feeds, cart upsells, promo strips).
  *     Amazon's widget markup is inconsistent — hitting class fragments
  *     matches more variants than exact class names.
@@ -718,10 +819,11 @@ html[data-amze-image-mode="tile"][data-amze-theme="dark"] img.a-dynamic-image,
 html[data-amze-image-mode="tile"][data-amze-theme="amoled"] img.a-dynamic-image,
 html[data-amze-image-mode="tile"][data-amze-theme="dark"] img.sc-product-image,
 html[data-amze-image-mode="tile"][data-amze-theme="amoled"] img.sc-product-image {
-  background: #e8e8ee !important;
-  border-radius: 6px !important;
-  padding: 4px !important;
+  background: #f5f5f7 !important;
+  border-radius: 10px !important;
+  padding: 10px !important;
   box-sizing: content-box !important;
+  box-shadow: 0 0 0 1px var(--amze-border), 0 2px 8px rgba(0,0,0,.4) !important;
 }
 
 /* Larger rounding for the landing image (PDP main photo) */

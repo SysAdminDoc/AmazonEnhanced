@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "AmazonEnhanced",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "De-clutters Amazon: dark theme, sponsored-result removal, review-quality scoring, price-per-unit, and brand filters.",
   "author": "Matt Parker",
   "homepage_url": "https://github.com/SysAdminDoc/AmazonEnhanced",

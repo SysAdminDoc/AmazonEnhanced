@@ -562,6 +562,74 @@
   }
 
   // -------------------------------------------------------------------
+  // 7c. Kill white backgrounds at runtime.
+  //     Amazon's HTML has many <div style="background:#fff"> variants
+  //     the CSS attribute selectors can't exhaustively catch. After the
+  //     page settles, read computed background-color on plausibly-white
+  //     container elements and mark them with data-amze-kw="1" so
+  //     theme.css (section 2a) applies the dark override.
+  //
+  //     Bounded: only processes containers with text/structural content
+  //     (not images, inputs, svg) and skips elements smaller than 40x20.
+  //     Runs once per element via data-amze-kw-checked.
+  // -------------------------------------------------------------------
+
+  const KW_SELECTORS = [
+    '.a-box', '.a-box-inner', '.a-section', '.a-cardui', '.a-cardui-body',
+    '.a-container', '.a-row', '.a-popover', '.a-popover-inner',
+    'div[role="main"]', '.a-padding-medium', '.a-padding-small',
+    '.a-padding-large', '.a-fixed-left-grid', '.a-fixed-right-grid',
+    '.a-fixed-right-grid-col', '.a-fixed-left-grid-col'
+  ].join(',');
+
+  const WHITE_RGBS = [
+    'rgb(255, 255, 255)',
+    'rgb(255,255,255)',
+    'rgba(255, 255, 255, 1)',
+    'rgba(255,255,255,1)',
+    '#ffffff',
+    '#fff'
+  ];
+
+  function killWhiteBackgrounds() {
+    if (settings.theme !== 'dark' && settings.theme !== 'amoled') return;
+    const nodes = document.querySelectorAll(KW_SELECTORS);
+    let processed = 0;
+    for (const el of nodes) {
+      if (el.dataset.amzeKwChecked === '1') continue;
+      el.dataset.amzeKwChecked = '1';
+      // Skip tiny elements (icons, spacers).
+      const rect = el.getBoundingClientRect();
+      if (rect.width < 40 || rect.height < 20) continue;
+      // Skip form controls & media.
+      if (/^(INPUT|TEXTAREA|SELECT|BUTTON|IMG|SVG|VIDEO|IFRAME|CANVAS)$/i.test(el.tagName)) continue;
+      let bg;
+      try { bg = getComputedStyle(el).backgroundColor; } catch (e) { continue; }
+      if (!bg) continue;
+      // Normalize: ignore transparent/no-bg.
+      if (bg === 'rgba(0, 0, 0, 0)' || bg === 'transparent') continue;
+      // Quick match against known whites.
+      const normalized = bg.replace(/\s+/g, '').toLowerCase();
+      let white = false;
+      if (normalized === 'rgb(255,255,255)' || normalized === 'rgba(255,255,255,1)') {
+        white = true;
+      } else {
+        // Near-white threshold (Amazon uses #eaeded, #f7f7f7, etc. for some panels).
+        const m = bg.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+        if (m) {
+          const r = +m[1], g = +m[2], b = +m[3];
+          if (r >= 230 && g >= 230 && b >= 230) white = true;
+        }
+      }
+      if (white) {
+        el.setAttribute('data-amze-kw', '1');
+        processed++;
+        if (processed > 400) break; // safety cap per sweep
+      }
+    }
+  }
+
+  // -------------------------------------------------------------------
   // 8. Affiliate / tracking link stripper
   // -------------------------------------------------------------------
 
@@ -616,6 +684,7 @@
     stripAffiliate(document);
     scoreReviews();
     scanImagesForSmart();
+    killWhiteBackgrounds();
   }, 180);
 
   function startObserver() {
@@ -648,6 +717,11 @@
         document.querySelectorAll('[data-amze-img]').forEach(el => {
           delete el.dataset.amzeImg;
           el.removeAttribute('data-amze-invert');
+        });
+        // Reset white-bg sweep markers.
+        document.querySelectorAll('[data-amze-kw-checked]').forEach(el => {
+          delete el.dataset.amzeKwChecked;
+          el.removeAttribute('data-amze-kw');
         });
         schedule();
         toast('AmazonEnhanced settings updated');

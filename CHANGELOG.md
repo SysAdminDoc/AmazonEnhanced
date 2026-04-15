@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.1.2] - 2026-04-14
+
+### Fixed
+- **Persistent white backgrounds on cart, checkout, and PDP widgets.** Amazon inlines `style="background:#fff"` on dozens of elements with no distinctive class. Added:
+  - Nuclear CSS attribute selectors that override any inline `background:#fff`, `background-color:#fff`, `background:white`, `rgb(255,...)`, legacy `bgcolor="#FFFFFF"`, etc.
+  - Broader container coverage: `#a-page`, `#pageContent`, `#dp`, `#dp-container`, `#ppd`, `#imageBlock_feature_div`, `.a-container`, `.a-padding-*`, `.a-fixed-left-grid`, `.a-fixed-right-grid`.
+  - Runtime JS sweep (`killWhiteBackgrounds`) that reads computed backgrounds on `.a-box`, `.a-section`, `.a-cardui`, `.a-container`, etc. and marks any with near-white backgrounds (`R,G,B >= 230`) with `data-amze-kw="1"` so theme.css forces them dark. Capped at 400 elements per sweep. Re-runs on DOM mutations.
+- **Tile mode was nearly invisible:** increased padding from 4px to 10px, rounded corners from 6px to 10px, added a subtle border + shadow so the tile frame is actually visible around images.
+
+### Note on image modes
+If product images themselves still look white, switch the **Theme → Image dark-mode** picker away from `Tile` (the default — preserves color fidelity but doesn't darken the image content). Use `Dim` to soften, `Invert` to flip every image, or `Smart` to invert only images with white backgrounds (falls back to tile on CORS-tainted canvas).
+
 ## [1.1.1] - 2026-04-14
 
 ### Fixed
