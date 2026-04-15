@@ -281,12 +281,13 @@
     <div class="amze-seg amze-seg-image">
       <button type="button" data-image="off" class="amze-seg-btn" title="No change to images">Off</button>
       <button type="button" data-image="tile" class="amze-seg-btn" title="Wrap images in a light card (no color distortion)">Tile</button>
-      <button type="button" data-image="dim" class="amze-seg-btn" title="Dim brightness to soften harsh whites">Dim</button>
-      <button type="button" data-image="invert" class="amze-seg-btn" title="Invert every image (ruins photos, great for line art)">Invert</button>
-      <button type="button" data-image="smart" class="amze-seg-btn" title="Sample image corners via canvas — invert only if background looks white">Smart</button>
+      <button type="button" data-image="dim" class="amze-seg-btn" title="Brightness/contrast filter — softens harsh whites">Dim</button>
+      <button type="button" data-image="darken" class="amze-seg-btn" title="Opacity 0.75 — clean reduction without color distortion">Darken</button>
+      <button type="button" data-image="invert" class="amze-seg-btn" title="Flips every image (ruins photos, great for icons/text)">Invert</button>
+      <button type="button" data-image="smart" class="amze-seg-btn" title="Canvas corner-sample — inverts only images with white backgrounds">Smart</button>
     </div>
     <p class="amze-info amze-info-small">
-      Amazon product images are white-background JPGs that look harsh on dark themes. <strong>Tile</strong> (default) wraps each in a soft light card — no color distortion. <strong>Dim</strong> softens without inverting. <strong>Invert</strong> flips every image (wrecks photos, great for icons/text). <strong>Smart</strong> samples corner pixels to detect white backgrounds and inverts only those; may fall back to tile if Amazon's CDN blocks canvas reads.
+      <strong>Tile</strong> wraps each image in a soft card (default, no color distortion). <strong>Dim</strong> softens via brightness/contrast. <strong>Darken</strong> reduces opacity to 75% (inspired by stonecrusher's userstyle). <strong>Invert</strong> flips every image. <strong>Smart</strong> auto-inverts only white-bg images via canvas sampling.
     </p>
   </div>
   <label class="amze-row">

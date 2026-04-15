@@ -650,7 +650,24 @@ html[data-amze-hideSponsored="1"] [id*="desktop-homepage-atf-card"],
 html[data-amze-hideSponsored="1"] [data-gwi*="btf-grid"][data-gwi*="active"],
 html[data-amze-hideSponsored="1"] iframe[title="Sponsored ad"],
 html[data-amze-hideSponsored="1"] iframe[src*="amazon-adsystem.com"],
-html[data-amze-hideSponsored="1"] iframe[src*="sash/"][src*=".html"] {
+html[data-amze-hideSponsored="1"] iframe[src*="sash/"][src*=".html"],
+/* Additional sponsored selectors from stonecrusher/stylus-UserCSS */
+html[data-amze-hideSponsored="1"] #pdagEncapsulated,
+html[data-amze-hideSponsored="1"] #atfResults h5[class*="sponsored"],
+html[data-amze-hideSponsored="1"] .sponsoredBy,
+html[data-amze-hideSponsored="1"] .adFeedback__text,
+html[data-amze-hideSponsored="1"] #sidebar-top,
+html[data-amze-hideSponsored="1"] #sidebar-bottom,
+html[data-amze-hideSponsored="1"] [id^="image-map_image-map-ns_"].a-section.shogun-widget,
+html[data-amze-hideSponsored="1"] #masrw-top > #skippedLink ~ div[cel_widget_id^="desktop-dp-atf_"],
+html[data-amze-hideSponsored="1"] .bit-aa-install-widget-contents,
+html[data-amze-hideSponsored="1"] #cs-app-prompt,
+/* Prime Video self-ads */
+html[data-amze-hideSponsored="1"] .tancaccept,
+html[data-amze-hideSponsored="1"] .dv-dp-top-banner,
+html[data-amze-hideSponsored="1"] .a-section.a-spacing-small.dv-hero-carousel,
+html[data-amze-hideSponsored="1"] .a-section.a-spacing-none.dv-hero-carousel.dv-superhero-carousel,
+html[data-amze-hideSponsored="1"] .av-detail-section > article.av-hql-container {
   display: none !important;
 }
 
@@ -895,37 +912,58 @@ html[data-amze-hidePadding="1"] .s-widget-spacing-small:empty { display: none !i
  *    Smart = invert only images with ~white backgrounds (canvas sampled)
  * -------------------------------------------------------------------- */
 
-/* Image target selectors (shared across all non-off modes). */
-html[data-amze-theme="dark"] img.s-image,
-html[data-amze-theme="amoled"] img.s-image,
-html[data-amze-theme="dark"] #landingImage,
-html[data-amze-theme="amoled"] #landingImage,
-html[data-amze-theme="dark"] #imgTagWrapperId img,
-html[data-amze-theme="amoled"] #imgTagWrapperId img,
-html[data-amze-theme="dark"] .imgTagWrapper img,
-html[data-amze-theme="amoled"] .imgTagWrapper img,
-html[data-amze-theme="dark"] #altImages img,
-html[data-amze-theme="amoled"] #altImages img,
-html[data-amze-theme="dark"] img.a-dynamic-image,
-html[data-amze-theme="amoled"] img.a-dynamic-image,
-html[data-amze-theme="dark"] img.sc-product-image,
-html[data-amze-theme="amoled"] img.sc-product-image {
-  transition: filter .15s ease, background-color .15s ease;
+/* Universal image target — any element matching this selector group is
+ * treated as a product image for dark-mode handling. Covers search tiles,
+ * PDP, p13n recommendations, octopus/sims carousels, and all other
+ * Amazon image class variants. */
+html[data-amze-theme="dark"] :is(
+  img.s-image, img.a-dynamic-image, img.sc-product-image,
+  img.p13n-sc-dynamic-image, img.p13n-product-image,
+  img.octopus-sims-img, img.octopus-pc-item-image,
+  img.sims-fbt-image, img.asin-image, img.g-itemImage,
+  img.s-access-image, img.bxc-grid__image, img.coupon-image,
+  img.imageThumbnail, img.octopus-quick-look-product-image,
+  img.recs-carousel-element-img-outer,
+  #landingImage, #imgTagWrapperId img, .imgTagWrapper img,
+  #altImages img, .item-view-left-col-inner img,
+  .cr-lightbox-image img, .gw-card img, .a-cardui img,
+  [class*="p13n-sc-"] img, [class*="octopus-"] img
+),
+html[data-amze-theme="amoled"] :is(
+  img.s-image, img.a-dynamic-image, img.sc-product-image,
+  img.p13n-sc-dynamic-image, img.p13n-product-image,
+  img.octopus-sims-img, img.octopus-pc-item-image,
+  img.sims-fbt-image, img.asin-image, img.g-itemImage,
+  img.s-access-image, img.bxc-grid__image, img.coupon-image,
+  img.imageThumbnail, img.octopus-quick-look-product-image,
+  img.recs-carousel-element-img-outer,
+  #landingImage, #imgTagWrapperId img, .imgTagWrapper img,
+  #altImages img, .item-view-left-col-inner img,
+  .cr-lightbox-image img, .gw-card img, .a-cardui img,
+  [class*="p13n-sc-"] img, [class*="octopus-"] img
+) {
+  transition: filter .15s ease, background-color .15s ease, opacity .15s ease;
 }
 
-/* Tile mode: wrap the image with a soft off-white card so white backgrounds blend */
-html[data-amze-image-mode="tile"][data-amze-theme="dark"] img.s-image,
-html[data-amze-image-mode="tile"][data-amze-theme="amoled"] img.s-image,
-html[data-amze-image-mode="tile"][data-amze-theme="dark"] #landingImage,
-html[data-amze-image-mode="tile"][data-amze-theme="amoled"] #landingImage,
-html[data-amze-image-mode="tile"][data-amze-theme="dark"] .imgTagWrapper img,
-html[data-amze-image-mode="tile"][data-amze-theme="amoled"] .imgTagWrapper img,
-html[data-amze-image-mode="tile"][data-amze-theme="dark"] #altImages img,
-html[data-amze-image-mode="tile"][data-amze-theme="amoled"] #altImages img,
-html[data-amze-image-mode="tile"][data-amze-theme="dark"] img.a-dynamic-image,
-html[data-amze-image-mode="tile"][data-amze-theme="amoled"] img.a-dynamic-image,
-html[data-amze-image-mode="tile"][data-amze-theme="dark"] img.sc-product-image,
-html[data-amze-image-mode="tile"][data-amze-theme="amoled"] img.sc-product-image {
+/* ----- Tile mode — wraps image in a soft light card ----- */
+html[data-amze-image-mode="tile"][data-amze-theme="dark"] :is(
+  img.s-image, img.a-dynamic-image, img.sc-product-image,
+  img.p13n-sc-dynamic-image, img.p13n-product-image,
+  img.octopus-sims-img, img.octopus-pc-item-image,
+  img.sims-fbt-image, img.asin-image, img.g-itemImage,
+  img.s-access-image, img.bxc-grid__image,
+  #landingImage, .imgTagWrapper img, #altImages img,
+  [class*="p13n-sc-"] img, [class*="octopus-"] img
+),
+html[data-amze-image-mode="tile"][data-amze-theme="amoled"] :is(
+  img.s-image, img.a-dynamic-image, img.sc-product-image,
+  img.p13n-sc-dynamic-image, img.p13n-product-image,
+  img.octopus-sims-img, img.octopus-pc-item-image,
+  img.sims-fbt-image, img.asin-image, img.g-itemImage,
+  img.s-access-image, img.bxc-grid__image,
+  #landingImage, .imgTagWrapper img, #altImages img,
+  [class*="p13n-sc-"] img, [class*="octopus-"] img
+) {
   background: #f5f5f7 !important;
   border-radius: 10px !important;
   padding: 10px !important;
@@ -934,44 +972,88 @@ html[data-amze-image-mode="tile"][data-amze-theme="amoled"] img.sc-product-image
 }
 
 /* Larger rounding for the landing image (PDP main photo) */
-html[data-amze-image-mode="tile"][data-amze-theme="dark"] #landingImage,
-html[data-amze-image-mode="tile"][data-amze-theme="amoled"] #landingImage,
-html[data-amze-image-mode="tile"][data-amze-theme="dark"] #imgTagWrapperId img,
-html[data-amze-image-mode="tile"][data-amze-theme="amoled"] #imgTagWrapperId img {
+html[data-amze-image-mode="tile"][data-amze-theme="dark"] :is(#landingImage, #imgTagWrapperId img),
+html[data-amze-image-mode="tile"][data-amze-theme="amoled"] :is(#landingImage, #imgTagWrapperId img) {
   border-radius: 12px !important;
   padding: 8px !important;
 }
 
-/* Dim mode: soften the harsh white without touching colors */
-html[data-amze-image-mode="dim"][data-amze-theme="dark"] img.s-image,
-html[data-amze-image-mode="dim"][data-amze-theme="amoled"] img.s-image,
-html[data-amze-image-mode="dim"][data-amze-theme="dark"] #landingImage,
-html[data-amze-image-mode="dim"][data-amze-theme="amoled"] #landingImage,
-html[data-amze-image-mode="dim"][data-amze-theme="dark"] .imgTagWrapper img,
-html[data-amze-image-mode="dim"][data-amze-theme="amoled"] .imgTagWrapper img,
-html[data-amze-image-mode="dim"][data-amze-theme="dark"] #altImages img,
-html[data-amze-image-mode="dim"][data-amze-theme="amoled"] #altImages img,
-html[data-amze-image-mode="dim"][data-amze-theme="dark"] img.a-dynamic-image,
-html[data-amze-image-mode="dim"][data-amze-theme="amoled"] img.a-dynamic-image,
-html[data-amze-image-mode="dim"][data-amze-theme="dark"] img.sc-product-image,
-html[data-amze-image-mode="dim"][data-amze-theme="amoled"] img.sc-product-image {
+/* ----- Dim mode — brightness/contrast ----- */
+html[data-amze-image-mode="dim"][data-amze-theme="dark"] :is(
+  img.s-image, img.a-dynamic-image, img.sc-product-image,
+  img.p13n-sc-dynamic-image, img.p13n-product-image,
+  img.octopus-sims-img, img.octopus-pc-item-image,
+  img.sims-fbt-image, img.asin-image, img.g-itemImage,
+  img.s-access-image, img.bxc-grid__image,
+  #landingImage, .imgTagWrapper img, #altImages img,
+  [class*="p13n-sc-"] img, [class*="octopus-"] img
+),
+html[data-amze-image-mode="dim"][data-amze-theme="amoled"] :is(
+  img.s-image, img.a-dynamic-image, img.sc-product-image,
+  img.p13n-sc-dynamic-image, img.p13n-product-image,
+  img.octopus-sims-img, img.octopus-pc-item-image,
+  img.sims-fbt-image, img.asin-image, img.g-itemImage,
+  img.s-access-image, img.bxc-grid__image,
+  #landingImage, .imgTagWrapper img, #altImages img,
+  [class*="p13n-sc-"] img, [class*="octopus-"] img
+) {
   filter: brightness(0.85) contrast(1.05) !important;
 }
 
-/* Invert mode: Dark Reader-style, inverts every targeted image */
-html[data-amze-image-mode="invert"][data-amze-theme="dark"] img.s-image,
-html[data-amze-image-mode="invert"][data-amze-theme="amoled"] img.s-image,
-html[data-amze-image-mode="invert"][data-amze-theme="dark"] #landingImage,
-html[data-amze-image-mode="invert"][data-amze-theme="amoled"] #landingImage,
-html[data-amze-image-mode="invert"][data-amze-theme="dark"] .imgTagWrapper img,
-html[data-amze-image-mode="invert"][data-amze-theme="amoled"] .imgTagWrapper img,
-html[data-amze-image-mode="invert"][data-amze-theme="dark"] #altImages img,
-html[data-amze-image-mode="invert"][data-amze-theme="amoled"] #altImages img,
-html[data-amze-image-mode="invert"][data-amze-theme="dark"] img.a-dynamic-image,
-html[data-amze-image-mode="invert"][data-amze-theme="amoled"] img.a-dynamic-image,
-html[data-amze-image-mode="invert"][data-amze-theme="dark"] img.sc-product-image,
-html[data-amze-image-mode="invert"][data-amze-theme="amoled"] img.sc-product-image {
+/* ----- Darken mode (new, inspired by stonecrusher) — simple opacity + dark bg ----- */
+html[data-amze-image-mode="darken"][data-amze-theme="dark"] :is(
+  img.s-image, img.a-dynamic-image, img.sc-product-image,
+  img.p13n-sc-dynamic-image, img.p13n-product-image,
+  img.octopus-sims-img, img.octopus-pc-item-image,
+  img.sims-fbt-image, img.asin-image, img.g-itemImage,
+  img.s-access-image, img.bxc-grid__image,
+  #landingImage, .imgTagWrapper img, #altImages img,
+  [class*="p13n-sc-"] img, [class*="octopus-"] img
+),
+html[data-amze-image-mode="darken"][data-amze-theme="amoled"] :is(
+  img.s-image, img.a-dynamic-image, img.sc-product-image,
+  img.p13n-sc-dynamic-image, img.p13n-product-image,
+  img.octopus-sims-img, img.octopus-pc-item-image,
+  img.sims-fbt-image, img.asin-image, img.g-itemImage,
+  img.s-access-image, img.bxc-grid__image,
+  #landingImage, .imgTagWrapper img, #altImages img,
+  [class*="p13n-sc-"] img, [class*="octopus-"] img
+) {
+  opacity: 0.75 !important;
+  background: transparent !important;
+}
+
+/* ----- Invert mode — Dark Reader-style filter ----- */
+html[data-amze-image-mode="invert"][data-amze-theme="dark"] :is(
+  img.s-image, img.a-dynamic-image, img.sc-product-image,
+  img.p13n-sc-dynamic-image, img.p13n-product-image,
+  img.octopus-sims-img, img.octopus-pc-item-image,
+  img.sims-fbt-image, img.asin-image, img.g-itemImage,
+  img.s-access-image, img.bxc-grid__image,
+  img.imageThumbnail, img.coupon-image,
+  img.recs-carousel-element-img-outer,
+  img.octopus-quick-look-product-image,
+  #landingImage, .imgTagWrapper img, #altImages img,
+  .item-view-left-col-inner img,
+  [class*="p13n-sc-"] img, [class*="octopus-"] img,
+  .a-cardui img, .gw-card img
+),
+html[data-amze-image-mode="invert"][data-amze-theme="amoled"] :is(
+  img.s-image, img.a-dynamic-image, img.sc-product-image,
+  img.p13n-sc-dynamic-image, img.p13n-product-image,
+  img.octopus-sims-img, img.octopus-pc-item-image,
+  img.sims-fbt-image, img.asin-image, img.g-itemImage,
+  img.s-access-image, img.bxc-grid__image,
+  img.imageThumbnail, img.coupon-image,
+  img.recs-carousel-element-img-outer,
+  img.octopus-quick-look-product-image,
+  #landingImage, .imgTagWrapper img, #altImages img,
+  .item-view-left-col-inner img,
+  [class*="p13n-sc-"] img, [class*="octopus-"] img,
+  .a-cardui img, .gw-card img
+) {
   filter: invert(0.92) hue-rotate(180deg) contrast(1.05) !important;
+  background: transparent !important;
 }
 
 /* Smart mode: content.js marks each image with data-amze-invert.

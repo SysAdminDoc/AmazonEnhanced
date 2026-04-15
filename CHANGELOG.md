@@ -1,5 +1,24 @@
 # Changelog
 
+## [2.0.3] - 2026-04-14
+
+### Fixed
+- **Invert mode not applying to related-items carousels** ("Consider these items" / "Related to items you've viewed"). Those carousels use p13n/octopus class names not covered by the original selectors. All image-mode rules (tile/dim/invert/smart/darken) now target the full set via `:is()`:
+  - `img.p13n-sc-dynamic-image`, `img.p13n-product-image`
+  - `img.octopus-sims-img`, `img.octopus-pc-item-image`
+  - `img.sims-fbt-image`, `img.asin-image`, `img.g-itemImage`
+  - `img.s-access-image`, `img.bxc-grid__image`
+  - `img.imageThumbnail`, `img.coupon-image`
+  - `img.recs-carousel-element-img-outer`
+  - `img.octopus-quick-look-product-image`
+  - `[class*="p13n-sc-"] img`, `[class*="octopus-"] img`
+  - `.a-cardui img`, `.gw-card img` (homepage cards)
+
+### Added
+- **New image mode: Darken.** Opacity 0.75 + transparent background. Inspired by stonecrusher's userstyle. Cleanest option: no color distortion, no filter artifacts — just a subtle brightness reduction. Added as a 6th button in the Theme tab's image picker.
+- **Integrated stonecrusher sponsored-ad selectors** (via [stylus-UserCSS/amazon](https://github.com/stonecrusher/stylus-UserCSS/tree/master/amazon)): `#pdagEncapsulated`, `#atfResults h5[class*="sponsored"]`, `.sponsoredBy`, `.adFeedback__text`, `#sidebar-top`, `#sidebar-bottom`, `#masrw-top > #skippedLink ~ div[cel_widget_id^="desktop-dp-atf_"]`, `.bit-aa-install-widget-contents`, `#cs-app-prompt`.
+- **Prime Video self-ad hiding:** `.tancaccept`, `.dv-dp-top-banner`, `.dv-hero-carousel`, `.dv-superhero-carousel`, `.av-hql-container`.
+
 ## [2.0.2] - 2026-04-14
 
 ### Fixed
