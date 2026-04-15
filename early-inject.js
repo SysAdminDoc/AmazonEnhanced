@@ -32,6 +32,8 @@
     for (const key of Object.keys(flags)) {
       if (flags[key]) html.setAttribute('data-amze-' + key, '1');
     }
+    if (flags.largeText)    html.setAttribute('data-amze-large-text', '');
+    if (flags.highContrast) html.setAttribute('data-amze-high-contrast', '');
     html.setAttribute('data-amze-ready', '1');
   }
 

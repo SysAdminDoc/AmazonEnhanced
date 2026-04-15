@@ -3,7 +3,7 @@
 ## Overview
 Chrome MV3 extension for Amazon UX: ad/sponsor removal, section declutter, local review-quality scoring, price-per-unit tools, Amazon-brand filtering, and theming.
 
-## Version: v1.1.2 (2026-04-14)
+## Version: v2.0.0 (2026-04-14)
 
 ## Stack
 - Manifest V3 (service worker, no background page).
@@ -73,6 +73,7 @@ gh release create vX.Y.Z --title "vX.Y.Z" AmazonEnhanced-vX.Y.Z.zip AmazonEnhanc
 `Amazon.com Shopping Cart.mhtml`, `Amazon.com. Spend less. Smile more..mhtml`, `Amazon.com_ Treadmill ... Product Types.mhtml`, `Your Account.mhtml`.
 
 ## Status
+- v2.0.0 — **Major feature release.** 15 new features: auto-decline warranty, S&S pre-tick guard, auto-uncheck checkout dark patterns, extra sort options (review count / newest / best $/unit), CPU tamer (MAIN-world injected), country-of-origin badge (cached per ASIN in `chrome.storage.local`), reveal seller (SoldBy-clone), variation bait detector (3× price spread), local price history sparkline (capped 60 entries/ASIN), copy clean product link, order history export (CSV/JSON), wishlist export (CSV/JSON/MD), late-delivery watcher (background alarm every 6h, `notifications` permission), large-text mode, high-contrast mode, ARIA fixes, allergen watchlist. Popup expanded to 10 tabs (460×640 max). All features individually flag-gated; settings broadcast live to all tabs.
 - v1.1.2 — Nuclear inline-style white-bg overrides (beats `style="background:#fff"` via attribute selectors). Added runtime JS sweep `killWhiteBackgrounds` that marks computed-white containers with `data-amze-kw="1"`. Tile mode padding increased from 4→10px with visible border/shadow so the frame is actually visible.
 - v1.1.1 — bugfix: `.a-dynamic-image` was hitting container divs. All image-mode selectors now `img`-qualified. Added coverage for `.a-cardui`, `.gw-card`, `[class*="FluidCard"]`, cart upsells, Prime Visa strip, subtotal buy-box, related-products sidebar (`#rcx_container`).
 - v1.1.0 — image dark-mode system (5 modes); broader theme coverage (modals, stars, tables, checkout, account, reviews, side panel, badges, focus, selection).

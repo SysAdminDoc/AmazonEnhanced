@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "AmazonEnhanced",
-  "version": "1.1.2",
-  "description": "De-clutters Amazon: dark theme, sponsored-result removal, review-quality scoring, price-per-unit, and brand filters.",
+  "version": "2.0.0",
+  "description": "Powerful Amazon companion: dark theme, sponsored removal, dark-pattern guards, seller transparency, price history, order/wishlist exports, accessibility.",
   "author": "Matt Parker",
   "homepage_url": "https://github.com/SysAdminDoc/AmazonEnhanced",
   "icons": {
@@ -13,7 +13,8 @@
   },
   "permissions": [
     "storage",
-    "alarms"
+    "alarms",
+    "notifications"
   ],
   "host_permissions": [
     "*://*.amazon.com/*",

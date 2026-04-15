@@ -1,50 +1,61 @@
 # Changelog
 
+## [2.0.0] - 2026-04-14
+
+Major feature release. 15 new features across dark-pattern protection, transparency tools, data portability, and accessibility.
+
+### Added — Dark-pattern pack
+- **Auto-decline warranty / protection plan.** Silently selects "No thanks" on SquareTrade/Allstate upsells at PDP, cart, and post-ATC interstitials (`#siNoCoverage`, `[data-feature-name="attachWarranty"]`, cart service-contract selects).
+- **Force one-time purchase.** Detects pre-selected Subscribe & Save radios at PDP load and switches back to one-time (`#oneTimePurchase`, `input[name="subscriptionPlan"]`).
+- **Auto-uncheck gift-receipt / share-info / add-on dark patterns** at checkout.
+- **Extra "Sort by" options** — injects *Most reviews*, *Newest*, *Best $/unit* into the search sort dropdown (client-side DOM reorder; leverages existing unit-price calc).
+- **CPU Tamer** (experimental) — MAIN-world-injected throttler that clamps background `setInterval`/`setTimeout` to ≥1s when tab is hidden.
+
+### Added — Transparency pack
+- **Country-of-origin badge.** Parses the Product Details table on PDPs, caches per ASIN in `chrome.storage.local`, and surfaces the origin both as a PDP badge and inline on cached search tiles.
+- **Reveal seller** (SoldBy-clone). Shows the actual 3P seller name + seller-page link near the product title.
+- **Variation bait detector.** Warns when a listing groups variants with >3× price spread — a common bait-and-switch pattern.
+- **Local price history.** Logs each observed PDP price per ASIN to `chrome.storage.local` (capped at 60 entries/ASIN). Renders an inline SVG sparkline with low/high/current when you revisit a product. No external API, no Keepa account.
+
+### Added — Tools & data portability
+- **Copy clean product link.** Button on PDPs that copies a Markdown-formatted link + price to clipboard.
+- **Order history export.** Buttons on `/your-orders` pages to export the currently-visible page as CSV or JSON.
+- **Wishlist export.** Buttons on wishlist pages to export as CSV, JSON, or Markdown.
+- **Late-delivery watcher.** Background alarm (every 6 hours) scans seeded orders; fires a Chrome notification when a promised delivery date passes without "Delivered" status. Uses new `notifications` permission.
+
+### Added — Accessibility & safety
+- **Large-text mode** — bumps body text to 17px, headings scale accordingly.
+- **High-contrast mode** — yellow-on-black with cyan links, green prices; overrides theme until toggled off.
+- **ARIA fixes** — adds `aria-label` to Amazon's icon-only buttons so screen readers can announce them.
+- **Allergen / ingredient watchlist.** User-defined terms (newline-separated) scan product title, bullets, description, A+ content, and details on every PDP. Matches show a warning banner.
+
+### Added — UI
+- Popup expanded from 6 tabs to 10: *Ads · Declutter · Reviews · Price · Cart · Trust · Tools · Brands · A11y · Theme*.
+- Width bumped 420→460px.
+- New chrome classes: `.amze-pdp-badge`, `.amze-pdp-warn`, `.amze-action-btn`, `.amze-export-wrap`, `.amze-badge-country`.
+
+### Changed
+- `manifest.json` — added `notifications` permission for the late-delivery watcher.
+- `early-inject.js` — also sets `data-amze-large-text` / `data-amze-high-contrast` on `<html>`.
+
 ## [1.1.2] - 2026-04-14
 
 ### Fixed
-- **Persistent white backgrounds on cart, checkout, and PDP widgets.** Amazon inlines `style="background:#fff"` on dozens of elements with no distinctive class. Added:
-  - Nuclear CSS attribute selectors that override any inline `background:#fff`, `background-color:#fff`, `background:white`, `rgb(255,...)`, legacy `bgcolor="#FFFFFF"`, etc.
-  - Broader container coverage: `#a-page`, `#pageContent`, `#dp`, `#dp-container`, `#ppd`, `#imageBlock_feature_div`, `.a-container`, `.a-padding-*`, `.a-fixed-left-grid`, `.a-fixed-right-grid`.
-  - Runtime JS sweep (`killWhiteBackgrounds`) that reads computed backgrounds on `.a-box`, `.a-section`, `.a-cardui`, `.a-container`, etc. and marks any with near-white backgrounds (`R,G,B >= 230`) with `data-amze-kw="1"` so theme.css forces them dark. Capped at 400 elements per sweep. Re-runs on DOM mutations.
-- **Tile mode was nearly invisible:** increased padding from 4px to 10px, rounded corners from 6px to 10px, added a subtle border + shadow so the tile frame is actually visible around images.
-
-### Note on image modes
-If product images themselves still look white, switch the **Theme → Image dark-mode** picker away from `Tile` (the default — preserves color fidelity but doesn't darken the image content). Use `Dim` to soften, `Invert` to flip every image, or `Smart` to invert only images with white backgrounds (falls back to tile on CORS-tainted canvas).
+- Persistent white backgrounds on cart, checkout, and PDP widgets. Added inline-style attribute CSS overrides + runtime JS sweep that marks near-white containers with `data-amze-kw`.
+- Tile image-mode now has 10px padding + visible border/shadow (was near-invisible at 4px).
 
 ## [1.1.1] - 2026-04-14
 
 ### Fixed
-- **Lavender-card bug on homepage:** image-mode `tile` rules targeted `.a-dynamic-image` which Amazon also applies to container `<div>`s, causing huge light-grey rectangles on homepage feed cards. Scoped all image-mode selectors to `img.*` only (`img.a-dynamic-image`, `img.s-image`, `img.sc-product-image`).
-- **Light Prime Visa promo strip and cart subtotal sidebar:** added coverage for `.a-cardui`, `.gw-card`, `[class*="FluidCard"]`, `#hlb-message`, `#hlb-subcart`, `#sw-subtotal`, `#sw-hsa-rcx-upsell`, `#sc-buy-box`, `.sc-subtotal`, `#rcx_container`, `.rcx-carousel-card`.
-- **Unreadable text on hero cards:** Amazon sometimes inlines `color: #fff` for dark-over-image layouts; force readable `--amze-text` on card text while preserving `.a-price` and link coloring.
+- Lavender-card homepage bug — `.a-dynamic-image` was hitting container divs. All image-mode selectors now `img`-scoped.
+- Added dark-theme coverage for `.a-cardui`, `.gw-card`, `[class*="FluidCard"]`, `#hlb-message`, `#hlb-subcart`, `#sw-subtotal`, `#rcx_container`, and other widgets.
 
 ## [1.1.0] - 2026-04-14
 
 ### Added
-- **Image dark-mode system** with five modes: `off`, `tile` (default), `dim`, `invert`, `smart`.
-  - `tile` wraps product images in a soft light card — no color distortion.
-  - `dim` applies `brightness(0.85) contrast(1.05)` to soften harsh whites.
-  - `invert` applies Dark-Reader-style `invert(0.92) hue-rotate(180deg)` to every targeted image.
-  - `smart` samples corner pixels of each image via canvas; inverts only images whose background is near-white. Gracefully falls back to tile if Amazon's CDN blocks canvas reads.
-  - Segmented picker added to the Theme tab in the popup.
-- Broader dark-theme coverage: search autocomplete dropdown, modals and popovers, account/orders pages, checkout page, cart tables, review cards, side refinement panels, price variant swatches, badges (Bestseller, Amazon's Choice), focus ring, text selection, horizontal rules.
-- Star-rating filter preserves warm gold color on dark themes.
-
-### Changed
-- README and popup copy simplified; removed marketing phrasing.
+- Image dark-mode system: `off`, `tile` (default), `dim`, `invert`, `smart`.
+- Broader dark-theme coverage (autocomplete, modals, reviews, side refinement panel, checkout, account/orders, variant swatches).
 
 ## [1.0.0] - 2026-04-14
 
-Initial release.
-
-- Chrome MV3 extension targeting 20 Amazon locales.
-- Sponsored/ad removal: search tiles, PDP carousels, banners, hero strips, video blocks, Prime upsell nags. Optional shade mode.
-- 13 independent section-declutter toggles.
-- Local review-quality scoring on product pages.
-- Price-per-unit badges with locale-safe parsing.
-- Suspicious-MSRP detection for strikethrough list prices >70% above actual.
-- Amazon URL cleanup: strips `tag`, `ref_`, `pd_rd_*`, `pf_rd_*`; canonicalizes `/dp/ASIN`.
-- Brand filters: Amazon in-house brand list, gibberish-brand heuristic, user regex blocklist.
-- Themes: Catppuccin Mocha (default), AMOLED, Light. Comfortable/Compact density. Anti-FOUC.
-- Popup with 6 tabs (Ads, Declutter, Reviews, Price, Brands, Theme). Live-broadcasts changes to all open Amazon tabs.
+Initial release — 20 Amazon locales; sponsored removal, 13 declutter toggles, review scoring, price-per-unit, MSRP flag, affiliate stripper, brand filters, Catppuccin/AMOLED/Light themes.

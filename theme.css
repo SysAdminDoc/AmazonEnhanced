@@ -1109,6 +1109,112 @@ html[data-amze-theme="amoled"] .a-badge-text {
   border-color: var(--amze-border) !important;
 }
 
+/* ----------------------------------------------------------------------
+ * 8. v2.0 feature chrome — PDP badges, action buttons, export panels.
+ * -------------------------------------------------------------------- */
+
+.amze-pdp-badge {
+  display: block;
+  background: var(--amze-bg-alt, #181825);
+  color: var(--amze-text, #cdd6f4);
+  border: 1px solid var(--amze-border-soft, #313244);
+  border-left: 3px solid var(--amze-accent, #89b4fa);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin: 10px 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+  box-shadow: var(--amze-shadow, 0 2px 10px rgba(0,0,0,.4));
+}
+.amze-pdp-badge strong { color: var(--amze-text, #cdd6f4); font-weight: 600; }
+.amze-pdp-warn {
+  border-left-color: var(--amze-warn, #f9e2af);
+  background: linear-gradient(90deg, rgba(249,226,175,0.06), var(--amze-bg-alt, #181825) 30%);
+}
+
+.amze-badge-country {
+  background: var(--amze-bg-raise, #313244);
+  color: var(--amze-success, #a6e3a1);
+  border: 1px solid var(--amze-border, #45475a);
+}
+
+.amze-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--amze-bg-raise, #313244);
+  color: var(--amze-text, #cdd6f4);
+  border: 1px solid var(--amze-border, #45475a);
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  margin: 4px 4px 4px 0;
+  transition: background .15s, border-color .15s, transform .1s;
+}
+.amze-action-btn:hover {
+  background: var(--amze-bg-elev, #45475a);
+  border-color: var(--amze-accent, #89b4fa);
+}
+.amze-action-btn:active { transform: scale(0.97); }
+
+.amze-export-wrap {
+  background: var(--amze-bg-alt, #181825);
+  color: var(--amze-text, #cdd6f4);
+  border: 1px solid var(--amze-border-soft, #313244);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin: 10px 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+}
+.amze-export-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--amze-text-muted, #9399b2);
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  margin-bottom: 6px;
+}
+
+/* Accessibility: large-text mode */
+html[data-amze-large-text] body {
+  font-size: 17px !important;
+}
+html[data-amze-large-text] #productTitle,
+html[data-amze-large-text] h1 { font-size: 28px !important; line-height: 1.35 !important; }
+html[data-amze-large-text] h2 { font-size: 22px !important; }
+html[data-amze-large-text] h3 { font-size: 18px !important; }
+html[data-amze-large-text] .a-size-small,
+html[data-amze-large-text] .a-size-mini { font-size: 14px !important; }
+html[data-amze-large-text] .s-result-item { line-height: 1.55 !important; }
+
+/* Accessibility: high-contrast PDP */
+html[data-amze-high-contrast][data-amze-theme="dark"] body,
+html[data-amze-high-contrast][data-amze-theme="amoled"] body {
+  background: #000 !important;
+  color: #ffff00 !important;
+}
+html[data-amze-high-contrast][data-amze-theme="dark"] *,
+html[data-amze-high-contrast][data-amze-theme="amoled"] * {
+  color: #ffff00 !important;
+  border-color: #ffff00 !important;
+}
+html[data-amze-high-contrast][data-amze-theme="dark"] a,
+html[data-amze-high-contrast][data-amze-theme="amoled"] a { color: #00ffff !important; }
+html[data-amze-high-contrast][data-amze-theme="dark"] .a-price *,
+html[data-amze-high-contrast][data-amze-theme="amoled"] .a-price * { color: #00ff00 !important; }
+html[data-amze-high-contrast][data-amze-theme="dark"] button,
+html[data-amze-high-contrast][data-amze-theme="amoled"] button,
+html[data-amze-high-contrast][data-amze-theme="dark"] .a-button,
+html[data-amze-high-contrast][data-amze-theme="amoled"] .a-button {
+  background: #000 !important;
+  color: #ffff00 !important;
+  border: 2px solid #ffff00 !important;
+}
+
 /* Hide page until theme is applied, anti-FOUC. */
 html[data-amze-theme="dark"][data-amze-ready="0"] body,
 html[data-amze-theme="amoled"][data-amze-ready="0"] body {

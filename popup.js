@@ -17,9 +17,15 @@
       hideBrandsRelated: true, hideInspired: true, hideAlsoBought: true, hideBuyAgain: false,
       hideClimate: false, hideEditorial: true, hideManufacturer: false, hideCompare: false,
       hideSubSave: true, hideCartUpsell: true, hideHomeClutter: true, hideFooter: false,
-      hidePadding: true
+      hidePadding: true,
+      autoDeclineWarranty: true, forceOneTimePurchase: true, autoUncheckDarkPatterns: true,
+      extraSortOptions: true, cpuTamer: false,
+      countryBadge: true, revealSeller: true, variationBait: true, priceHistory: true,
+      copyCleanLink: true, orderExport: true, wishlistExport: true, lateDeliveryWatch: false,
+      largeText: false, highContrast: false, ariaFixes: true, allergenScan: false
     },
     customBrands: '',
+    allergens: '',
     toastsEnabled: true
   };
 
@@ -62,6 +68,8 @@
     // Custom brand textarea
     const ta = $('#amze-brands');
     if (ta) ta.value = current.customBrands || '';
+    const al = $('#amze-allergens');
+    if (al) al.value = current.allergens || '';
   }
 
   function persistAndBroadcast() {
@@ -136,6 +144,18 @@
         clearTimeout(t);
         t = setTimeout(() => {
           current.customBrands = ta.value;
+          persistAndBroadcast();
+        }, 350);
+      });
+    }
+    // Allergens textarea (debounced)
+    const al = $('#amze-allergens');
+    if (al) {
+      let t;
+      al.addEventListener('input', () => {
+        clearTimeout(t);
+        t = setTimeout(() => {
+          current.allergens = al.value;
           persistAndBroadcast();
         }, 350);
       });

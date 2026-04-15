@@ -23,7 +23,11 @@
   <button class="amze-tab" data-tab="declutter">Declutter</button>
   <button class="amze-tab" data-tab="reviews">Reviews</button>
   <button class="amze-tab" data-tab="price">Price</button>
+  <button class="amze-tab" data-tab="cart">Cart</button>
+  <button class="amze-tab" data-tab="trust">Trust</button>
+  <button class="amze-tab" data-tab="tools">Tools</button>
   <button class="amze-tab" data-tab="brands">Brands</button>
+  <button class="amze-tab" data-tab="a11y">A11y</button>
   <button class="amze-tab" data-tab="theme">Theme</button>
 </nav>
 
@@ -154,6 +158,94 @@
   <div class="amze-field">
     <label for="amze-brands">Custom brand blocklist (regex, one per line)</label>
     <textarea id="amze-brands" rows="6" spellcheck="false" placeholder="^AOEUFG$&#10;Brand Name 1&#10;^[A-Z]{5,8}$"></textarea>
+  </div>
+</section>
+
+<section class="amze-pane" data-pane="cart">
+  <h2>Cart, checkout &amp; dark patterns</h2>
+  <label class="amze-row">
+    <span><strong>Auto-decline warranty / protection plan</strong><small>Silently selects "No thanks" on SquareTrade/Allstate upsells at PDP, cart, and post-add-to-cart interstitial.</small></span>
+    <input type="checkbox" data-flag="autoDeclineWarranty" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span><strong>Force one-time purchase</strong><small>Catches pre-selected Subscribe &amp; Save radios on product pages and switches back to one-time.</small></span>
+    <input type="checkbox" data-flag="forceOneTimePurchase" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Auto-uncheck gift-receipt &amp; share-info<small>Clears pre-ticked "gift receipt", share-info-with-seller, and add-on checkboxes at checkout.</small></span>
+    <input type="checkbox" data-flag="autoUncheckDarkPatterns" class="amze-switch">
+  </label>
+</section>
+
+<section class="amze-pane" data-pane="trust">
+  <h2>Transparency &amp; trust</h2>
+  <label class="amze-row">
+    <span>Country-of-origin badge<small>Pulls "Country of Origin" from the product details table and displays it as a badge on PDP. Caches per-ASIN for later search-page badging.</small></span>
+    <input type="checkbox" data-flag="countryBadge" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Reveal seller on PDP<small>Shows the actual third-party seller name + link near the product title.</small></span>
+    <input type="checkbox" data-flag="revealSeller" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Variation bait warning<small>Flags listings where variant prices span more than 3× — a common bait-and-switch pattern.</small></span>
+    <input type="checkbox" data-flag="variationBait" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Local price history<small>Logs each observed price per ASIN to local storage. Renders a sparkline on product pages you've visited more than once.</small></span>
+    <input type="checkbox" data-flag="priceHistory" class="amze-switch">
+  </label>
+</section>
+
+<section class="amze-pane" data-pane="tools">
+  <h2>Tools &amp; data</h2>
+  <label class="amze-row">
+    <span>Copy clean product link<small>Adds a "📋 Copy clean link" button on PDPs that puts a Markdown-formatted link + price on the clipboard.</small></span>
+    <input type="checkbox" data-flag="copyCleanLink" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Order history export<small>On your-orders pages, shows CSV / JSON export buttons.</small></span>
+    <input type="checkbox" data-flag="orderExport" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Wishlist export<small>On wishlist pages, shows CSV / JSON / Markdown export buttons.</small></span>
+    <input type="checkbox" data-flag="wishlistExport" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Late-delivery watcher<small>Scans visited orders pages; notifies when a promised delivery date passes without "Delivered" status. Uses the notifications permission.</small></span>
+    <input type="checkbox" data-flag="lateDeliveryWatch" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Extra "Sort by" options<small>Adds "Most reviews", "Newest", and "Best $/unit" to the search sort dropdown. Client-side re-order only.</small></span>
+    <input type="checkbox" data-flag="extraSortOptions" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>CPU tamer (experimental)<small>Throttles background setInterval / setTimeout to ≥1s while the tab is hidden. Reduces Amazon's battery/CPU cost.</small></span>
+    <input type="checkbox" data-flag="cpuTamer" class="amze-switch">
+  </label>
+</section>
+
+<section class="amze-pane" data-pane="a11y">
+  <h2>Accessibility &amp; safety</h2>
+  <label class="amze-row">
+    <span>Large text mode<small>Bumps body text to 17px, headings scale accordingly.</small></span>
+    <input type="checkbox" data-flag="largeText" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>High-contrast mode<small>Yellow on black with cyan links, green prices. Overrides the theme until toggled off.</small></span>
+    <input type="checkbox" data-flag="highContrast" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>ARIA fixes<small>Adds aria-labels to Amazon's icon-only buttons so screen readers can announce them.</small></span>
+    <input type="checkbox" data-flag="ariaFixes" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Allergen / ingredient watchlist<small>Scans product title, bullets, description, and A+ content for any of your watchlist terms. Matches show a warning banner on the PDP.</small></span>
+    <input type="checkbox" data-flag="allergenScan" class="amze-switch">
+  </label>
+  <div class="amze-field">
+    <label for="amze-allergens">Allergen / ingredient watchlist (one term per line)</label>
+    <textarea id="amze-allergens" rows="5" spellcheck="false" placeholder="peanut&#10;palm oil&#10;fragrance&#10;parabens"></textarea>
   </div>
 </section>
 

@@ -5,13 +5,13 @@
 <h1 align="center">AmazonEnhanced</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.1.2-89b4fa?style=flat-square" alt="version" />
+  <img src="https://img.shields.io/badge/version-2.0.0-89b4fa?style=flat-square" alt="version" />
   <img src="https://img.shields.io/badge/license-MIT-a6e3a1?style=flat-square" alt="license" />
   <img src="https://img.shields.io/badge/platform-Chrome%20MV3-f9e2af?style=flat-square" alt="platform" />
 </p>
 
 <p align="center">
-  Chrome extension that de-clutters Amazon: dark theme, sponsored-result removal, review-quality scoring, price-per-unit badges, and brand filters.
+  Chrome extension that de-clutters Amazon, blocks dark patterns, adds seller transparency, price history, order/wishlist export, and accessibility tools.
 </p>
 
 ---
@@ -19,63 +19,55 @@
 ## Features
 
 ### Ads & sponsored
-- Sponsored-result removal across search pages, PDP carousels, and infinite scroll
+- Sponsored-result removal (search pages, PDP carousels, infinite scroll)
 - Optional shade mode (keeps tiles visible but dimmed + outlined)
 - Video-ad and Prime-upsell nag removal
 - Hero banner / promo strip removal
 
 ### Section declutter
-Each of these can be toggled independently:
-- `Brands related to this category`
-- `Inspired by your browsing`
-- `Customers also bought / viewed`
-- `Buy it again` rails
-- `Climate Pledge Friendly` widgets
-- `Editorial recommendations`
-- `From the manufacturer` A+ content
-- `Compare with similar items`
-- `Subscribe & Save` default upsell
-- Cart upsells / saved-for-later clutter
-- Homepage carousels & hero widgets
-- Footer
-- Inline search-result whitespace padding
+13 independent toggles: Brands related, Inspired by browsing, Customers also bought, Buy it again, Climate Pledge, Editorial, From the manufacturer, Compare, Subscribe & Save default, cart upsells, homepage clutter, footer, inline padding.
 
-### Reviews
-Local review-quality score on each product page, based on:
-- Star polarization (1★ + 5★ share)
-- One-star share (paid-review red flag threshold)
-- Verified-purchase ratio in the visible sample
-- Total review volume
+### Cart, checkout & dark patterns
+- **Auto-decline warranty / protection plan.** SquareTrade/Allstate upsell: "No thanks" is selected automatically.
+- **Force one-time purchase.** Detects pre-selected Subscribe & Save radios and switches back.
+- **Auto-uncheck** gift-receipt, share-info, and add-on dark patterns at checkout.
 
-The adjusted rating is shown alongside Amazon's displayed rating. Runs locally on the DOM that's already loaded.
+### Transparency & trust
+- **Country-of-origin badge** on PDPs + cached search-tile badges.
+- **Reveal seller.** Actual third-party seller name + link near the product title.
+- **Variation bait warning.** Flags listings with >3× price spread across variants.
+- **Local price history.** Sparkline of every price you've seen on that ASIN. No external API, no Keepa account.
+- **Review-quality scoring.** Polarization, 1-star share, verified-sample ratio, volume.
 
 ### Price tools
-- Inline price-per-unit badges on search tiles (auto $/oz, $/kg, $/ct; handles EU comma decimals)
-- Suspicious-MSRP flag when strikethrough list price is >70% above actual
-- Amazon URL cleanup: strips `tag`, `ref_`, `pd_rd_*`, `pf_rd_*` and canonicalizes `/dp/ASIN` links
+- Inline price-per-unit badges (auto $/oz, $/kg, $/ct; locale-safe EU decimal parsing)
+- Suspicious-MSRP flag (>70% above actual)
+- Affiliate/tracking URL stripper + `/dp/ASIN` canonicalization
+- Extra "Sort by" options: *Most reviews*, *Newest*, *Best $/unit*
+
+### Tools & data portability
+- **Copy clean product link** button on PDPs (Markdown-formatted)
+- **Order history export** (CSV / JSON) on `/your-orders` pages
+- **Wishlist export** (CSV / JSON / Markdown) on wishlist pages
+- **Late-delivery watcher** — background alarm notifies you when a promised delivery date passes without "Delivered"
+- **CPU Tamer** — throttles Amazon's background `setInterval`s when the tab is hidden
 
 ### Brand & seller filters
-- Hide Amazon in-house brands (Amazon Basics, Essentials, Solimo, Pinzon, Goodthreads, Wag, etc.)
-- "Gibberish brand" heuristic for 5–8 letter all-caps random-looking brand names
+- Hide Amazon in-house brands (Amazon Basics, Essentials, Solimo, Pinzon, Goodthreads, Wag, Mama Bear, Ring, Blink, eero, etc.)
+- Gibberish-brand heuristic (5–8 letter all-caps random names)
 - User-defined regex blocklist
 
+### Accessibility & safety
+- Large-text mode (17px body)
+- High-contrast mode (yellow on black, cyan links, green prices)
+- ARIA fixes for Amazon's icon-only buttons
+- Allergen / ingredient watchlist (user-defined terms, banner on match)
+
 ### Theme
-- Dark (Catppuccin Mocha, default), AMOLED true-black, Light
+- Catppuccin Mocha (default) · AMOLED · Light
 - Comfortable or Compact density
-- Anti-FOUC via `document_start`
-
-#### Image dark-mode (v1.1.2)
-Amazon product images are white-background JPGs which look harsh against a dark page. Four handling modes:
-
-| Mode | Behavior |
-|------|----------|
-| **Off** | No change — Amazon images as-is |
-| **Tile** (default) | Wraps each image in a soft light card. No color distortion. |
-| **Dim** | `brightness(0.85) contrast(1.05)` — softens whites, keeps colors |
-| **Invert** | `invert(0.92) hue-rotate(180deg)` — flips every image (ruins photos, good for icons/text) |
-| **Smart** | Samples corner pixels via canvas. Inverts only images with near-white backgrounds. Falls back to tile if Amazon's CDN taints the canvas (CORS). |
-
-There is no way to make photo backgrounds literally transparent — product shots are flat JPGs and the Amazon CDN often blocks pixel reads. Tile is the recommended default.
+- Anti-FOUC
+- Image dark-mode: Off · Tile · Dim · Invert · Smart (canvas corner-sample to detect white backgrounds)
 
 ## Locale coverage
 
@@ -83,24 +75,24 @@ There is no way to make photo backgrounds literally transparent — product shot
 
 ## Install
 
-From the [Releases page](https://github.com/SysAdminDoc/AmazonEnhanced/releases), grab either:
+From the [Releases page](https://github.com/SysAdminDoc/AmazonEnhanced/releases):
 
-- `AmazonEnhanced-v1.1.2.zip` — extract and load unpacked in `chrome://extensions/` (Developer mode).
-- `AmazonEnhanced-v1.1.2.crx` — drag-and-drop into `chrome://extensions/`.
+- `AmazonEnhanced-v2.0.0.zip` — extract, then **Load unpacked** in `chrome://extensions/` (Developer mode).
+- `AmazonEnhanced-v2.0.0.crx` — drag into `chrome://extensions/`.
 
 ## Settings
 
-Toolbar popup. Six tabs: Ads, Declutter, Reviews, Price, Brands, Theme. Changes broadcast live to all open Amazon tabs.
+Toolbar popup with 10 tabs: Ads, Declutter, Reviews, Price, Cart, Trust, Tools, Brands, A11y, Theme. Changes broadcast live to every open Amazon tab.
 
 ## Architecture
 
 ```
 manifest.json        MV3 manifest, 20 Amazon locales
-early-inject.js      document_start: theme + flag attributes
-theme.css            document_start: theme + declutter + image-mode rules
-content.js           document_end: runtime orchestrator + MutationObserver
-background.js        Service worker, defaults + tab broadcast
-popup.html/css/js    Settings UI
+early-inject.js      document_start: theme + a11y attributes
+theme.css            document_start: theme + declutter + image-mode + feature chrome
+content.js           document_end: 15 feature modules + MutationObserver
+background.js        Service worker: defaults, late-delivery alarm, tab broadcast
+popup.html/css/js    10-tab settings UI
 icons/               16/32/48/128/512 PNGs
 build/pack-crx.py    CRX3 packer
 ```
