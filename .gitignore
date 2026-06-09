@@ -29,3 +29,7 @@ build/amazonenhanced.pem
 # Local private settings
 local-settings.json
 CLAUDE.md
+
+# Markdown files local-only (except README)
+*.md
+!README.md
