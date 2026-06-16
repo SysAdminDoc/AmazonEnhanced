@@ -26,81 +26,38 @@
   // 1. Defaults + storage
   // -------------------------------------------------------------------
 
-  const DEFAULT_SETTINGS = {
-    theme: 'dark',               // 'dark' | 'amoled' | 'light'
-    density: 'comfortable',      // 'comfortable' | 'compact'
-    imageMode: 'tile',           // 'off' | 'tile' | 'dim' | 'invert' | 'smart'
-    flags: {
-      hideSponsored:      true,
-      shadeSponsored:     false,
-      hideVideoAds:       true,
-      hidePrimeNag:       true,
-      hideBanners:        true,
-      hideAmazonBrands:   false,
-      hideCustomBrands:   false,
-      hideCN:             false,
-      reviewScore:        true,
-      pricePerUnit:       true,
-      listPriceWarn:      true,
-      stripAffiliate:     true,
-      hideBrandsRelated:  true,
-      hideInspired:       true,
-      hideAlsoBought:     true,
-      hideBuyAgain:       false,
-      hideClimate:        false,
-      hideEditorial:      true,
-      hideManufacturer:   false,
-      hideCompare:        false,
-      hideSubSave:        true,
-      hideCartUpsell:     true,
-      hideHomeClutter:    true,
-      hideFooter:         false,
-      hidePadding:        true,
-      // v2.0.0 — dark-pattern pack
-      autoDeclineWarranty:     true,
-      forceOneTimePurchase:    true,
-      autoUncheckDarkPatterns: true,
-      extraSortOptions:        true,
-      cpuTamer:                false,
-      // v2.0.0 — transparency pack
-      countryBadge:            true,
-      revealSeller:            true,
-      variationBait:           true,
-      priceHistory:            true,
-      // v2.0.0 — tools / data portability
-      copyCleanLink:           true,
-      orderExport:             true,
-      wishlistExport:          true,
-      lateDeliveryWatch:       false,
-      // v2.0.0 — accessibility
-      largeText:               false,
-      highContrast:            false,
-      ariaFixes:               true,
-      // v2.0.0 — safety
-      allergenScan:            false
-    },
-    customBrands: '',            // newline-separated regex patterns
-    allergens: '',               // newline-separated allergen terms
-    toastsEnabled: true
-  };
-
-  let settings = structuredClone(DEFAULT_SETTINGS);
+  let DEFAULT_SETTINGS = null;
+  let settings = null;
   const LOCALE_TLD = (() => {
     const h = location.hostname;
     const m = h.match(/amazon\.(.+)$/);
     return m ? m[1] : 'com';
   })();
 
+  async function loadDefaultSettings() {
+    const res = await fetch(chrome.runtime.getURL('defaults.json'));
+    if (!res.ok) throw new Error('Failed to load defaults.json');
+    return res.json();
+  }
+
+  function cloneDefaultSettings() {
+    return structuredClone(DEFAULT_SETTINGS);
+  }
+
+  function mergeSettings(saved) {
+    const merged = Object.assign(cloneDefaultSettings(), saved || {});
+    merged.flags = Object.assign({}, DEFAULT_SETTINGS.flags, (saved && saved.flags) || {});
+    return merged;
+  }
+
   function getSettings(cb) {
     try {
       chrome.storage.local.get(['amzeSettings'], (r) => {
-        if (r && r.amzeSettings) {
-          settings = Object.assign({}, DEFAULT_SETTINGS, r.amzeSettings);
-          settings.flags = Object.assign({}, DEFAULT_SETTINGS.flags, r.amzeSettings.flags || {});
-        }
+        settings = mergeSettings(r && r.amzeSettings);
         cb();
       });
     } catch (e) {
+      settings = cloneDefaultSettings();
       cb();
     }
   }
@@ -847,8 +804,7 @@
     chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       if (!msg || !msg.type) return;
       if (msg.type === 'AMZE_SETTINGS_UPDATED') {
-        settings = Object.assign({}, DEFAULT_SETTINGS, msg.settings);
-        settings.flags = Object.assign({}, DEFAULT_SETTINGS.flags, msg.settings.flags || {});
+        settings = mergeSettings(msg.settings);
         applyFlagAttributes();
         // Re-scan fresh tiles under new rules.
         document.querySelectorAll('[data-amze-processed]').forEach(el => delete el.dataset.amzeProcessed);
@@ -1575,6 +1531,7 @@
   // -------------------------------------------------------------------
 
   function runFeaturePack() {
+    if (!settings) return;
     try { autoDeclineWarranty(); } catch (e) {}
     try { forceOneTimePurchase(); } catch (e) {}
     try { autoUncheckDarkPatterns(); } catch (e) {}
@@ -1622,6 +1579,16 @@
     html.toggleAttribute('data-amze-high-contrast', !!settings.flags.highContrast);
   }
 
-  getSettings(init);
+  async function boot() {
+    try {
+      DEFAULT_SETTINGS = await loadDefaultSettings();
+      settings = cloneDefaultSettings();
+      getSettings(init);
+    } catch (e) {
+      document.documentElement.setAttribute('data-amze-ready', '1');
+    }
+  }
+
+  boot();
 
 })();

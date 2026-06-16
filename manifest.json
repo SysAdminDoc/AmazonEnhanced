@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "AmazonEnhanced",
-  "version": "2.0.5",
+  "version": "2.0.6",
   "description": "Powerful Amazon companion: dark theme, sponsored removal, dark-pattern guards, seller transparency, price history, order/wishlist exports, accessibility.",
   "author": "Matt Parker",
   "homepage_url": "https://github.com/SysAdminDoc/AmazonEnhanced",
@@ -110,7 +110,7 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["icons/*"],
+      "resources": ["icons/*", "defaults.json"],
       "matches": [
         "*://*.amazon.com/*",
         "*://*.amazon.co.uk/*",

@@ -4,71 +4,34 @@
  * Responsibilities:
  *   - Seed default settings on install.
  *   - Relay popup <-> active-tab messages.
- *   - No alarms currently (reserved for future price-snapshot caching).
  */
 
-const DEFAULT_SETTINGS = {
-  theme: 'dark',
-  density: 'comfortable',
-  imageMode: 'tile',
-  flags: {
-    hideSponsored: true,
-    shadeSponsored: false,
-    hideVideoAds: true,
-    hidePrimeNag: true,
-    hideBanners: true,
-    hideAmazonBrands: false,
-    hideCustomBrands: false,
-    hideCN: false,
-    reviewScore: true,
-    pricePerUnit: true,
-    listPriceWarn: true,
-    stripAffiliate: true,
-    hideBrandsRelated: true,
-    hideInspired: true,
-    hideAlsoBought: true,
-    hideBuyAgain: false,
-    hideClimate: false,
-    hideEditorial: true,
-    hideManufacturer: false,
-    hideCompare: false,
-    hideSubSave: true,
-    hideCartUpsell: true,
-    hideHomeClutter: true,
-    hideFooter: false,
-    hidePadding: true,
-    autoDeclineWarranty: true,
-    forceOneTimePurchase: true,
-    autoUncheckDarkPatterns: true,
-    extraSortOptions: true,
-    cpuTamer: false,
-    countryBadge: true,
-    revealSeller: true,
-    variationBait: true,
-    priceHistory: true,
-    copyCleanLink: true,
-    orderExport: true,
-    wishlistExport: true,
-    lateDeliveryWatch: false,
-    largeText: false,
-    highContrast: false,
-    ariaFixes: true,
-    allergenScan: false
-  },
-  customBrands: '',
-  allergens: '',
-  toastsEnabled: true
-};
+let defaultSettingsPromise = null;
+
+async function getDefaultSettings() {
+  if (!defaultSettingsPromise) {
+    defaultSettingsPromise = fetch(chrome.runtime.getURL('defaults.json')).then((res) => {
+      if (!res.ok) throw new Error('Failed to load defaults.json');
+      return res.json();
+    });
+  }
+  return structuredClone(await defaultSettingsPromise);
+}
+
+function mergeSettings(defaults, saved) {
+  const merged = Object.assign({}, defaults, saved || {});
+  merged.flags = Object.assign({}, defaults.flags, (saved && saved.flags) || {});
+  return merged;
+}
 
 chrome.runtime.onInstalled.addListener(async (details) => {
+  const defaults = await getDefaultSettings();
   const { amzeSettings } = await chrome.storage.local.get(['amzeSettings']);
   if (!amzeSettings) {
-    await chrome.storage.local.set({ amzeSettings: DEFAULT_SETTINGS });
+    await chrome.storage.local.set({ amzeSettings: defaults });
   } else {
     // Forward-migrate: ensure all flags exist.
-    const merged = Object.assign({}, DEFAULT_SETTINGS, amzeSettings, {
-      flags: Object.assign({}, DEFAULT_SETTINGS.flags, amzeSettings.flags || {})
-    });
+    const merged = mergeSettings(defaults, amzeSettings);
     await chrome.storage.local.set({ amzeSettings: merged });
   }
 });

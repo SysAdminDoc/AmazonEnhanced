@@ -6,40 +6,31 @@
 (function () {
   'use strict';
 
-  const DEFAULT_SETTINGS = {
-    theme: 'dark',
-    density: 'comfortable',
-    imageMode: 'tile',
-    flags: {
-      hideSponsored: true, shadeSponsored: false, hideVideoAds: true, hidePrimeNag: true,
-      hideBanners: true, hideAmazonBrands: false, hideCustomBrands: false, hideCN: false,
-      reviewScore: true, pricePerUnit: true, listPriceWarn: true, stripAffiliate: true,
-      hideBrandsRelated: true, hideInspired: true, hideAlsoBought: true, hideBuyAgain: false,
-      hideClimate: false, hideEditorial: true, hideManufacturer: false, hideCompare: false,
-      hideSubSave: true, hideCartUpsell: true, hideHomeClutter: true, hideFooter: false,
-      hidePadding: true,
-      autoDeclineWarranty: true, forceOneTimePurchase: true, autoUncheckDarkPatterns: true,
-      extraSortOptions: true, cpuTamer: false,
-      countryBadge: true, revealSeller: true, variationBait: true, priceHistory: true,
-      copyCleanLink: true, orderExport: true, wishlistExport: true, lateDeliveryWatch: false,
-      largeText: false, highContrast: false, ariaFixes: true, allergenScan: false
-    },
-    customBrands: '',
-    allergens: '',
-    toastsEnabled: true
-  };
-
-  let current = structuredClone(DEFAULT_SETTINGS);
+  let DEFAULT_SETTINGS = null;
+  let current = null;
 
   function $(sel, root) { return (root || document).querySelector(sel); }
   function $$(sel, root) { return Array.from((root || document).querySelectorAll(sel)); }
 
+  async function loadDefaultSettings() {
+    const res = await fetch(chrome.runtime.getURL('defaults.json'));
+    if (!res.ok) throw new Error('Failed to load defaults.json');
+    return res.json();
+  }
+
+  function cloneDefaultSettings() {
+    return structuredClone(DEFAULT_SETTINGS);
+  }
+
+  function mergeSettings(saved) {
+    const merged = Object.assign(cloneDefaultSettings(), saved || {});
+    merged.flags = Object.assign({}, DEFAULT_SETTINGS.flags, (saved && saved.flags) || {});
+    return merged;
+  }
+
   function load() {
     chrome.storage.local.get(['amzeSettings'], (r) => {
-      if (r.amzeSettings) {
-        current = Object.assign({}, DEFAULT_SETTINGS, r.amzeSettings);
-        current.flags = Object.assign({}, DEFAULT_SETTINGS.flags, r.amzeSettings.flags || {});
-      }
+      current = mergeSettings(r && r.amzeSettings);
       renderForm();
     });
   }
@@ -165,7 +156,7 @@
     const reset = $('#amze-reset');
     if (reset) {
       reset.addEventListener('click', () => {
-        current = structuredClone(DEFAULT_SETTINGS);
+        current = cloneDefaultSettings();
         renderForm();
         persistAndBroadcast();
       });
@@ -178,8 +169,14 @@
     }
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
-    wireUp();
-    load();
+  document.addEventListener('DOMContentLoaded', async () => {
+    try {
+      DEFAULT_SETTINGS = await loadDefaultSettings();
+      current = cloneDefaultSettings();
+      wireUp();
+      load();
+    } catch (e) {
+      document.body.dataset.amzeDefaultsError = '1';
+    }
   });
 })();
