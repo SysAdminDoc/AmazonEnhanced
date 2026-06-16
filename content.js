@@ -66,6 +66,30 @@
     try { chrome.storage.local.set({ amzeSettings: settings }); } catch (e) {}
   }
 
+  function sendMessageWithTimeout(message, timeoutMs = 3000) {
+    return new Promise(resolve => {
+      let settled = false;
+      const finish = (value) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        resolve(value);
+      };
+      const timer = setTimeout(() => finish(null), timeoutMs);
+      try {
+        chrome.runtime.sendMessage(message, (response) => {
+          if (chrome.runtime.lastError) {
+            finish(null);
+          } else {
+            finish(response || null);
+          }
+        });
+      } catch (e) {
+        finish(null);
+      }
+    });
+  }
+
   // Keep html flag attrs in sync with settings (lets theme.css react).
   function applyFlagAttributes() {
     const html = document.documentElement;
@@ -1041,17 +1065,13 @@
 
   async function cacheOrigin(asin, country) {
     try {
-      const key = 'amzeOrigins';
-      const r = await new Promise(res => chrome.storage.local.get([key], res));
-      const map = r[key] || {};
-      map[asin] = { country, ts: Date.now() };
-      await new Promise(res => chrome.storage.local.set({ [key]: map }, res));
+      await sendMessageWithTimeout({ type: 'AMZE_IDB_PUT_ORIGIN', asin, country });
     } catch (e) {}
   }
   async function readOriginCache() {
     try {
-      const r = await new Promise(res => chrome.storage.local.get(['amzeOrigins'], res));
-      return r.amzeOrigins || {};
+      const res = await sendMessageWithTimeout({ type: 'AMZE_IDB_GET_ORIGINS' });
+      return (res && res.origins) || {};
     } catch (e) { return {}; }
   }
 
@@ -1078,7 +1098,7 @@
       const asin = getAsin();
       const origin = extractOriginFromPdp();
       if (origin && asin) {
-        cacheOrigin(asin, origin);
+        await cacheOrigin(asin, origin);
         renderCountryBadge(origin);
       }
     }
@@ -1194,14 +1214,16 @@
   // 12.9 Local price history sparkline
   // -------------------------------------------------------------------
 
-  async function readPriceHistory() {
+  async function readPriceHistory(asin) {
     try {
-      const r = await new Promise(res => chrome.storage.local.get(['amzePriceHistory'], res));
-      return r.amzePriceHistory || {};
-    } catch (e) { return {}; }
+      const res = await sendMessageWithTimeout({ type: 'AMZE_IDB_GET_PRICE_HISTORY', asin });
+      return res && Array.isArray(res.points) ? res.points : [];
+    } catch (e) { return []; }
   }
-  async function writePriceHistory(map) {
-    try { await new Promise(res => chrome.storage.local.set({ amzePriceHistory: map }, res)); } catch (e) {}
+  async function writePriceHistory(asin, points) {
+    try {
+      await sendMessageWithTimeout({ type: 'AMZE_IDB_PUT_PRICE_HISTORY', asin, points });
+    } catch (e) {}
   }
 
   async function logAndRenderPrice() {
@@ -1211,16 +1233,15 @@
     const priceEl = document.querySelector('#corePrice_feature_div .a-offscreen, #priceblock_ourprice, #priceblock_dealprice, .a-price .a-offscreen');
     const price = priceEl ? parseNumber(priceEl.textContent) : NaN;
     if (!asin || !isFinite(price)) return;
-    const map = await readPriceHistory();
-    map[asin] = map[asin] || [];
-    const last = map[asin][map[asin].length - 1];
+    let points = await readPriceHistory(asin);
+    const last = points[points.length - 1];
     if (!last || Math.abs(last.p - price) > 0.01 || (Date.now() - last.t) > 86400000) {
-      map[asin].push({ p: price, t: Date.now() });
+      points.push({ p: price, t: Date.now() });
       // Cap to last 60 entries per ASIN
-      if (map[asin].length > 60) map[asin] = map[asin].slice(-60);
-      await writePriceHistory(map);
+      if (points.length > 60) points = points.slice(-60);
+      await writePriceHistory(asin, points);
     }
-    renderSparkline(asin, map[asin]);
+    renderSparkline(asin, points);
   }
 
   function renderSparkline(asin, points) {
@@ -1467,7 +1488,7 @@
       if (orderId && promise) orders.push({ orderId, promise, status, seenAt: Date.now() });
     });
     if (orders.length) {
-      try { chrome.runtime.sendMessage({ type: 'AMZE_SEED_ORDERS', orders }); } catch (e) {}
+      try { sendMessageWithTimeout({ type: 'AMZE_SEED_ORDERS', orders }); } catch (e) {}
     }
   }
 

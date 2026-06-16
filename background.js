@@ -24,6 +24,136 @@ function mergeSettings(defaults, saved) {
   return merged;
 }
 
+const DB_NAME = 'AmazonEnhancedDB';
+const DB_VERSION = 1;
+let dbPromise = null;
+let legacyStorageMigrationPromise = null;
+
+function normalizeAsin(asin) {
+  return String(asin || '').toUpperCase();
+}
+
+function openDb() {
+  if (!dbPromise) {
+    dbPromise = new Promise((resolve, reject) => {
+      const req = indexedDB.open(DB_NAME, DB_VERSION);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        if (!db.objectStoreNames.contains('priceHistory')) {
+          db.createObjectStore('priceHistory', { keyPath: 'asin' });
+        }
+        if (!db.objectStoreNames.contains('origins')) {
+          db.createObjectStore('origins', { keyPath: 'asin' });
+        }
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+  return dbPromise;
+}
+
+function idbRequest(req) {
+  return new Promise((resolve, reject) => {
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function idbTransactionDone(tx) {
+  return new Promise((resolve, reject) => {
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error);
+  });
+}
+
+async function idbGet(storeName, key) {
+  const db = await openDb();
+  return idbRequest(db.transaction(storeName, 'readonly').objectStore(storeName).get(key));
+}
+
+async function idbGetAll(storeName) {
+  const db = await openDb();
+  return idbRequest(db.transaction(storeName, 'readonly').objectStore(storeName).getAll());
+}
+
+async function idbPut(storeName, value) {
+  const db = await openDb();
+  const tx = db.transaction(storeName, 'readwrite');
+  tx.objectStore(storeName).put(value);
+  return idbTransactionDone(tx);
+}
+
+async function migrateLegacyStorageToIndexedDb() {
+  if (!legacyStorageMigrationPromise) {
+    legacyStorageMigrationPromise = (async () => {
+      const legacy = await chrome.storage.local.get(['amzePriceHistory', 'amzeOrigins']);
+      const keysToRemove = [];
+      if (legacy.amzePriceHistory && typeof legacy.amzePriceHistory === 'object') {
+        for (const [asin, points] of Object.entries(legacy.amzePriceHistory)) {
+          if (Array.isArray(points)) {
+            await idbPut('priceHistory', { asin: normalizeAsin(asin), points });
+          }
+        }
+        keysToRemove.push('amzePriceHistory');
+      }
+      if (legacy.amzeOrigins && typeof legacy.amzeOrigins === 'object') {
+        for (const [asin, entry] of Object.entries(legacy.amzeOrigins)) {
+          if (entry && entry.country) {
+            await idbPut('origins', {
+              asin: normalizeAsin(asin),
+              country: String(entry.country),
+              ts: entry.ts || Date.now()
+            });
+          }
+        }
+        keysToRemove.push('amzeOrigins');
+      }
+      if (keysToRemove.length) await chrome.storage.local.remove(keysToRemove);
+    })().catch(() => {});
+  }
+  return legacyStorageMigrationPromise;
+}
+
+async function readOriginCache() {
+  await migrateLegacyStorageToIndexedDb();
+  const entries = await idbGetAll('origins');
+  return entries.reduce((map, entry) => {
+    map[entry.asin] = { country: entry.country, ts: entry.ts };
+    return map;
+  }, {});
+}
+
+async function writeOriginCache(asin, country) {
+  const key = normalizeAsin(asin);
+  if (!key || !country) return;
+  await migrateLegacyStorageToIndexedDb();
+  await idbPut('origins', {
+    asin: key,
+    country: String(country),
+    ts: Date.now()
+  });
+}
+
+async function readPriceHistory(asin) {
+  const key = normalizeAsin(asin);
+  if (!key) return [];
+  await migrateLegacyStorageToIndexedDb();
+  const record = await idbGet('priceHistory', key);
+  return record && Array.isArray(record.points) ? record.points : [];
+}
+
+async function writePriceHistory(asin, points) {
+  const key = normalizeAsin(asin);
+  if (!key) return;
+  await migrateLegacyStorageToIndexedDb();
+  await idbPut('priceHistory', {
+    asin: key,
+    points: Array.isArray(points) ? points : []
+  });
+}
+
 chrome.runtime.onInstalled.addListener(async (details) => {
   const defaults = await getDefaultSettings();
   const { amzeSettings } = await chrome.storage.local.get(['amzeSettings']);
@@ -107,6 +237,38 @@ chrome.alarms.onAlarm.addListener((a) => {
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (!msg || !msg.type) return;
+
+  if (msg.type === 'AMZE_IDB_GET_ORIGINS') {
+    (async () => {
+      const origins = await readOriginCache();
+      sendResponse({ ok: true, origins });
+    })().catch(() => sendResponse({ ok: false, origins: {} }));
+    return true;
+  }
+
+  if (msg.type === 'AMZE_IDB_PUT_ORIGIN') {
+    (async () => {
+      await writeOriginCache(msg.asin, msg.country);
+      sendResponse({ ok: true });
+    })().catch(() => sendResponse({ ok: false }));
+    return true;
+  }
+
+  if (msg.type === 'AMZE_IDB_GET_PRICE_HISTORY') {
+    (async () => {
+      const points = await readPriceHistory(msg.asin);
+      sendResponse({ ok: true, points });
+    })().catch(() => sendResponse({ ok: false, points: [] }));
+    return true;
+  }
+
+  if (msg.type === 'AMZE_IDB_PUT_PRICE_HISTORY') {
+    (async () => {
+      await writePriceHistory(msg.asin, msg.points);
+      sendResponse({ ok: true });
+    })().catch(() => sendResponse({ ok: false }));
+    return true;
+  }
 
   if (msg.type === 'AMZE_SEED_ORDERS') {
     (async () => {
