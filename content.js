@@ -158,6 +158,22 @@
     };
   }
 
+  let whiteBgIdleHandle = null;
+  let domObserver = null;
+
+  function requestWhiteBackgroundSweep() {
+    if (whiteBgIdleHandle !== null) return;
+    const run = () => {
+      whiteBgIdleHandle = null;
+      try { killWhiteBackgrounds(); } catch (e) {}
+    };
+    if (typeof window.requestIdleCallback === 'function') {
+      whiteBgIdleHandle = window.requestIdleCallback(run, { timeout: 1200 });
+    } else {
+      whiteBgIdleHandle = setTimeout(run, 120);
+    }
+  }
+
   function parseNumber(str) {
     if (!str) return NaN;
     // Locale-safe: strip currency symbols + thousands sep, detect decimal.
@@ -657,7 +673,7 @@
   //
   //     Bounded: only processes containers with text/structural content
   //     (not images, inputs, svg) and skips elements smaller than 40x20.
-  //     Runs once per element via data-amze-kw-checked.
+  //     Marks only near-white elements and skips already-marked nodes.
   // -------------------------------------------------------------------
 
   const KW_SELECTORS = [
@@ -717,7 +733,7 @@
   function killWhiteBackgrounds() {
     if (settings.theme !== 'dark' && settings.theme !== 'amoled') return;
     const nodes = document.querySelectorAll(KW_SELECTORS);
-    let processed = 0;
+    const toMark = [];
     for (const el of nodes) {
       // Skip if already marked dark in a previous sweep — no need to re-check
       // because the theme won't change it back. But DON'T skip unmarked
@@ -743,11 +759,11 @@
       if (a < 0.3) continue;
       // "Near white" = all channels >= 235 (catches #fff, #f7f7f7, #eaeded, and Amazon's common off-whites).
       if (r >= 235 && g >= 235 && b >= 235) {
-        el.setAttribute('data-amze-kw', '1');
-        processed++;
-        if (processed > 800) break;
+        toMark.push(el);
+        if (toMark.length > 800) break;
       }
     }
+    toMark.forEach(el => el.setAttribute('data-amze-kw', '1'));
   }
 
   // -------------------------------------------------------------------
@@ -805,11 +821,13 @@
     stripAffiliate(document);
     scoreReviews();
     scanImagesForSmart();
-    killWhiteBackgrounds();
+    requestWhiteBackgroundSweep();
+    runFeaturePack();
   }, 180);
 
   function startObserver() {
-    const mo = new MutationObserver((muts) => {
+    if (domObserver) return;
+    domObserver = new MutationObserver((muts) => {
       // Fast path: only re-scan when added nodes include candidate tiles.
       let hit = false;
       for (const mut of muts) {
@@ -817,7 +835,7 @@
       }
       if (hit) schedule();
     });
-    mo.observe(document.documentElement, { childList: true, subtree: true });
+    domObserver.observe(document.documentElement, { childList: true, subtree: true });
   }
 
   // -------------------------------------------------------------------
@@ -839,8 +857,7 @@
           el.removeAttribute('data-amze-invert');
         });
         // Reset white-bg sweep markers.
-        document.querySelectorAll('[data-amze-kw-checked]').forEach(el => {
-          delete el.dataset.amzeKwChecked;
+        document.querySelectorAll('[data-amze-kw]').forEach(el => {
           el.removeAttribute('data-amze-kw');
         });
         // Re-run v2.0 features under new flags.
@@ -1570,12 +1587,6 @@
     try { scanAllergens(); } catch (e) {}
   }
 
-  // Run the v2.0 feature pack on every DOM mutation batch, debounced
-  // separately from the v1 scanner so runtime stays fast.
-  const runFeaturePackDebounced = debounce(runFeaturePack, 200);
-  const featurePackObserver = new MutationObserver(() => runFeaturePackDebounced());
-  featurePackObserver.observe(document.documentElement, { childList: true, subtree: true });
-
   // -------------------------------------------------------------------
   // 11. Init
   // -------------------------------------------------------------------
@@ -1588,10 +1599,6 @@
     applyAccessibilityAttrs();
     // Mark ready so anti-FOUC releases (body opacity 1)
     document.documentElement.setAttribute('data-amze-ready', '1');
-    // Catch elements styled late by Amazon's own JS (after our initial pass).
-    setTimeout(() => { try { killWhiteBackgrounds(); } catch (e) {} }, 1500);
-    setTimeout(() => { try { killWhiteBackgrounds(); } catch (e) {} }, 4000);
-    setTimeout(() => { try { killWhiteBackgrounds(); } catch (e) {} }, 8000);
   }
 
   function applyAccessibilityAttrs() {
