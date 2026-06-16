@@ -8,6 +8,7 @@
 
   let DEFAULT_SETTINGS = null;
   let current = null;
+  let clearConfirmTimer = null;
 
   function $(sel, root) { return (root || document).querySelector(sel); }
   function $$(sel, root) { return Array.from((root || document).querySelectorAll(sel)); }
@@ -69,6 +70,29 @@
         chrome.runtime.sendMessage({ type: 'AMZE_BROADCAST_SETTINGS', settings: current });
       } catch (e) {}
     });
+  }
+
+  function clearDataCaches() {
+    return new Promise(resolve => {
+      try {
+        chrome.runtime.sendMessage({ type: 'AMZE_CLEAR_LOCAL_DATA' }, (response) => {
+          if (chrome.runtime.lastError) {
+            resolve({ ok: false });
+          } else {
+            resolve(response || { ok: false });
+          }
+        });
+      } catch (e) {
+        resolve({ ok: false });
+      }
+    });
+  }
+
+  function resetClearDataButton(btn, status) {
+    delete btn.dataset.confirming;
+    btn.disabled = false;
+    btn.textContent = 'Clear local data';
+    if (status && !status.textContent) status.textContent = '';
   }
 
   function wireUp() {
@@ -159,6 +183,34 @@
         current = cloneDefaultSettings();
         renderForm();
         persistAndBroadcast();
+      });
+    }
+
+    const clearData = $('#amze-clear-data');
+    const clearStatus = $('#amze-clear-status');
+    if (clearData) {
+      clearData.addEventListener('click', async () => {
+        if (clearData.dataset.confirming !== '1') {
+          clearData.dataset.confirming = '1';
+          clearData.textContent = 'Click again to clear';
+          if (clearStatus) clearStatus.textContent = 'Clears local price, origin, and watched-order caches. Settings stay unchanged.';
+          clearTimeout(clearConfirmTimer);
+          clearConfirmTimer = setTimeout(() => resetClearDataButton(clearData, clearStatus), 5000);
+          return;
+        }
+
+        clearTimeout(clearConfirmTimer);
+        clearData.disabled = true;
+        if (clearStatus) clearStatus.textContent = 'Clearing local data...';
+        const result = await clearDataCaches();
+        delete clearData.dataset.confirming;
+        clearData.disabled = false;
+        clearData.textContent = 'Clear local data';
+        if (clearStatus) {
+          clearStatus.textContent = result.ok
+            ? 'Local data cleared. Settings were kept.'
+            : 'Could not clear local data. Reload the popup and try again.';
+        }
       });
     }
 

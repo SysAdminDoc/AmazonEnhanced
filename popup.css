@@ -70,6 +70,11 @@ html, body {
 }
 .amze-btn:hover { background: var(--amze-bg-elev); }
 .amze-btn-ghost { background: transparent; }
+.amze-btn-danger {
+  border-color: var(--amze-danger);
+  color: var(--amze-danger);
+}
+.amze-btn-danger:hover { background: rgba(243, 139, 168, .12); }
 
 /* Tabs */
 .amze-tabs {
@@ -268,6 +273,38 @@ textarea:focus { outline: 2px solid var(--amze-accent); border-color: var(--amze
 }
 .amze-info-small { font-size: 10.5px; line-height: 1.45; }
 .amze-info-small strong { color: var(--amze-text); }
+
+.amze-privacy {
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: var(--amze-bg-alt);
+  border: 1px solid var(--amze-border-soft);
+  border-radius: 8px;
+}
+.amze-privacy h3 {
+  margin: 0 0 6px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .3px;
+}
+.amze-privacy p {
+  margin: 0;
+  color: var(--amze-text-dim);
+  font-size: 11px;
+  line-height: 1.5;
+}
+.amze-data-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+.amze-data-actions #amze-clear-status {
+  flex: 1;
+  color: var(--amze-text-muted);
+  font-size: 11px;
+  line-height: 1.35;
+}
 
 /* 5-button seg for image-mode needs tighter padding */
 .amze-seg-image .amze-seg-btn { padding: 6px 4px; font-size: 11px; }

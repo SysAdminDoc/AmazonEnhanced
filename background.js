@@ -93,6 +93,13 @@ async function idbPut(storeName, value) {
   return idbTransactionDone(tx);
 }
 
+async function idbClear(storeName) {
+  const db = await openDb();
+  const tx = db.transaction(storeName, 'readwrite');
+  tx.objectStore(storeName).clear();
+  return idbTransactionDone(tx);
+}
+
 async function migrateLegacyStorageToIndexedDb() {
   if (!legacyStorageMigrationPromise) {
     legacyStorageMigrationPromise = (async () => {
@@ -269,6 +276,14 @@ async function purgeRetainedData(now = Date.now()) {
   ]);
 }
 
+async function clearLocalDataCaches() {
+  await Promise.all([
+    idbClear('priceHistory'),
+    idbClear('origins'),
+    chrome.storage.local.remove(['amzePriceHistory', 'amzeOrigins', 'amzeWatchedOrders'])
+  ]);
+}
+
 function scheduleRetentionPurge() {
   if (!retentionPurgePromise) {
     retentionPurgePromise = purgeRetainedData()
@@ -351,6 +366,14 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       await writePriceHistory(msg.asin, msg.points);
       sendResponse({ ok: true });
     })().catch(() => sendResponse({ ok: false }));
+    return true;
+  }
+
+  if (msg.type === 'AMZE_CLEAR_LOCAL_DATA') {
+    (async () => {
+      await clearLocalDataCaches();
+      sendResponse({ ok: true, cleared: ['priceHistory', 'origins', 'watchedOrders'] });
+    })().catch(() => sendResponse({ ok: false, cleared: [] }));
     return true;
   }
 

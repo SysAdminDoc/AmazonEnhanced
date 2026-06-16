@@ -5,7 +5,7 @@
 <h1 align="center">AmazonEnhanced</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-2.0.10-89b4fa?style=flat-square" alt="version" />
+  <img src="https://img.shields.io/badge/version-2.0.11-89b4fa?style=flat-square" alt="version" />
   <img src="https://img.shields.io/badge/license-MIT-a6e3a1?style=flat-square" alt="license" />
   <img src="https://img.shields.io/badge/platform-Chrome%20MV3-f9e2af?style=flat-square" alt="platform" />
 </p>
@@ -77,12 +77,16 @@
 
 From the [Releases page](https://github.com/SysAdminDoc/AmazonEnhanced/releases):
 
-- `AmazonEnhanced-v2.0.10.zip` — extract, then **Load unpacked** in `chrome://extensions/` (Developer mode).
-- `AmazonEnhanced-v2.0.10.crx` — drag into `chrome://extensions/`.
+- `AmazonEnhanced-v2.0.11.zip` — extract, then **Load unpacked** in `chrome://extensions/` (Developer mode).
+- `AmazonEnhanced-v2.0.11.crx` — drag into `chrome://extensions/`.
 
 ## Settings
 
 Toolbar popup with 10 tabs: Ads, Declutter, Reviews, Price, Cart, Trust, Tools, Brands, A11y, Theme. Changes broadcast live to every open Amazon tab.
+
+## Privacy
+
+AmazonEnhanced stores settings, local price history, country-of-origin cache entries, watched-order dates, custom brand rules, and allergen terms only in the browser profile. The current release does not send analytics, telemetry, browsing history, shopping data, or affiliate data to external services. The Tools tab includes a local data clear action for price, origin, and watched-order caches.
 
 ## Architecture
 
