@@ -37,6 +37,7 @@ KEY_PATH = REPO / "build" / "amazonenhanced.pem"
 
 INCLUDE_FILES = [
     "manifest.json",
+    "defaults.json",
     "early-inject.js",
     "theme.css",
     "content.js",

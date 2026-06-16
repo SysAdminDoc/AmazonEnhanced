@@ -26,11 +26,19 @@ function mergeSettings(defaults, saved) {
 
 const DB_NAME = 'AmazonEnhancedDB';
 const DB_VERSION = 1;
+const PRICE_HISTORY_RETENTION_MS = 365 * 24 * 60 * 60 * 1000;
+const WATCHED_ORDER_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
 let dbPromise = null;
 let legacyStorageMigrationPromise = null;
+let retentionPurgePromise = null;
 
 function normalizeAsin(asin) {
   return String(asin || '').toUpperCase();
+}
+
+function toFiniteTimestamp(value) {
+  const ts = Number(value);
+  return Number.isFinite(ts) && ts > 0 ? ts : 0;
 }
 
 function openDb() {
@@ -154,6 +162,36 @@ async function writePriceHistory(asin, points) {
   });
 }
 
+async function purgePriceHistoryRetention(now = Date.now()) {
+  await migrateLegacyStorageToIndexedDb();
+  const cutoff = now - PRICE_HISTORY_RETENTION_MS;
+  const entries = await idbGetAll('priceHistory');
+  const entriesToPut = [];
+  const keysToDelete = [];
+
+  for (const entry of entries) {
+    const key = normalizeAsin(entry && entry.asin);
+    if (!key) continue;
+    const points = Array.isArray(entry.points) ? entry.points : [];
+    const retained = points.filter((point) => toFiniteTimestamp(point && point.t) >= cutoff);
+    if (retained.length === points.length) continue;
+    if (retained.length) {
+      entriesToPut.push({ asin: key, points: retained });
+    } else {
+      keysToDelete.push(key);
+    }
+  }
+
+  if (!entriesToPut.length && !keysToDelete.length) return;
+
+  const db = await openDb();
+  const tx = db.transaction('priceHistory', 'readwrite');
+  const store = tx.objectStore('priceHistory');
+  for (const entry of entriesToPut) store.put(entry);
+  for (const key of keysToDelete) store.delete(key);
+  await idbTransactionDone(tx);
+}
+
 chrome.runtime.onInstalled.addListener(async (details) => {
   const defaults = await getDefaultSettings();
   const { amzeSettings } = await chrome.storage.local.get(['amzeSettings']);
@@ -164,6 +202,7 @@ chrome.runtime.onInstalled.addListener(async (details) => {
     const merged = mergeSettings(defaults, amzeSettings);
     await chrome.storage.local.set({ amzeSettings: merged });
   }
+  await scheduleRetentionPurge();
 });
 
 // -------------------------------------------------------------------
@@ -202,6 +241,43 @@ function parsePromisedDate(text) {
   return d;
 }
 
+function getWatchedOrderRetentionTimestamp(rec) {
+  const seenAt = toFiniteTimestamp(rec && rec.seenAt);
+  if (seenAt) return seenAt;
+  const promised = parsePromisedDate(rec && rec.promise);
+  return promised ? promised.getTime() : 0;
+}
+
+async function purgeWatchedOrderRetention(now = Date.now()) {
+  const map = await readWatchedOrders();
+  const cutoff = now - WATCHED_ORDER_RETENTION_MS;
+  let dirty = false;
+
+  for (const [id, rec] of Object.entries(map)) {
+    if (getWatchedOrderRetentionTimestamp(rec) >= cutoff) continue;
+    delete map[id];
+    dirty = true;
+  }
+
+  if (dirty) await writeWatchedOrders(map);
+}
+
+async function purgeRetainedData(now = Date.now()) {
+  await Promise.all([
+    purgePriceHistoryRetention(now),
+    purgeWatchedOrderRetention(now)
+  ]);
+}
+
+function scheduleRetentionPurge() {
+  if (!retentionPurgePromise) {
+    retentionPurgePromise = purgeRetainedData()
+      .catch(() => {})
+      .finally(() => { retentionPurgePromise = null; });
+  }
+  return retentionPurgePromise;
+}
+
 async function scanLateOrders() {
   const { amzeSettings } = await chrome.storage.local.get(['amzeSettings']);
   if (!amzeSettings || !amzeSettings.flags || !amzeSettings.flags.lateDeliveryWatch) return;
@@ -232,8 +308,16 @@ async function scanLateOrders() {
 
 chrome.alarms.create('amze-late-watch', { periodInMinutes: 60 * 6, delayInMinutes: 5 });
 chrome.alarms.onAlarm.addListener((a) => {
-  if (a.name === 'amze-late-watch') scanLateOrders();
+  if (a.name === 'amze-late-watch') {
+    scheduleRetentionPurge().finally(() => scanLateOrders());
+  }
 });
+
+chrome.runtime.onStartup.addListener(() => {
+  scheduleRetentionPurge();
+});
+
+scheduleRetentionPurge();
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (!msg || !msg.type) return;

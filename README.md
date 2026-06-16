@@ -1,11 +1,11 @@
 <p align="center">
-  <img src="icon.svg" width="128" height="128" alt="AmazonEnhanced" />
+  <img src="icon.png" width="128" height="128" alt="AmazonEnhanced" />
 </p>
 
 <h1 align="center">AmazonEnhanced</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-2.0.7-89b4fa?style=flat-square" alt="version" />
+  <img src="https://img.shields.io/badge/version-2.0.8-89b4fa?style=flat-square" alt="version" />
   <img src="https://img.shields.io/badge/license-MIT-a6e3a1?style=flat-square" alt="license" />
   <img src="https://img.shields.io/badge/platform-Chrome%20MV3-f9e2af?style=flat-square" alt="platform" />
 </p>
@@ -77,8 +77,8 @@
 
 From the [Releases page](https://github.com/SysAdminDoc/AmazonEnhanced/releases):
 
-- `AmazonEnhanced-v2.0.7.zip` — extract, then **Load unpacked** in `chrome://extensions/` (Developer mode).
-- `AmazonEnhanced-v2.0.7.crx` — drag into `chrome://extensions/`.
+- `AmazonEnhanced-v2.0.8.zip` — extract, then **Load unpacked** in `chrome://extensions/` (Developer mode).
+- `AmazonEnhanced-v2.0.8.crx` — drag into `chrome://extensions/`.
 
 ## Settings
 
