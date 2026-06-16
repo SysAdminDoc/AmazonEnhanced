@@ -142,6 +142,33 @@
     setTimeout(() => el.remove(), ms);
   }
 
+  function appendText(parent, text) {
+    parent.appendChild(document.createTextNode(text));
+  }
+
+  function appendStrong(parent, text) {
+    const strong = document.createElement('strong');
+    strong.textContent = text;
+    parent.appendChild(strong);
+    return strong;
+  }
+
+  function createTextElement(tag, className, text) {
+    const el = document.createElement(tag);
+    if (className) el.className = className;
+    if (text !== undefined) el.textContent = text;
+    return el;
+  }
+
+  function createActionButton(id, label) {
+    const btn = document.createElement('button');
+    btn.id = id;
+    btn.type = 'button';
+    btn.className = 'amze-action-btn';
+    btn.textContent = label;
+    return btn;
+  }
+
   function debounce(fn, wait) {
     let t;
     return function () {
@@ -492,23 +519,68 @@
     // Build panel
     const panel = document.createElement('div');
     panel.id = 'amze-review-panel';
-    panel.innerHTML = `
-      <h3>
-        <span>AmazonEnhanced review analysis</span>
-        <span class="amze-badge ${cls === 'amze-score-good' ? 'amze-badge-review-good' : cls === 'amze-score-mixed' ? 'amze-badge-review-mixed' : 'amze-badge-review-bad'}">${bucket}</span>
-      </h3>
-      <div class="amze-score ${cls}">${adjusted.toFixed(1)} <span style="font-size:13px;color:var(--amze-text-muted);font-weight:400;">adjusted / ${isFinite(shownRating) ? shownRating.toFixed(1) : '–'} shown</span></div>
-      <div class="amze-metrics">
-        <div class="amze-metric"><strong>${pct[0]}%</strong> 5★ &nbsp;·&nbsp; <strong>${pct[4]}%</strong> 1★</div>
-        <div class="amze-metric">Polarization: <strong>${polarization}%</strong></div>
-        <div class="amze-metric">Mid-ratings (2–4★): <strong>${middle}%</strong></div>
-        <div class="amze-metric">Total reviews: <strong>${isFinite(totalNum) ? Math.round(totalNum).toLocaleString() : '–'}</strong></div>
-        ${verifiedRatio !== null ? `<div class="amze-metric">Verified in sample: <strong>${Math.round(verifiedRatio * 100)}%</strong> (${verified}/${sampleSize})</div>` : ''}
-        <div class="amze-metric" style="grid-column:1/-1;color:var(--amze-text-muted);font-size:11px;margin-top:4px;">
-          Local heuristic only. Flags suspicious polarization, 1-star spikes, and MSRP inflation — but can't detect every paid-review pattern.
-        </div>
-      </div>
-    `;
+
+    const heading = document.createElement('h3');
+    heading.appendChild(createTextElement('span', '', 'AmazonEnhanced review analysis'));
+    const badge = createTextElement(
+      'span',
+      'amze-badge ' + (cls === 'amze-score-good' ? 'amze-badge-review-good' : cls === 'amze-score-mixed' ? 'amze-badge-review-mixed' : 'amze-badge-review-bad'),
+      bucket
+    );
+    heading.appendChild(badge);
+    panel.appendChild(heading);
+
+    const score = createTextElement('div', 'amze-score ' + cls);
+    appendText(score, adjusted.toFixed(1) + ' ');
+    const shown = createTextElement('span', '', `adjusted / ${isFinite(shownRating) ? shownRating.toFixed(1) : '–'} shown`);
+    shown.style.fontSize = '13px';
+    shown.style.color = 'var(--amze-text-muted)';
+    shown.style.fontWeight = '400';
+    score.appendChild(shown);
+    panel.appendChild(score);
+
+    const metrics = createTextElement('div', 'amze-metrics');
+    const starMetric = createTextElement('div', 'amze-metric');
+    appendStrong(starMetric, pct[0] + '%');
+    appendText(starMetric, ' 5★  ·  ');
+    appendStrong(starMetric, pct[4] + '%');
+    appendText(starMetric, ' 1★');
+    metrics.appendChild(starMetric);
+
+    const polarizationMetric = createTextElement('div', 'amze-metric');
+    appendText(polarizationMetric, 'Polarization: ');
+    appendStrong(polarizationMetric, polarization + '%');
+    metrics.appendChild(polarizationMetric);
+
+    const middleMetric = createTextElement('div', 'amze-metric');
+    appendText(middleMetric, 'Mid-ratings (2–4★): ');
+    appendStrong(middleMetric, middle + '%');
+    metrics.appendChild(middleMetric);
+
+    const totalMetric = createTextElement('div', 'amze-metric');
+    appendText(totalMetric, 'Total reviews: ');
+    appendStrong(totalMetric, isFinite(totalNum) ? Math.round(totalNum).toLocaleString() : '–');
+    metrics.appendChild(totalMetric);
+
+    if (verifiedRatio !== null) {
+      const verifiedMetric = createTextElement('div', 'amze-metric');
+      appendText(verifiedMetric, 'Verified in sample: ');
+      appendStrong(verifiedMetric, Math.round(verifiedRatio * 100) + '%');
+      appendText(verifiedMetric, ` (${verified}/${sampleSize})`);
+      metrics.appendChild(verifiedMetric);
+    }
+
+    const note = createTextElement(
+      'div',
+      'amze-metric',
+      "Local heuristic only. Flags suspicious polarization, 1-star spikes, and MSRP inflation — but can't detect every paid-review pattern."
+    );
+    note.style.gridColumn = '1/-1';
+    note.style.color = 'var(--amze-text-muted)';
+    note.style.fontSize = '11px';
+    note.style.marginTop = '4px';
+    metrics.appendChild(note);
+    panel.appendChild(metrics);
 
     // Insert above review list or histogram.
     const insertBefore = document.querySelector('#reviewsMedley, #cm_cr-review_list, #reviews-medley-footer') || histogram;
@@ -1080,7 +1152,8 @@
     const badge = document.createElement('div');
     badge.id = 'amze-country-badge';
     badge.className = 'amze-pdp-badge';
-    badge.innerHTML = `<strong>Country of Origin:</strong> ${country}`;
+    appendStrong(badge, 'Country of Origin:');
+    appendText(badge, ' ' + country);
     title.parentElement.insertBefore(badge, title.nextSibling);
   }
 
@@ -1099,10 +1172,17 @@
     const panel = document.createElement('div');
     panel.id = 'amze-seller-reveal';
     panel.className = 'amze-pdp-badge';
-    panel.innerHTML = `
-      <strong>Sold by:</strong> ${name}
-      ${href ? `<a href="${href}" target="_blank" rel="noreferrer noopener" style="margin-left:8px;font-size:11px;">View seller page →</a>` : ''}
-    `;
+    appendStrong(panel, 'Sold by:');
+    appendText(panel, ' ' + name);
+    if (href) {
+      const link = createTextElement('a', '', 'View seller page →');
+      link.href = href;
+      link.target = '_blank';
+      link.rel = 'noreferrer noopener';
+      link.style.marginLeft = '8px';
+      link.style.fontSize = '11px';
+      panel.appendChild(link);
+    }
     const target = document.querySelector('#titleSection, #centerCol .a-row');
     if (target) target.parentElement.insertBefore(panel, target.nextSibling);
   }
@@ -1142,7 +1222,13 @@
       const warn = document.createElement('div');
       warn.id = 'amze-variation-warn';
       warn.className = 'amze-pdp-badge amze-pdp-warn';
-      warn.innerHTML = `⚠ <strong>Variation price spread:</strong> this listing groups ${prices.length} variants ranging <strong>${min.toFixed(2)}</strong> to <strong>${max.toFixed(2)}</strong> (${ratio.toFixed(1)}× spread). Reviews may apply to very different products.`;
+      appendText(warn, '⚠ ');
+      appendStrong(warn, 'Variation price spread:');
+      appendText(warn, ` this listing groups ${prices.length} variants ranging `);
+      appendStrong(warn, min.toFixed(2));
+      appendText(warn, ' to ');
+      appendStrong(warn, max.toFixed(2));
+      appendText(warn, ` (${ratio.toFixed(1)}× spread). Reviews may apply to very different products.`);
       const target = document.querySelector('#titleSection') || document.querySelector('#centerCol');
       if (target) target.insertBefore(warn, target.firstChild);
     }
@@ -1199,17 +1285,45 @@
     const panel = document.createElement('div');
     panel.id = 'amze-sparkline';
     panel.className = 'amze-pdp-badge';
-    panel.innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
-        <div>
-          <div style="font-size:11px;color:var(--amze-text-muted,#9399b2);">AmazonEnhanced — your price history (${points.length} pts)</div>
-          <div style="font-size:12px;margin-top:2px;">Low <strong>$${min.toFixed(2)}</strong> · High <strong>$${max.toFixed(2)}</strong> · Now <strong>$${current.toFixed(2)}</strong></div>
-        </div>
-        <svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="flex-shrink:0;">
-          <path d="${d}" fill="none" stroke="var(--amze-accent,#89b4fa)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </div>
-    `;
+    const row = document.createElement('div');
+    row.style.display = 'flex';
+    row.style.justifyContent = 'space-between';
+    row.style.alignItems = 'center';
+    row.style.gap = '8px';
+
+    const copy = document.createElement('div');
+    const label = createTextElement('div', '', `AmazonEnhanced — your price history (${points.length} pts)`);
+    label.style.fontSize = '11px';
+    label.style.color = 'var(--amze-text-muted,#9399b2)';
+    copy.appendChild(label);
+
+    const summary = createTextElement('div');
+    summary.style.fontSize = '12px';
+    summary.style.marginTop = '2px';
+    appendText(summary, 'Low ');
+    appendStrong(summary, '$' + min.toFixed(2));
+    appendText(summary, ' · High ');
+    appendStrong(summary, '$' + max.toFixed(2));
+    appendText(summary, ' · Now ');
+    appendStrong(summary, '$' + current.toFixed(2));
+    copy.appendChild(summary);
+    row.appendChild(copy);
+
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('width', String(w));
+    svg.setAttribute('height', String(h));
+    svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+    svg.style.flexShrink = '0';
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', d.trim());
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke', 'var(--amze-accent,#89b4fa)');
+    path.setAttribute('stroke-width', '2');
+    path.setAttribute('stroke-linecap', 'round');
+    path.setAttribute('stroke-linejoin', 'round');
+    svg.appendChild(path);
+    row.appendChild(svg);
+    panel.appendChild(row);
     const target = document.querySelector('#corePriceDisplay_desktop_feature_div, #price, #centerCol');
     if (target) target.parentElement.insertBefore(panel, target.nextSibling);
   }
@@ -1263,14 +1377,14 @@
     if (!host) return;
     const wrap = document.createElement('div');
     wrap.className = 'amze-export-wrap';
-    wrap.innerHTML = `
-      <div class="amze-export-title">Export orders</div>
-      <button id="amze-order-export-btn" type="button" class="amze-action-btn">CSV</button>
-      <button id="amze-order-export-json" type="button" class="amze-action-btn">JSON</button>
-    `;
+    wrap.appendChild(createTextElement('div', 'amze-export-title', 'Export orders'));
+    const csvButton = createActionButton('amze-order-export-btn', 'CSV');
+    const jsonButton = createActionButton('amze-order-export-json', 'JSON');
+    wrap.appendChild(csvButton);
+    wrap.appendChild(jsonButton);
     host.parentElement.insertBefore(wrap, host);
-    document.getElementById('amze-order-export-btn').addEventListener('click', () => exportOrders('csv'));
-    document.getElementById('amze-order-export-json').addEventListener('click', () => exportOrders('json'));
+    csvButton.addEventListener('click', () => exportOrders('csv'));
+    jsonButton.addEventListener('click', () => exportOrders('json'));
   }
 
   function extractOrdersFromCurrentPage() {
@@ -1330,16 +1444,17 @@
     if (!host) return;
     const wrap = document.createElement('div');
     wrap.className = 'amze-export-wrap';
-    wrap.innerHTML = `
-      <div class="amze-export-title">Export wishlist</div>
-      <button id="amze-wl-export-btn" type="button" class="amze-action-btn">CSV</button>
-      <button id="amze-wl-export-json" type="button" class="amze-action-btn">JSON</button>
-      <button id="amze-wl-export-md" type="button" class="amze-action-btn">Markdown</button>
-    `;
+    wrap.appendChild(createTextElement('div', 'amze-export-title', 'Export wishlist'));
+    const csvButton = createActionButton('amze-wl-export-btn', 'CSV');
+    const jsonButton = createActionButton('amze-wl-export-json', 'JSON');
+    const mdButton = createActionButton('amze-wl-export-md', 'Markdown');
+    wrap.appendChild(csvButton);
+    wrap.appendChild(jsonButton);
+    wrap.appendChild(mdButton);
     host.parentElement.insertBefore(wrap, host);
-    document.getElementById('amze-wl-export-btn').addEventListener('click', () => exportWishlist('csv'));
-    document.getElementById('amze-wl-export-json').addEventListener('click', () => exportWishlist('json'));
-    document.getElementById('amze-wl-export-md').addEventListener('click', () => exportWishlist('md'));
+    csvButton.addEventListener('click', () => exportWishlist('csv'));
+    jsonButton.addEventListener('click', () => exportWishlist('json'));
+    mdButton.addEventListener('click', () => exportWishlist('md'));
   }
 
   function extractWishlistItems() {
@@ -1440,7 +1555,17 @@
     const warn = document.createElement('div');
     warn.id = 'amze-allergen-warn';
     warn.className = 'amze-pdp-badge amze-pdp-warn';
-    warn.innerHTML = `⚠ <strong>Allergen match:</strong> ${hits.map(h => `<span style="background:var(--amze-bg-raise);padding:1px 6px;border-radius:3px;margin-right:4px;">${h}</span>`).join('')}`;
+    appendText(warn, '⚠ ');
+    appendStrong(warn, 'Allergen match:');
+    appendText(warn, ' ');
+    hits.forEach(h => {
+      const chip = createTextElement('span', '', h);
+      chip.style.background = 'var(--amze-bg-raise)';
+      chip.style.padding = '1px 6px';
+      chip.style.borderRadius = '3px';
+      chip.style.marginRight = '4px';
+      warn.appendChild(chip);
+    });
     const target = document.querySelector('#titleSection') || document.querySelector('#centerCol');
     if (target) target.insertBefore(warn, target.firstChild);
   }
