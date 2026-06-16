@@ -46,7 +46,7 @@ INCLUDE_FILES = [
     "popup.css",
     "popup.js",
 ]
-INCLUDE_DIRS = ["icons"]
+INCLUDE_DIRS = ["icons", "_locales"]
 
 
 def _read_version() -> str:

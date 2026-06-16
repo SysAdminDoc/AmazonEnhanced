@@ -1,8 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "AmazonEnhanced",
-  "version": "2.0.11",
-  "description": "Powerful Amazon companion: dark theme, sponsored removal, dark-pattern guards, seller transparency, price history, order/wishlist exports, accessibility.",
+  "name": "__MSG_extName__",
+  "version": "2.0.12",
+  "default_locale": "en",
+  "description": "__MSG_extDescription__",
   "author": "Matt Parker",
   "homepage_url": "https://github.com/SysAdminDoc/AmazonEnhanced",
   "icons": {
@@ -46,7 +47,7 @@
       "48": "icons/48.png",
       "128": "icons/128.png"
     },
-    "default_title": "AmazonEnhanced"
+    "default_title": "__MSG_extName__"
   },
   "background": {
     "service_worker": "background.js"
