@@ -160,6 +160,7 @@
 
   let whiteBgIdleHandle = null;
   let domObserver = null;
+  let smartImageObserver = null;
 
   function requestWhiteBackgroundSweep() {
     if (whiteBgIdleHandle !== null) return;
@@ -650,17 +651,43 @@
     }
   }
 
-  function scanImagesForSmart() {
-    if (settings.imageMode !== 'smart') return;
-    // Add crossorigin hint BEFORE the image loads to maximize canvas readability.
-    const imgs = document.querySelectorAll(IMAGE_SELECTORS);
-    imgs.forEach(img => {
+  function getSmartImageObserver() {
+    if (smartImageObserver || typeof IntersectionObserver !== 'function') return smartImageObserver;
+    smartImageObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        const img = entry.target;
+        smartImageObserver.unobserve(img);
+        if (img.complete && img.naturalWidth > 0) {
+          processImageForSmartInvert(img);
+        } else {
+          img.addEventListener('load', () => processImageForSmartInvert(img), { once: true });
+        }
+      });
+    }, { rootMargin: '400px 0px', threshold: 0.01 });
+    return smartImageObserver;
+  }
+
+  function queueImageForSmartInvert(img) {
+    if (!img || img.dataset.amzeImg === '1' || img.dataset.amzeImgObserved === '1') return;
+    const observer = getSmartImageObserver();
+    if (!observer) {
       if (img.complete && img.naturalWidth > 0) {
         processImageForSmartInvert(img);
       } else {
         img.addEventListener('load', () => processImageForSmartInvert(img), { once: true });
       }
-    });
+      return;
+    }
+    img.dataset.amzeImgObserved = '1';
+    observer.observe(img);
+  }
+
+  function scanImagesForSmart() {
+    if (settings.imageMode !== 'smart') return;
+    // Add crossorigin hint BEFORE the image loads to maximize canvas readability.
+    const imgs = document.querySelectorAll(IMAGE_SELECTORS);
+    imgs.forEach(queueImageForSmartInvert);
   }
 
   // -------------------------------------------------------------------
@@ -852,10 +879,15 @@
         document.querySelectorAll('[data-amze-processed]').forEach(el => delete el.dataset.amzeProcessed);
         document.querySelectorAll('.amze-hidden-by-brand').forEach(el => el.classList.remove('amze-hidden-by-brand'));
         // Reset image-smart markers so the new mode re-evaluates.
-        document.querySelectorAll('[data-amze-img]').forEach(el => {
+        document.querySelectorAll('[data-amze-img], [data-amze-img-observed]').forEach(el => {
           delete el.dataset.amzeImg;
+          delete el.dataset.amzeImgObserved;
           el.removeAttribute('data-amze-invert');
         });
+        if (smartImageObserver) {
+          smartImageObserver.disconnect();
+          smartImageObserver = null;
+        }
         // Reset white-bg sweep markers.
         document.querySelectorAll('[data-amze-kw]').forEach(el => {
           el.removeAttribute('data-amze-kw');
