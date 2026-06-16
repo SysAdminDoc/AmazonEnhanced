@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "__MSG_extName__",
-  "version": "2.0.12",
+  "version": "2.0.13",
   "default_locale": "en",
   "description": "__MSG_extDescription__",
   "author": "Matt Parker",
@@ -111,7 +111,7 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["icons/*", "defaults.json"],
+      "resources": ["icons/*", "defaults.json", "locales.json"],
       "matches": [
         "*://*.amazon.com/*",
         "*://*.amazon.co.uk/*",

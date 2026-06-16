@@ -38,6 +38,7 @@ KEY_PATH = REPO / "build" / "amazonenhanced.pem"
 INCLUDE_FILES = [
     "manifest.json",
     "defaults.json",
+    "locales.json",
     "early-inject.js",
     "theme.css",
     "content.js",
@@ -52,6 +53,24 @@ INCLUDE_DIRS = ["icons", "_locales"]
 def _read_version() -> str:
     with open(REPO / "manifest.json", "r", encoding="utf-8") as f:
         return json.load(f)["version"]
+
+
+def _read_locale_patterns() -> list[str]:
+    with open(REPO / "locales.json", "r", encoding="utf-8") as f:
+        data = json.load(f)
+    return [entry["pattern"] for entry in data["locales"]]
+
+
+def _build_manifest() -> bytes:
+    with open(REPO / "manifest.json", "r", encoding="utf-8") as f:
+        manifest = json.load(f)
+    patterns = _read_locale_patterns()
+    manifest["host_permissions"] = patterns
+    for script in manifest.get("content_scripts", []):
+        script["matches"] = patterns
+    for resource in manifest.get("web_accessible_resources", []):
+        resource["matches"] = patterns
+    return (json.dumps(manifest, indent=2) + "\n").encode("utf-8")
 
 
 def varint(n: int) -> bytes:
@@ -96,6 +115,9 @@ def zip_extension() -> bytes:
             p = REPO / name
             if not p.exists():
                 print(f"WARN: missing {p}")
+                continue
+            if name == "manifest.json":
+                zf.writestr(name, _build_manifest())
                 continue
             zf.write(p, name)
         for d in INCLUDE_DIRS:

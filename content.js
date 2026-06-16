@@ -28,7 +28,8 @@
 
   let DEFAULT_SETTINGS = null;
   let settings = null;
-  const LOCALE_TLD = (() => {
+  let localeCatalogPromise = null;
+  let LOCALE_TLD = (() => {
     const h = location.hostname;
     const m = h.match(/amazon\.(.+)$/);
     return m ? m[1] : 'com';
@@ -48,6 +49,29 @@
     const merged = Object.assign(cloneDefaultSettings(), saved || {});
     merged.flags = Object.assign({}, DEFAULT_SETTINGS.flags, (saved && saved.flags) || {});
     return merged;
+  }
+
+  async function loadLocaleCatalog() {
+    if (!localeCatalogPromise) {
+      localeCatalogPromise = fetch(chrome.runtime.getURL('locales.json'))
+        .then((res) => {
+          if (!res.ok) throw new Error('Failed to load locales.json');
+          return res.json();
+        })
+        .then((data) => data.locales || [])
+        .catch(() => []);
+    }
+    return localeCatalogPromise;
+  }
+
+  async function hydrateLocaleFromCatalog() {
+    const locales = await loadLocaleCatalog();
+    const host = location.hostname.toLowerCase();
+    const match = locales.find(entry => {
+      const domain = String(entry.domain || '').toLowerCase();
+      return domain && (host === domain || host.endsWith('.' + domain));
+    });
+    if (match && match.tld) LOCALE_TLD = match.tld;
   }
 
   function getSettings(cb) {
@@ -1641,6 +1665,7 @@
 
   async function boot() {
     try {
+      await hydrateLocaleFromCatalog();
       DEFAULT_SETTINGS = await loadDefaultSettings();
       settings = cloneDefaultSettings();
       getSettings(init);

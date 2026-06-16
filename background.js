@@ -7,6 +7,7 @@
  */
 
 let defaultSettingsPromise = null;
+let localePatternsPromise = null;
 
 async function getDefaultSettings() {
   if (!defaultSettingsPromise) {
@@ -22,6 +23,22 @@ function mergeSettings(defaults, saved) {
   const merged = Object.assign({}, defaults, saved || {});
   merged.flags = Object.assign({}, defaults.flags, (saved && saved.flags) || {});
   return merged;
+}
+
+async function getAmazonUrlPatterns() {
+  if (!localePatternsPromise) {
+    localePatternsPromise = fetch(chrome.runtime.getURL('locales.json'))
+      .then((res) => {
+        if (!res.ok) throw new Error('Failed to load locales.json');
+        return res.json();
+      })
+      .then((data) => {
+        const patterns = (data.locales || []).map(entry => entry.pattern).filter(Boolean);
+        return patterns.length ? patterns : ['*://*.amazon.com/*'];
+      })
+      .catch(() => ['*://*.amazon.com/*']);
+  }
+  return localePatternsPromise;
 }
 
 const DB_NAME = 'AmazonEnhancedDB';
@@ -399,20 +416,15 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
   if (msg.type === 'AMZE_BROADCAST_SETTINGS') {
     // Popup requested broadcast to all Amazon tabs.
-    chrome.tabs.query({ url: [
-      '*://*.amazon.com/*', '*://*.amazon.co.uk/*', '*://*.amazon.ca/*',
-      '*://*.amazon.de/*', '*://*.amazon.fr/*', '*://*.amazon.it/*',
-      '*://*.amazon.es/*', '*://*.amazon.nl/*', '*://*.amazon.pl/*',
-      '*://*.amazon.se/*', '*://*.amazon.com.tr/*', '*://*.amazon.in/*',
-      '*://*.amazon.co.jp/*', '*://*.amazon.com.au/*', '*://*.amazon.com.mx/*',
-      '*://*.amazon.com.br/*', '*://*.amazon.sg/*', '*://*.amazon.sa/*',
-      '*://*.amazon.ae/*', '*://*.amazon.eg/*'
-    ]}, (tabs) => {
-      for (const t of tabs) {
-        chrome.tabs.sendMessage(t.id, { type: 'AMZE_SETTINGS_UPDATED', settings: msg.settings }).catch(() => {});
-      }
-      sendResponse({ ok: true, count: tabs.length });
-    });
+    (async () => {
+      const url = await getAmazonUrlPatterns();
+      chrome.tabs.query({ url }, (tabs) => {
+        for (const t of tabs) {
+          chrome.tabs.sendMessage(t.id, { type: 'AMZE_SETTINGS_UPDATED', settings: msg.settings }).catch(() => {});
+        }
+        sendResponse({ ok: true, count: tabs.length });
+      });
+    })().catch(() => sendResponse({ ok: false, count: 0 }));
     return true;
   }
 });
