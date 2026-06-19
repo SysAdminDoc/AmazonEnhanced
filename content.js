@@ -355,6 +355,11 @@
     if (flags.listPriceWarn) {
       attachListPriceWarn(el);
     }
+
+    // Trust score badge
+    if (flags.trustBadge) {
+      attachTrustBadge(el);
+    }
   }
 
   // -------------------------------------------------------------------
@@ -466,6 +471,87 @@
     badge.setAttribute('aria-label', 'Suspicious MSRP: list price is ' + discountPct.toFixed(0) + '% higher than the current price');
     badge.title = 'AmazonEnhanced — list price is ' + discountPct.toFixed(0) + '% higher; likely inflated';
     const host = strikeEl.parentElement && strikeEl.parentElement.parentElement;
+    if (host) host.appendChild(badge);
+  }
+
+  // -------------------------------------------------------------------
+  // 6b. Trust score badge on search tiles
+  //     Combines star rating, review count, and heuristic signals into
+  //     a single 1-10 score near the product title on search results.
+  // -------------------------------------------------------------------
+
+  function computeTrustScore(rating, reviewCount) {
+    // Base score from rating (0-5 scale mapped to 0-5 points)
+    let score = 0;
+    if (!isFinite(rating) || rating <= 0) return NaN;
+
+    // Rating component (max 5 pts): penalize below 4.0 aggressively
+    if (rating >= 4.5) score += 5;
+    else if (rating >= 4.0) score += 4;
+    else if (rating >= 3.5) score += 3;
+    else if (rating >= 3.0) score += 2;
+    else score += 1;
+
+    // Volume component (max 3 pts): more reviews = more confidence
+    if (isFinite(reviewCount) && reviewCount > 0) {
+      if (reviewCount >= 1000) score += 3;
+      else if (reviewCount >= 200) score += 2;
+      else if (reviewCount >= 50) score += 1;
+      // < 50 reviews: no volume bonus
+    }
+
+    // Suspicious pattern penalties
+    // Perfect 5.0 with few reviews is suspicious
+    if (rating >= 4.9 && reviewCount < 30) score -= 1;
+    // Very high rating with very few reviews
+    if (rating >= 4.7 && reviewCount < 10) score -= 2;
+
+    // Volume trust bonus for highly-reviewed items
+    if (reviewCount >= 5000 && rating >= 4.0) score += 1;
+    if (reviewCount >= 10000 && rating >= 3.8) score += 1;
+
+    return Math.max(1, Math.min(10, score));
+  }
+
+  function getTrustBadgeClass(score) {
+    if (score >= 7) return 'amze-badge-trust-high';
+    if (score >= 4) return 'amze-badge-trust-mid';
+    return 'amze-badge-trust-low';
+  }
+
+  function attachTrustBadge(el) {
+    if (!settings.flags.trustBadge) return;
+    if (el.querySelector('.amze-badge-trust')) return;
+
+    // Extract star rating
+    const ratingEl = el.querySelector('.a-icon-alt, [aria-label*="out of"]');
+    if (!ratingEl) return;
+    const ratingText = ratingEl.getAttribute('aria-label') || ratingEl.textContent || '';
+    const ratingMatch = ratingText.match(/([\d.]+)\s*out\s*of/i);
+    if (!ratingMatch) return;
+    const rating = parseFloat(ratingMatch[1]);
+
+    // Extract review count
+    const countEl = el.querySelector('[aria-label*="ratings" i], [aria-label*="reviews" i], a[href*="customerReviews"] span');
+    let reviewCount = 0;
+    if (countEl) {
+      const countText = (countEl.getAttribute('aria-label') || countEl.textContent || '').replace(/,/g, '');
+      const countMatch = countText.match(/([\d,]+)/);
+      if (countMatch) reviewCount = parseInt(countMatch[1].replace(/,/g, ''), 10);
+    }
+
+    const score = computeTrustScore(rating, reviewCount);
+    if (!isFinite(score)) return;
+
+    const cls = getTrustBadgeClass(score);
+    const badge = document.createElement('span');
+    badge.className = 'amze-badge amze-badge-trust ' + cls;
+    badge.textContent = score + '/10';
+    badge.setAttribute('aria-label', 'Trust score: ' + score + ' out of 10 based on ' + rating.toFixed(1) + ' stars and ' + reviewCount.toLocaleString() + ' reviews');
+    badge.title = 'AmazonEnhanced trust score: ' + score + '/10 (' + rating.toFixed(1) + '★, ' + reviewCount.toLocaleString() + ' reviews)';
+
+    // Insert near the rating stars
+    const host = ratingEl.closest('.a-row') || ratingEl.parentElement;
     if (host) host.appendChild(badge);
   }
 

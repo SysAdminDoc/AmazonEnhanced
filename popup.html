@@ -119,9 +119,14 @@
     <span><strong>Review-quality scoring</strong><small>Shows adjusted rating + polarization + verified-sample ratio on product pages.</small></span>
     <input type="checkbox" data-flag="reviewScore" class="amze-switch">
   </label>
+  <label class="amze-row">
+    <span><strong>Trust score badge</strong><small>Shows a 1-10 trust score on search tiles combining star rating and review volume.</small></span>
+    <input type="checkbox" data-flag="trustBadge" class="amze-switch">
+  </label>
   <p class="amze-info">
     Computes a quality score from the review histogram: 1★/5★ polarization spike, one-star share,
-    verified-purchase ratio in the visible sample, and total volume. Heuristic only.
+    verified-purchase ratio in the visible sample, and total volume. Trust badge combines rating and
+    volume into a quick 1-10 number on search tiles. Heuristic only.
   </p>
 </section>
 

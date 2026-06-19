@@ -809,6 +809,10 @@ html[data-amze-hidePadding="1"] .s-widget-spacing-small:empty { display: none !i
 .amze-badge-review-mixed { background: #3a341f; color: #f9e2af; border: 1px solid #5a4d2d; }
 .amze-badge-review-bad   { background: #3a1f2a; color: #f38ba8; border: 1px solid #603d4a; }
 .amze-badge-warn         { background: #3a341f; color: #f9e2af; border: 1px solid #5a4d2d; }
+.amze-badge-trust        { font-weight: 700; }
+.amze-badge-trust-high   { background: #1f3a1f; color: #a6e3a1; border: 1px solid #3d603d; }
+.amze-badge-trust-mid    { background: #3a341f; color: #f9e2af; border: 1px solid #5a4d2d; }
+.amze-badge-trust-low    { background: #3a1f2a; color: #f38ba8; border: 1px solid #603d4a; }
 
 .amze-sponsor-marker {
   position: absolute;

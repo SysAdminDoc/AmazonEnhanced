@@ -45,7 +45,8 @@
     "largeText": false,
     "highContrast": false,
     "ariaFixes": true,
-    "allergenScan": false
+    "allergenScan": false,
+    "trustBadge": true
   },
   "customBrands": "",
   "allergens": "",
