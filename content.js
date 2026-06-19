@@ -1477,6 +1477,29 @@
     svg.appendChild(path);
     row.appendChild(svg);
     panel.appendChild(row);
+
+    // CSV export button for price history
+    const exportRow = document.createElement('div');
+    exportRow.style.marginTop = '6px';
+    exportRow.style.display = 'flex';
+    exportRow.style.gap = '6px';
+    const csvBtn = createActionButton('amze-sparkline-csv', 'Export CSV', 'Export price history as CSV for ' + asin);
+    csvBtn.style.fontSize = '10px';
+    csvBtn.style.padding = '3px 8px';
+    csvBtn.addEventListener('click', () => {
+      const esc = (s) => `"${String(s || '').replace(/"/g, '""')}"`;
+      const lines = ['asin,date,price'];
+      points.forEach(pt => {
+        const d = new Date(pt.t);
+        lines.push([esc(asin), esc(d.toISOString()), pt.p.toFixed(2)].join(','));
+      });
+      const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+      downloadBlob(blob, `amazon-price-history-${asin}-${Date.now()}.csv`);
+      toast('Exported ' + points.length + ' price points');
+    });
+    exportRow.appendChild(csvBtn);
+    panel.appendChild(exportRow);
+
     const target = document.querySelector('#corePriceDisplay_desktop_feature_div, #price, #centerCol');
     if (target) target.parentElement.insertBefore(panel, target.nextSibling);
   }
