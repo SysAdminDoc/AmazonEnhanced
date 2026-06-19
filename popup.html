@@ -18,22 +18,22 @@
   <button id="amze-reset" title="Restore defaults" class="amze-btn amze-btn-ghost">Reset</button>
 </header>
 
-<nav class="amze-tabs">
-  <button class="amze-tab amze-tab-active" data-tab="ads">Ads</button>
-  <button class="amze-tab" data-tab="declutter">Declutter</button>
-  <button class="amze-tab" data-tab="reviews">Reviews</button>
-  <button class="amze-tab" data-tab="price">Price</button>
-  <button class="amze-tab" data-tab="cart">Cart</button>
-  <button class="amze-tab" data-tab="trust">Trust</button>
-  <button class="amze-tab" data-tab="tools">Tools</button>
-  <button class="amze-tab" data-tab="brands">Brands</button>
-  <button class="amze-tab" data-tab="a11y">A11y</button>
-  <button class="amze-tab" data-tab="theme">Theme</button>
+<nav class="amze-tabs" role="tablist" aria-label="Settings sections">
+  <button id="amze-tab-ads" class="amze-tab amze-tab-active" data-tab="ads" role="tab" aria-selected="true" aria-controls="amze-pane-ads" tabindex="0">Ads</button>
+  <button id="amze-tab-declutter" class="amze-tab" data-tab="declutter" role="tab" aria-selected="false" aria-controls="amze-pane-declutter" tabindex="-1">Declutter</button>
+  <button id="amze-tab-reviews" class="amze-tab" data-tab="reviews" role="tab" aria-selected="false" aria-controls="amze-pane-reviews" tabindex="-1">Reviews</button>
+  <button id="amze-tab-price" class="amze-tab" data-tab="price" role="tab" aria-selected="false" aria-controls="amze-pane-price" tabindex="-1">Price</button>
+  <button id="amze-tab-cart" class="amze-tab" data-tab="cart" role="tab" aria-selected="false" aria-controls="amze-pane-cart" tabindex="-1">Cart</button>
+  <button id="amze-tab-trust" class="amze-tab" data-tab="trust" role="tab" aria-selected="false" aria-controls="amze-pane-trust" tabindex="-1">Trust</button>
+  <button id="amze-tab-tools" class="amze-tab" data-tab="tools" role="tab" aria-selected="false" aria-controls="amze-pane-tools" tabindex="-1">Tools</button>
+  <button id="amze-tab-brands" class="amze-tab" data-tab="brands" role="tab" aria-selected="false" aria-controls="amze-pane-brands" tabindex="-1">Brands</button>
+  <button id="amze-tab-a11y" class="amze-tab" data-tab="a11y" role="tab" aria-selected="false" aria-controls="amze-pane-a11y" tabindex="-1">A11y</button>
+  <button id="amze-tab-theme" class="amze-tab" data-tab="theme" role="tab" aria-selected="false" aria-controls="amze-pane-theme" tabindex="-1">Theme</button>
 </nav>
 
 <main>
 
-<section class="amze-pane amze-pane-active" data-pane="ads">
+<section id="amze-pane-ads" class="amze-pane amze-pane-active" data-pane="ads" role="tabpanel" aria-labelledby="amze-tab-ads" tabindex="-1">
   <h2>Ad &amp; sponsored removal</h2>
   <label class="amze-row">
     <span><strong>Hide sponsored results</strong><small>Removes sponsored tiles in search + PDP carousels.</small></span>
@@ -57,7 +57,7 @@
   </label>
 </section>
 
-<section class="amze-pane" data-pane="declutter">
+<section id="amze-pane-declutter" class="amze-pane" data-pane="declutter" role="tabpanel" aria-labelledby="amze-tab-declutter" tabindex="-1">
   <h2>Section declutter</h2>
   <label class="amze-row">
     <span>"Brands related to this category"<small></small></span>
@@ -113,7 +113,7 @@
   </label>
 </section>
 
-<section class="amze-pane" data-pane="reviews">
+<section id="amze-pane-reviews" class="amze-pane" data-pane="reviews" role="tabpanel" aria-labelledby="amze-tab-reviews" tabindex="-1">
   <h2>Reviews &amp; trust</h2>
   <label class="amze-row">
     <span><strong>Review-quality scoring</strong><small>Shows adjusted rating + polarization + verified-sample ratio on product pages.</small></span>
@@ -125,7 +125,7 @@
   </p>
 </section>
 
-<section class="amze-pane" data-pane="price">
+<section id="amze-pane-price" class="amze-pane" data-pane="price" role="tabpanel" aria-labelledby="amze-tab-price" tabindex="-1">
   <h2>Price tools</h2>
   <label class="amze-row">
     <span><strong>Inline price-per-unit badges</strong><small>Auto-computes $/oz, $/kg, $/ct on search-result tiles when Amazon doesn't show it.</small></span>
@@ -141,7 +141,7 @@
   </label>
 </section>
 
-<section class="amze-pane" data-pane="brands">
+<section id="amze-pane-brands" class="amze-pane" data-pane="brands" role="tabpanel" aria-labelledby="amze-tab-brands" tabindex="-1">
   <h2>Brand &amp; seller filters</h2>
   <label class="amze-row">
     <span>Hide Amazon in-house brands<small>Amazon Basics, Essentials, Solimo, Pinzon, Goodthreads, etc.</small></span>
@@ -161,7 +161,7 @@
   </div>
 </section>
 
-<section class="amze-pane" data-pane="cart">
+<section id="amze-pane-cart" class="amze-pane" data-pane="cart" role="tabpanel" aria-labelledby="amze-tab-cart" tabindex="-1">
   <h2>Cart, checkout &amp; dark patterns</h2>
   <label class="amze-row">
     <span><strong>Auto-decline warranty / protection plan</strong><small>Silently selects "No thanks" on SquareTrade/Allstate upsells at PDP, cart, and post-add-to-cart interstitial.</small></span>
@@ -177,7 +177,7 @@
   </label>
 </section>
 
-<section class="amze-pane" data-pane="trust">
+<section id="amze-pane-trust" class="amze-pane" data-pane="trust" role="tabpanel" aria-labelledby="amze-tab-trust" tabindex="-1">
   <h2>Transparency &amp; trust</h2>
   <label class="amze-row">
     <span>Country-of-origin badge<small>Pulls "Country of Origin" from the product details table and displays it as a badge on PDP. Caches per-ASIN for later search-page badging.</small></span>
@@ -197,7 +197,7 @@
   </label>
 </section>
 
-<section class="amze-pane" data-pane="tools">
+<section id="amze-pane-tools" class="amze-pane" data-pane="tools" role="tabpanel" aria-labelledby="amze-tab-tools" tabindex="-1">
   <h2>Tools &amp; data</h2>
   <label class="amze-row">
     <span>Copy clean product link<small>Adds a "📋 Copy clean link" button on PDPs that puts a Markdown-formatted link + price on the clipboard.</small></span>
@@ -233,7 +233,7 @@
   </div>
 </section>
 
-<section class="amze-pane" data-pane="a11y">
+<section id="amze-pane-a11y" class="amze-pane" data-pane="a11y" role="tabpanel" aria-labelledby="amze-tab-a11y" tabindex="-1">
   <h2>Accessibility &amp; safety</h2>
   <label class="amze-row">
     <span>Large text mode<small>Bumps body text to 17px, headings scale accordingly.</small></span>
@@ -257,7 +257,7 @@
   </div>
 </section>
 
-<section class="amze-pane" data-pane="theme">
+<section id="amze-pane-theme" class="amze-pane" data-pane="theme" role="tabpanel" aria-labelledby="amze-tab-theme" tabindex="-1">
   <h2>Theme &amp; density</h2>
   <div class="amze-theme-picker">
     <label>

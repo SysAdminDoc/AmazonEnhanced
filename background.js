@@ -216,6 +216,58 @@ async function purgePriceHistoryRetention(now = Date.now()) {
   await idbTransactionDone(tx);
 }
 
+// -------------------------------------------------------------------
+// declarativeNetRequest — affiliate/tracking param stripping at the
+// network layer. Uses a single dynamic rule (ID 1) that strips
+// tag, ref, ref_, pd_rd_*, pf_rd_*, and other tracking params from
+// Amazon URLs before navigation completes. This prevents Amazon's
+// own JS from re-adding params that content-script stripping misses.
+// -------------------------------------------------------------------
+
+const DNR_AFFILIATE_RULE_ID = 1;
+const DNR_STRIP_PARAMS = [
+  'tag', 'ref', 'ref_', 'pd_rd_w', 'pd_rd_r', 'pd_rd_i',
+  'pf_rd_p', 'pf_rd_r', 'pf_rd_s', 'pf_rd_t', 'pf_rd_i',
+  'content-id', 'psc', 'qid', 'sr', '_encoding',
+  'dib', 'dib_tag', 'keywords', 'sprefix', 'linkCode', 'th'
+];
+
+async function syncAffiliateStripRule(enabled) {
+  if (typeof chrome.declarativeNetRequest === 'undefined') return;
+  try {
+    if (enabled) {
+      const patterns = await getAmazonUrlPatterns();
+      const rule = {
+        id: DNR_AFFILIATE_RULE_ID,
+        priority: 1,
+        action: {
+          type: 'redirect',
+          redirect: {
+            transform: {
+              queryTransform: {
+                removeParams: DNR_STRIP_PARAMS
+              }
+            }
+          }
+        },
+        condition: {
+          urlFilter: '*://*.amazon.*/*',
+          resourceTypes: ['main_frame', 'sub_frame']
+        }
+      };
+      await chrome.declarativeNetRequest.updateDynamicRules({
+        removeRuleIds: [DNR_AFFILIATE_RULE_ID],
+        addRules: [rule]
+      });
+    } else {
+      await chrome.declarativeNetRequest.updateDynamicRules({
+        removeRuleIds: [DNR_AFFILIATE_RULE_ID],
+        addRules: []
+      });
+    }
+  } catch (e) {}
+}
+
 chrome.runtime.onInstalled.addListener(async (details) => {
   const defaults = await getDefaultSettings();
   const { amzeSettings } = await chrome.storage.local.get(['amzeSettings']);
@@ -226,6 +278,9 @@ chrome.runtime.onInstalled.addListener(async (details) => {
     const merged = mergeSettings(defaults, amzeSettings);
     await chrome.storage.local.set({ amzeSettings: merged });
   }
+  // Sync DNR affiliate-strip rule with current setting
+  const settings = (await chrome.storage.local.get(['amzeSettings'])).amzeSettings;
+  await syncAffiliateStripRule(!!(settings && settings.flags && settings.flags.stripAffiliate));
   await scheduleRetentionPurge();
 });
 
@@ -345,8 +400,11 @@ chrome.alarms.onAlarm.addListener((a) => {
   }
 });
 
-chrome.runtime.onStartup.addListener(() => {
+chrome.runtime.onStartup.addListener(async () => {
   scheduleRetentionPurge();
+  // Sync DNR affiliate-strip rule on browser start
+  const { amzeSettings } = await chrome.storage.local.get(['amzeSettings']);
+  await syncAffiliateStripRule(!!(amzeSettings && amzeSettings.flags && amzeSettings.flags.stripAffiliate));
 });
 
 scheduleRetentionPurge();
@@ -417,6 +475,9 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.type === 'AMZE_BROADCAST_SETTINGS') {
     // Popup requested broadcast to all Amazon tabs.
     (async () => {
+      // Sync DNR affiliate-strip rule with updated settings
+      const stripEnabled = !!(msg.settings && msg.settings.flags && msg.settings.flags.stripAffiliate);
+      await syncAffiliateStripRule(stripEnabled);
       const url = await getAmazonUrlPatterns();
       chrome.tabs.query({ url }, (tabs) => {
         for (const t of tabs) {

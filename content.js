@@ -142,6 +142,8 @@
     if (el) el.remove();
     el = document.createElement('div');
     el.id = id;
+    el.setAttribute('role', 'status');
+    el.setAttribute('aria-live', 'polite');
     el.textContent = msg;
     document.body && document.body.appendChild(el);
     setTimeout(() => el.remove(), ms);
@@ -165,12 +167,13 @@
     return el;
   }
 
-  function createActionButton(id, label) {
+  function createActionButton(id, label, ariaLabel) {
     const btn = document.createElement('button');
     btn.id = id;
     btn.type = 'button';
     btn.className = 'amze-action-btn';
     btn.textContent = label;
+    btn.setAttribute('aria-label', ariaLabel || label);
     return btn;
   }
 
@@ -435,6 +438,7 @@
     const badge = document.createElement('span');
     badge.className = 'amze-badge amze-badge-price';
     badge.textContent = formatted;
+    badge.setAttribute('aria-label', 'Price per unit: ' + formatted);
     badge.title = 'AmazonEnhanced — price per unit';
     host.parentElement.appendChild(badge);
   }
@@ -459,6 +463,7 @@
     const badge = document.createElement('span');
     badge.className = 'amze-badge amze-badge-warn';
     badge.textContent = '⚠ Suspicious MSRP';
+    badge.setAttribute('aria-label', 'Suspicious MSRP: list price is ' + discountPct.toFixed(0) + '% higher than the current price');
     badge.title = 'AmazonEnhanced — list price is ' + discountPct.toFixed(0) + '% higher; likely inflated';
     const host = strikeEl.parentElement && strikeEl.parentElement.parentElement;
     if (host) host.appendChild(badge);
@@ -549,6 +554,7 @@
       'amze-badge ' + (cls === 'amze-score-good' ? 'amze-badge-review-good' : cls === 'amze-score-mixed' ? 'amze-badge-review-mixed' : 'amze-badge-review-bad'),
       bucket
     );
+    badge.setAttribute('aria-label', 'Review quality: ' + bucket);
     heading.appendChild(badge);
     panel.appendChild(heading);
 
@@ -1189,6 +1195,7 @@
       const badge = document.createElement('span');
       badge.className = 'amze-badge amze-badge-country';
       badge.textContent = '🌐 ' + entry.country;
+      badge.setAttribute('aria-label', 'Country of origin: ' + entry.country);
       const host = tile.querySelector('.a-row.a-size-base') || tile.querySelector('.a-price')?.parentElement;
       (host || tile).appendChild(badge);
     });
@@ -1201,6 +1208,7 @@
     const badge = document.createElement('div');
     badge.id = 'amze-country-badge';
     badge.className = 'amze-pdp-badge';
+    badge.setAttribute('aria-label', 'Country of Origin: ' + country);
     appendStrong(badge, 'Country of Origin:');
     appendText(badge, ' ' + country);
     title.parentElement.insertBefore(badge, title.nextSibling);
@@ -1221,6 +1229,7 @@
     const panel = document.createElement('div');
     panel.id = 'amze-seller-reveal';
     panel.className = 'amze-pdp-badge';
+    panel.setAttribute('aria-label', 'Sold by: ' + name);
     appendStrong(panel, 'Sold by:');
     appendText(panel, ' ' + name);
     if (href) {
@@ -1271,6 +1280,8 @@
       const warn = document.createElement('div');
       warn.id = 'amze-variation-warn';
       warn.className = 'amze-pdp-badge amze-pdp-warn';
+      warn.setAttribute('role', 'alert');
+      warn.setAttribute('aria-label', 'Variation price spread warning');
       appendText(warn, '⚠ ');
       appendStrong(warn, 'Variation price spread:');
       appendText(warn, ` this listing groups ${prices.length} variants ranging `);
@@ -1332,6 +1343,7 @@
       d += (i === 0 ? 'M' : 'L') + x.toFixed(1) + ',' + y.toFixed(1) + ' ';
     });
     const current = prices[prices.length - 1];
+    const sparklineLabel = `Price history for ${asin}: ${points.length} points, low $${min.toFixed(2)}, high $${max.toFixed(2)}, current $${current.toFixed(2)}`;
     const panel = document.createElement('div');
     panel.id = 'amze-sparkline';
     panel.className = 'amze-pdp-badge';
@@ -1363,7 +1375,12 @@
     svg.setAttribute('width', String(w));
     svg.setAttribute('height', String(h));
     svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', sparklineLabel);
     svg.style.flexShrink = '0';
+    const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+    title.textContent = sparklineLabel;
+    svg.appendChild(title);
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     path.setAttribute('d', d.trim());
     path.setAttribute('fill', 'none');
@@ -1395,6 +1412,7 @@
     btn.type = 'button';
     btn.className = 'amze-action-btn';
     btn.textContent = '📋 Copy clean link';
+    btn.setAttribute('aria-label', 'Copy clean Amazon product link as Markdown');
     btn.addEventListener('click', async () => {
       const title = (document.querySelector('#productTitle')?.textContent || '').trim();
       const priceEl = document.querySelector('#corePrice_feature_div .a-offscreen, #priceblock_ourprice, .a-price .a-offscreen');
@@ -1428,8 +1446,8 @@
     const wrap = document.createElement('div');
     wrap.className = 'amze-export-wrap';
     wrap.appendChild(createTextElement('div', 'amze-export-title', 'Export orders'));
-    const csvButton = createActionButton('amze-order-export-btn', 'CSV');
-    const jsonButton = createActionButton('amze-order-export-json', 'JSON');
+    const csvButton = createActionButton('amze-order-export-btn', 'CSV', 'Export visible orders as CSV');
+    const jsonButton = createActionButton('amze-order-export-json', 'JSON', 'Export visible orders as JSON');
     wrap.appendChild(csvButton);
     wrap.appendChild(jsonButton);
     host.parentElement.insertBefore(wrap, host);
@@ -1495,9 +1513,9 @@
     const wrap = document.createElement('div');
     wrap.className = 'amze-export-wrap';
     wrap.appendChild(createTextElement('div', 'amze-export-title', 'Export wishlist'));
-    const csvButton = createActionButton('amze-wl-export-btn', 'CSV');
-    const jsonButton = createActionButton('amze-wl-export-json', 'JSON');
-    const mdButton = createActionButton('amze-wl-export-md', 'Markdown');
+    const csvButton = createActionButton('amze-wl-export-btn', 'CSV', 'Export wishlist as CSV');
+    const jsonButton = createActionButton('amze-wl-export-json', 'JSON', 'Export wishlist as JSON');
+    const mdButton = createActionButton('amze-wl-export-md', 'Markdown', 'Export wishlist as Markdown');
     wrap.appendChild(csvButton);
     wrap.appendChild(jsonButton);
     wrap.appendChild(mdButton);

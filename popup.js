@@ -29,6 +29,31 @@
     return merged;
   }
 
+  function syncSwitchAria(input) {
+    input.setAttribute('role', 'switch');
+    input.setAttribute('aria-checked', String(!!input.checked));
+  }
+
+  function activateTab(btn, moveFocus) {
+    $$('.amze-tab').forEach(t => {
+      const active = t === btn;
+      t.classList.toggle('amze-tab-active', active);
+      t.setAttribute('aria-selected', String(active));
+      t.tabIndex = active ? 0 : -1;
+    });
+
+    $$('.amze-pane').forEach(p => {
+      const active = p.dataset.pane === btn.dataset.tab;
+      p.classList.toggle('amze-pane-active', active);
+      if (active) {
+        p.removeAttribute('hidden');
+        if (moveFocus) p.focus({ preventScroll: true });
+      } else {
+        p.setAttribute('hidden', '');
+      }
+    });
+  }
+
   function load() {
     chrome.storage.local.get(['amzeSettings'], (r) => {
       current = mergeSettings(r && r.amzeSettings);
@@ -52,10 +77,12 @@
     // Flag switches
     $$('input[data-flag]').forEach(i => {
       i.checked = !!current.flags[i.dataset.flag];
+      syncSwitchAria(i);
     });
     // Meta switches (e.g., toastsEnabled)
     $$('input[data-meta]').forEach(i => {
       i.checked = !!current[i.dataset.meta];
+      syncSwitchAria(i);
     });
     // Custom brand textarea
     const ta = $('#amze-brands');
@@ -99,26 +126,28 @@
     // Tabs
     $$('.amze-tab').forEach(btn => {
       btn.addEventListener('click', () => {
-        $$('.amze-tab').forEach(t => t.classList.remove('amze-tab-active'));
-        $$('.amze-pane').forEach(p => p.classList.remove('amze-pane-active'));
-        btn.classList.add('amze-tab-active');
-        const pane = $(`.amze-pane[data-pane="${btn.dataset.tab}"]`);
-        if (pane) pane.classList.add('amze-pane-active');
+        activateTab(btn, true);
       });
     });
+    const activeTab = $('.amze-tab-active') || $('.amze-tab');
+    if (activeTab) activateTab(activeTab, false);
 
     // Flag checkboxes
     $$('input[data-flag]').forEach(i => {
+      syncSwitchAria(i);
       i.addEventListener('change', () => {
         current.flags[i.dataset.flag] = i.checked;
+        syncSwitchAria(i);
         persistAndBroadcast();
       });
     });
 
     // Meta checkboxes
     $$('input[data-meta]').forEach(i => {
+      syncSwitchAria(i);
       i.addEventListener('change', () => {
         current[i.dataset.meta] = i.checked;
+        syncSwitchAria(i);
         persistAndBroadcast();
       });
     });
