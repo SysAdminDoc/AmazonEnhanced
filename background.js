@@ -509,6 +509,14 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return true;
   }
 
+  if (msg.type === 'AMZE_IDB_GET_ALL_PRICE_HISTORY') {
+    (async () => {
+      const entries = await idbGetAll('priceHistory');
+      sendResponse({ ok: true, entries: entries || [] });
+    })().catch(() => sendResponse({ ok: false, entries: [] }));
+    return true;
+  }
+
   if (msg.type === 'AMZE_IDB_PUT_PRICE_HISTORY') {
     (async () => {
       await writePriceHistory(msg.asin, msg.points);

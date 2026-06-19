@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>AmazonEnhanced — Price History</title>
+<link rel="stylesheet" href="popup.css" />
+<style>
+  html, body { width: 100%; max-height: none; }
+  .amze-sp-header { padding: 12px 16px; border-bottom: 1px solid var(--amze-border-soft); }
+  .amze-sp-header h1 { margin: 0; font-size: 14px; }
+  .amze-sp-content { padding: 12px 16px; }
+  .amze-sp-empty { color: var(--amze-text-muted); font-size: 12px; padding: 20px 16px; text-align: center; }
+  .amze-sp-item { background: var(--amze-bg-alt); border: 1px solid var(--amze-border-soft); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; }
+  .amze-sp-item-title { font-size: 12px; font-weight: 600; color: var(--amze-text); margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .amze-sp-item-title a { color: var(--amze-link); text-decoration: none; }
+  .amze-sp-item-title a:hover { color: var(--amze-accent-hov); }
+  .amze-sp-prices { font-size: 11px; color: var(--amze-text-dim); display: flex; gap: 8px; flex-wrap: wrap; }
+  .amze-sp-prices strong { color: var(--amze-text); }
+  .amze-sp-sparkline { margin-top: 6px; }
+  .amze-sp-alert { font-size: 10px; color: var(--amze-warn); margin-top: 4px; }
+  .amze-sp-tabs { display: flex; gap: 2px; padding: 8px 16px; border-bottom: 1px solid var(--amze-border-soft); }
+  .amze-sp-tab { background: transparent; color: var(--amze-text-dim); border: 1px solid transparent; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-family: inherit; cursor: pointer; }
+  .amze-sp-tab.active { color: var(--amze-accent); background: var(--amze-bg-raise); border-color: var(--amze-accent); }
+</style>
+</head>
+<body>
+<div class="amze-sp-header">
+  <div style="display: flex; align-items: center; gap: 8px;">
+    <img src="icons/32.png" alt="" width="20" height="20" />
+    <h1>AmazonEnhanced</h1>
+  </div>
+</div>
+
+<div class="amze-sp-tabs">
+  <button class="amze-sp-tab active" data-view="history">Price History</button>
+  <button class="amze-sp-tab" data-view="alerts">Alerts</button>
+</div>
+
+<div class="amze-sp-content" id="sp-content">
+  <div class="amze-sp-empty" id="sp-empty">
+    Browse Amazon product pages to build your price history.
+  </div>
+  <div id="sp-list"></div>
+</div>
+
+<script src="sidepanel.js"></script>
+</body>
+</html>

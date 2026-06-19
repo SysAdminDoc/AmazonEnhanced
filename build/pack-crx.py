@@ -47,6 +47,8 @@ INCLUDE_FILES = [
     "popup.html",
     "popup.css",
     "popup.js",
+    "sidepanel.html",
+    "sidepanel.js",
 ]
 INCLUDE_DIRS = ["icons", "_locales"]
 

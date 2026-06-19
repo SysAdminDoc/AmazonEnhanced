@@ -16,7 +16,8 @@
     "storage",
     "alarms",
     "notifications",
-    "declarativeNetRequest"
+    "declarativeNetRequest",
+    "sidePanel"
   ],
   "host_permissions": [
     "*://*.amazon.com/*",
@@ -52,6 +53,9 @@
   },
   "background": {
     "service_worker": "background.js"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
   },
   "content_scripts": [
     {
