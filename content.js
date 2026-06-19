@@ -1505,6 +1505,111 @@
   }
 
   // -------------------------------------------------------------------
+  // 12.9b Price alert — set target price, background notifies when met
+  // -------------------------------------------------------------------
+
+  async function injectPriceAlertUI() {
+    if (!settings.flags.priceAlert) return;
+    if (!isPdp()) return;
+    if (document.getElementById('amze-price-alert')) return;
+    const asin = getAsin();
+    if (!asin) return;
+
+    const priceEl = document.querySelector('#corePrice_feature_div .a-offscreen, #priceblock_ourprice, #priceblock_dealprice, .a-price .a-offscreen');
+    const currentPrice = priceEl ? parseNumber(priceEl.textContent) : NaN;
+    const titleEl = document.querySelector('#productTitle');
+    const productTitle = (titleEl?.textContent || '').trim().slice(0, 100);
+
+    // Check existing alert
+    let existingAlert = null;
+    try {
+      const res = await sendMessageWithTimeout({ type: 'AMZE_GET_PRICE_ALERTS' });
+      if (res && res.alerts && res.alerts[asin]) {
+        existingAlert = res.alerts[asin];
+      }
+    } catch (e) {}
+
+    const panel = document.createElement('div');
+    panel.id = 'amze-price-alert';
+    panel.className = 'amze-pdp-badge';
+    panel.style.display = 'flex';
+    panel.style.alignItems = 'center';
+    panel.style.gap = '8px';
+    panel.style.flexWrap = 'wrap';
+
+    const label = createTextElement('span', '', 'Alert when under $');
+    label.style.fontSize = '12px';
+
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.step = '0.01';
+    input.min = '0.01';
+    input.placeholder = isFinite(currentPrice) ? (currentPrice * 0.9).toFixed(2) : '0.00';
+    input.style.width = '80px';
+    input.style.padding = '3px 6px';
+    input.style.borderRadius = '4px';
+    input.style.border = '1px solid var(--amze-border, #45475a)';
+    input.style.background = 'var(--amze-bg-raise, #313244)';
+    input.style.color = 'var(--amze-text, #cdd6f4)';
+    input.style.fontSize = '12px';
+    input.setAttribute('aria-label', 'Target price for price drop alert');
+
+    if (existingAlert && !existingAlert.notified) {
+      input.value = existingAlert.target.toFixed(2);
+    }
+
+    const setBtn = createActionButton('amze-price-alert-set', existingAlert && !existingAlert.notified ? 'Update' : 'Set alert', 'Set price drop alert');
+    setBtn.style.fontSize = '11px';
+    setBtn.style.padding = '3px 8px';
+
+    const clearBtn = createActionButton('amze-price-alert-clear', 'Clear', 'Remove price drop alert');
+    clearBtn.style.fontSize = '11px';
+    clearBtn.style.padding = '3px 8px';
+    if (!existingAlert) clearBtn.style.display = 'none';
+
+    const status = createTextElement('span', '');
+    status.style.fontSize = '11px';
+    status.style.color = 'var(--amze-text-muted, #9399b2)';
+    if (existingAlert && !existingAlert.notified) {
+      status.textContent = 'Alert active: $' + existingAlert.target.toFixed(2);
+    } else if (existingAlert && existingAlert.notified) {
+      status.textContent = 'Alert triggered!';
+    }
+
+    setBtn.addEventListener('click', async () => {
+      const target = parseFloat(input.value);
+      if (!isFinite(target) || target <= 0) { toast('Enter a valid price'); return; }
+      try {
+        await sendMessageWithTimeout({ type: 'AMZE_SET_PRICE_ALERT', asin, target, title: productTitle });
+        status.textContent = 'Alert set: $' + target.toFixed(2);
+        setBtn.textContent = 'Update';
+        clearBtn.style.display = '';
+        toast('Price alert set for $' + target.toFixed(2));
+      } catch (e) { toast('Could not set alert'); }
+    });
+
+    clearBtn.addEventListener('click', async () => {
+      try {
+        await sendMessageWithTimeout({ type: 'AMZE_SET_PRICE_ALERT', asin, target: null });
+        status.textContent = '';
+        input.value = '';
+        setBtn.textContent = 'Set alert';
+        clearBtn.style.display = 'none';
+        toast('Price alert cleared');
+      } catch (e) { toast('Could not clear alert'); }
+    });
+
+    panel.appendChild(label);
+    panel.appendChild(input);
+    panel.appendChild(setBtn);
+    panel.appendChild(clearBtn);
+    panel.appendChild(status);
+
+    const target = document.querySelector('#amze-sparkline, #corePriceDisplay_desktop_feature_div, #price, #centerCol');
+    if (target) target.parentElement.insertBefore(panel, target.nextSibling);
+  }
+
+  // -------------------------------------------------------------------
   // 12.10 Copy clean product link
   // -------------------------------------------------------------------
 
@@ -1839,6 +1944,7 @@
     try { revealSellerPdp(); } catch (e) {}
     try { detectVariationBait(); } catch (e) {}
     try { logAndRenderPrice(); } catch (e) {}
+    try { injectPriceAlertUI(); } catch (e) {}
     try { injectCopyLinkButton(); } catch (e) {}
     try { injectOrderExportButton(); } catch (e) {}
     try { injectWishlistExportButton(); } catch (e) {}

@@ -424,10 +424,52 @@ async function scanLateOrders() {
   if (dirty.length) await writeWatchedOrders(map);
 }
 
+// -------------------------------------------------------------------
+// Price alerts — check stored price history against user-set thresholds
+// -------------------------------------------------------------------
+
+async function readPriceAlerts() {
+  const r = await chrome.storage.local.get(['amzePriceAlerts']);
+  return r.amzePriceAlerts || {};
+}
+
+async function writePriceAlerts(map) {
+  await chrome.storage.local.set({ amzePriceAlerts: map });
+}
+
+async function checkPriceAlerts() {
+  const { amzeSettings } = await chrome.storage.local.get(['amzeSettings']);
+  if (!amzeSettings || !amzeSettings.flags || !amzeSettings.flags.priceAlert) return;
+  const alerts = await readPriceAlerts();
+  if (!Object.keys(alerts).length) return;
+
+  for (const [asin, alert] of Object.entries(alerts)) {
+    if (alert.notified) continue;
+    const record = await idbGet('priceHistory', normalizeAsin(asin));
+    if (!record || !Array.isArray(record.points) || !record.points.length) continue;
+    const latest = record.points[record.points.length - 1];
+    if (latest && latest.p <= alert.target) {
+      alert.notified = true;
+      try {
+        chrome.notifications.create('amze-price-' + asin, {
+          type: 'basic',
+          iconUrl: 'icons/128.png',
+          title: 'Price drop alert',
+          message: `${alert.title || asin} is now $${latest.p.toFixed(2)} (target: $${alert.target.toFixed(2)})`,
+          priority: 2
+        });
+      } catch (e) {}
+    }
+  }
+  await writePriceAlerts(alerts);
+}
+
 chrome.alarms.create('amze-late-watch', { periodInMinutes: 60 * 6, delayInMinutes: 5 });
 chrome.alarms.onAlarm.addListener((a) => {
   if (a.name === 'amze-late-watch') {
-    scheduleRetentionPurge().finally(() => scanLateOrders());
+    scheduleRetentionPurge()
+      .finally(() => scanLateOrders())
+      .finally(() => checkPriceAlerts());
   }
 });
 
@@ -480,6 +522,35 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       await clearLocalDataCaches();
       sendResponse({ ok: true, cleared: ['priceHistory', 'origins', 'watchedOrders'] });
     })().catch(() => sendResponse({ ok: false, cleared: [] }));
+    return true;
+  }
+
+  if (msg.type === 'AMZE_GET_PRICE_ALERTS') {
+    (async () => {
+      const alerts = await readPriceAlerts();
+      sendResponse({ ok: true, alerts });
+    })().catch(() => sendResponse({ ok: false, alerts: {} }));
+    return true;
+  }
+
+  if (msg.type === 'AMZE_SET_PRICE_ALERT') {
+    (async () => {
+      const alerts = await readPriceAlerts();
+      const key = normalizeAsin(msg.asin);
+      if (!key) { sendResponse({ ok: false }); return; }
+      if (msg.target === null || msg.target === undefined) {
+        delete alerts[key];
+      } else {
+        alerts[key] = {
+          target: Number(msg.target),
+          title: String(msg.title || key).slice(0, 100),
+          createdAt: Date.now(),
+          notified: false
+        };
+      }
+      await writePriceAlerts(alerts);
+      sendResponse({ ok: true });
+    })().catch(() => sendResponse({ ok: false }));
     return true;
   }
 

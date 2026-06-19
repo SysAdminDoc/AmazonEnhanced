@@ -47,7 +47,8 @@
     "ariaFixes": true,
     "allergenScan": false,
     "trustBadge": true,
-    "hideRufus": true
+    "hideRufus": true,
+    "priceAlert": false
   },
   "customBrands": "",
   "allergens": "",
