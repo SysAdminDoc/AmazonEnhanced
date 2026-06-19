@@ -769,6 +769,21 @@ html[data-amze-hideHomeClutter="1"] #nav-xshop { display: none !important; }
 html[data-amze-hideFooter="1"] #navFooter,
 html[data-amze-hideFooter="1"] #navBackToTop { display: none !important; }
 
+/* Rufus / Alexa AI chatbot dismisser */
+html[data-amze-hideRufus="1"] #rufus-chat-widget,
+html[data-amze-hideRufus="1"] #rufus-chat-container,
+html[data-amze-hideRufus="1"] [data-cel-widget*="rufus"],
+html[data-amze-hideRufus="1"] [data-cel-widget*="Rufus"],
+html[data-amze-hideRufus="1"] [id*="rufus"],
+html[data-amze-hideRufus="1"] [class*="rufus"],
+html[data-amze-hideRufus="1"] [data-csa-c-content-id*="rufus"],
+html[data-amze-hideRufus="1"] #ai-shopping-assistant,
+html[data-amze-hideRufus="1"] [class*="ai-shopping"],
+html[data-amze-hideRufus="1"] [data-cel-widget*="alexa"],
+html[data-amze-hideRufus="1"] [class*="chat-widget"],
+html[data-amze-hideRufus="1"] [id*="chatbot-widget"],
+html[data-amze-hideRufus="1"] #GW-Rufus-container { display: none !important; }
+
 /* Result padding squeeze */
 html[data-amze-density="compact"] .s-result-item[data-component-type="s-search-result"] {
   padding: 6px !important;

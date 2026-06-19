@@ -46,7 +46,8 @@
     "highContrast": false,
     "ariaFixes": true,
     "allergenScan": false,
-    "trustBadge": true
+    "trustBadge": true,
+    "hideRufus": true
   },
   "customBrands": "",
   "allergens": "",
