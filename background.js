@@ -22,7 +22,37 @@ async function getDefaultSettings() {
 function mergeSettings(defaults, saved) {
   const merged = Object.assign({}, defaults, saved || {});
   merged.flags = Object.assign({}, defaults.flags, (saved && saved.flags) || {});
+  merged.settingsVersion = defaults.settingsVersion;
   return merged;
+}
+
+// -------------------------------------------------------------------
+// Structured settings migration
+//
+// Each entry in SETTINGS_MIGRATIONS maps a version number to a
+// migration function: (settings) => settings. Migrations run
+// sequentially from the saved settingsVersion up to the current one.
+// This enables safe renames, removals, and structural changes.
+// -------------------------------------------------------------------
+
+const SETTINGS_MIGRATIONS = {
+  // Version 0 → 1: initial schema version stamp. No structural changes
+  // needed; the mergeSettings forward-merge covers new flags.
+};
+
+function migrateSettings(settings, targetVersion) {
+  let v = (settings && typeof settings.settingsVersion === 'number')
+    ? settings.settingsVersion
+    : 0;
+  while (v < targetVersion) {
+    const fn = SETTINGS_MIGRATIONS[v];
+    if (typeof fn === 'function') {
+      settings = fn(settings);
+    }
+    v++;
+    settings.settingsVersion = v;
+  }
+  return settings;
 }
 
 async function getAmazonUrlPatterns() {
@@ -274,8 +304,9 @@ chrome.runtime.onInstalled.addListener(async (details) => {
   if (!amzeSettings) {
     await chrome.storage.local.set({ amzeSettings: defaults });
   } else {
-    // Forward-migrate: ensure all flags exist.
-    const merged = mergeSettings(defaults, amzeSettings);
+    // Run structured migrations, then forward-merge new flags.
+    const migrated = migrateSettings(amzeSettings, defaults.settingsVersion);
+    const merged = mergeSettings(defaults, migrated);
     await chrome.storage.local.set({ amzeSettings: merged });
   }
   // Sync DNR affiliate-strip rule with current setting
