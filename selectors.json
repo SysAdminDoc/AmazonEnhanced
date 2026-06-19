@@ -1,0 +1,97 @@
+{
+  "version": 1,
+  "sponsored": [
+    "[data-component-type=\"sp-sponsored-result\"]",
+    ".AdHolder",
+    "[data-cel-widget*=\"MAIN-SPONSORED\"]",
+    "[cel_widget_id*=\"MAIN-SPONSORED\"]",
+    "[cel_widget_id^=\"adplacements:\"]",
+    "[data-cel-widget^=\"adplacements:\"]",
+    "[data-csa-c-painter=\"JavelinRenderingService\"]",
+    "[class*=\"ad-placements\"]",
+    "[class*=\"gateway-btf_ad\"]",
+    "[class*=\"gateway-atf_ad\"]",
+    "[id*=\"desktop-homepage-btf-card\"]",
+    "[id*=\"desktop-homepage-atf-card\"]",
+    ".ape-placement"
+  ],
+  "sponsoredLabels": [
+    ".s-sponsored-label-info-icon",
+    ".puis-label-popover-default",
+    "[aria-label*=\"Sponsored\" i]",
+    ".puis-sponsored-label-text",
+    "span.a-color-secondary"
+  ],
+  "localeOverrides": {
+    "co.jp": {
+      "sponsoredLabels": [
+        ".s-sponsored-label-info-icon",
+        ".puis-label-popover-default",
+        "[aria-label*=\"スポンサー\"]",
+        "[aria-label*=\"Sponsored\" i]",
+        ".puis-sponsored-label-text",
+        "span.a-color-secondary"
+      ]
+    },
+    "de": {
+      "sponsoredLabels": [
+        ".s-sponsored-label-info-icon",
+        ".puis-label-popover-default",
+        "[aria-label*=\"Gesponsert\"]",
+        "[aria-label*=\"Sponsored\" i]",
+        ".puis-sponsored-label-text",
+        "span.a-color-secondary"
+      ]
+    },
+    "fr": {
+      "sponsoredLabels": [
+        ".s-sponsored-label-info-icon",
+        ".puis-label-popover-default",
+        "[aria-label*=\"Sponsorisé\"]",
+        "[aria-label*=\"Sponsored\" i]",
+        ".puis-sponsored-label-text",
+        "span.a-color-secondary"
+      ]
+    },
+    "it": {
+      "sponsoredLabels": [
+        ".s-sponsored-label-info-icon",
+        ".puis-label-popover-default",
+        "[aria-label*=\"Sponsorizzato\"]",
+        "[aria-label*=\"Sponsored\" i]",
+        ".puis-sponsored-label-text",
+        "span.a-color-secondary"
+      ]
+    },
+    "es": {
+      "sponsoredLabels": [
+        ".s-sponsored-label-info-icon",
+        ".puis-label-popover-default",
+        "[aria-label*=\"Patrocinado\"]",
+        "[aria-label*=\"Sponsored\" i]",
+        ".puis-sponsored-label-text",
+        "span.a-color-secondary"
+      ]
+    },
+    "com.br": {
+      "sponsoredLabels": [
+        ".s-sponsored-label-info-icon",
+        ".puis-label-popover-default",
+        "[aria-label*=\"Patrocinado\"]",
+        "[aria-label*=\"Sponsored\" i]",
+        ".puis-sponsored-label-text",
+        "span.a-color-secondary"
+      ]
+    },
+    "in": {
+      "sponsoredLabels": [
+        ".s-sponsored-label-info-icon",
+        ".puis-label-popover-default",
+        "[aria-label*=\"Sponsored\" i]",
+        "[aria-label*=\"प्रायोजित\"]",
+        ".puis-sponsored-label-text",
+        "span.a-color-secondary"
+      ]
+    }
+  }
+}

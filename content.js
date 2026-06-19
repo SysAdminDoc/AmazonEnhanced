@@ -238,14 +238,18 @@
 
   // -------------------------------------------------------------------
   // 4. Sponsored / filter logic on result tiles
+  //    Selectors loaded from selectors.json with per-locale overrides.
   // -------------------------------------------------------------------
 
-  const SPONSORED_SELECTORS = [
+  let selectorPackPromise = null;
+  let SPONSORED_SELECTORS = '';
+  let SPONSORED_LABEL_SELECTORS = '';
+
+  const SPONSORED_SELECTORS_FALLBACK = [
     '[data-component-type="sp-sponsored-result"]',
     '.AdHolder',
     '[data-cel-widget*="MAIN-SPONSORED"]',
     '[cel_widget_id*="MAIN-SPONSORED"]',
-    // APE / Javelin SafeFrame ad slots (homepage, gateway cards)
     '[cel_widget_id^="adplacements:"]',
     '[data-cel-widget^="adplacements:"]',
     '[data-csa-c-painter="JavelinRenderingService"]',
@@ -257,11 +261,46 @@
     '.ape-placement'
   ].join(',');
 
+  const SPONSORED_LABELS_FALLBACK = [
+    '.s-sponsored-label-info-icon',
+    '.puis-label-popover-default',
+    '[aria-label*="Sponsored" i]'
+  ].join(',');
+
+  async function loadSelectorPack() {
+    if (!selectorPackPromise) {
+      selectorPackPromise = fetch(chrome.runtime.getURL('selectors.json'))
+        .then(res => {
+          if (!res.ok) throw new Error('Failed to load selectors.json');
+          return res.json();
+        })
+        .then(data => {
+          // Base selectors
+          SPONSORED_SELECTORS = (data.sponsored || []).join(',') || SPONSORED_SELECTORS_FALLBACK;
+          let labels = data.sponsoredLabels || [];
+
+          // Apply locale overrides
+          const overrides = data.localeOverrides && data.localeOverrides[LOCALE_TLD];
+          if (overrides) {
+            if (overrides.sponsored) SPONSORED_SELECTORS = overrides.sponsored.join(',');
+            if (overrides.sponsoredLabels) labels = overrides.sponsoredLabels;
+          }
+          SPONSORED_LABEL_SELECTORS = labels.join(',') || SPONSORED_LABELS_FALLBACK;
+        })
+        .catch(() => {
+          SPONSORED_SELECTORS = SPONSORED_SELECTORS_FALLBACK;
+          SPONSORED_LABEL_SELECTORS = SPONSORED_LABELS_FALLBACK;
+        });
+    }
+    return selectorPackPromise;
+  }
+
   function isSponsoredTile(el) {
     if (!el) return false;
-    if (el.matches && el.matches(SPONSORED_SELECTORS)) return true;
+    if (SPONSORED_SELECTORS && el.matches && el.matches(SPONSORED_SELECTORS)) return true;
     // Fallback: look for "Sponsored" label inside the tile.
-    const label = el.querySelector && el.querySelector('.s-sponsored-label-info-icon, .puis-label-popover-default, [aria-label*="Sponsored" i]');
+    const labelSel = SPONSORED_LABEL_SELECTORS || SPONSORED_LABELS_FALLBACK;
+    const label = el.querySelector && el.querySelector(labelSel);
     if (label) return true;
     const txt = el.querySelector && el.querySelector('.puis-sponsored-label-text, span.a-color-secondary');
     if (txt && /sponsored|ad\s*$/i.test(txt.textContent || '')) return true;
@@ -1988,6 +2027,7 @@
   async function boot() {
     try {
       await hydrateLocaleFromCatalog();
+      await loadSelectorPack();
       DEFAULT_SETTINGS = await loadDefaultSettings();
       settings = cloneDefaultSettings();
       getSettings(init);

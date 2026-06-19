@@ -112,7 +112,7 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["icons/*", "defaults.json", "locales.json"],
+      "resources": ["icons/*", "defaults.json", "locales.json", "selectors.json"],
       "matches": [
         "*://*.amazon.com/*",
         "*://*.amazon.co.uk/*",

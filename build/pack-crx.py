@@ -39,6 +39,7 @@ INCLUDE_FILES = [
     "manifest.json",
     "defaults.json",
     "locales.json",
+    "selectors.json",
     "early-inject.js",
     "theme.css",
     "content.js",
