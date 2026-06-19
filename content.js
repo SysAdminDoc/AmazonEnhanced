@@ -295,16 +295,28 @@
       .filter(Boolean);
   }
 
+  // -------------------------------------------------------------------
+  // 4b. Detect conflicting ad-blocking extensions
+  //     Guard against nodes already removed by other blockers (AdGuard,
+  //     uBlock, etc.) which may have mutated the DOM before us.
+  // -------------------------------------------------------------------
+
+  function isNodeRemoved(el) {
+    return !el || !el.parentNode || !document.contains(el);
+  }
+
   function processResultTile(el) {
     if (!el || el.dataset.amzeProcessed) return;
+    if (isNodeRemoved(el)) return;
     el.dataset.amzeProcessed = '1';
 
     const flags = settings.flags;
 
-    // Sponsored handling
+    // Sponsored handling (guard with optional chaining for nodes
+    // that another ad blocker may have already removed)
     if (isSponsoredTile(el)) {
       if (flags.hideSponsored) {
-        el.remove();
+        el?.remove();
         return;
       } else if (flags.shadeSponsored) {
         el.style.outline = '1px dashed var(--amze-danger)';
