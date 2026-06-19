@@ -1557,11 +1557,14 @@
     wrap.appendChild(createTextElement('div', 'amze-export-title', 'Export orders'));
     const csvButton = createActionButton('amze-order-export-btn', 'CSV', 'Export visible orders as CSV');
     const jsonButton = createActionButton('amze-order-export-json', 'JSON', 'Export visible orders as JSON');
+    const icsButton = createActionButton('amze-order-export-ics', '.ics Calendar', 'Export delivery dates as calendar events');
     wrap.appendChild(csvButton);
     wrap.appendChild(jsonButton);
+    wrap.appendChild(icsButton);
     host.parentElement.insertBefore(wrap, host);
     csvButton.addEventListener('click', () => exportOrders('csv'));
     jsonButton.addEventListener('click', () => exportOrders('json'));
+    icsButton.addEventListener('click', () => exportOrdersAsIcs());
   }
 
   function extractOrdersFromCurrentPage() {
@@ -1607,6 +1610,80 @@
     document.body.appendChild(a);
     a.click();
     setTimeout(() => { a.remove(); URL.revokeObjectURL(url); }, 1000);
+  }
+
+  // -------------------------------------------------------------------
+  // 12.11b .ics calendar export of delivery dates
+  // -------------------------------------------------------------------
+
+  function parseDeliveryDate(text) {
+    if (!text) return null;
+    const m = text.match(/([A-Z][a-z]+)\s+(\d{1,2})(?:\s*[-,]\s*(\d{1,2}))?(?:\s*,?\s*(\d{4}))?/);
+    if (!m) return null;
+    const months = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+    const month = months.indexOf(m[1].toLowerCase().slice(0, 3));
+    if (month < 0) return null;
+    const day = parseInt(m[2], 10);
+    const year = m[4] ? parseInt(m[4], 10) : new Date().getFullYear();
+    return new Date(year, month, day);
+  }
+
+  function formatIcsDate(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}${m}${d}`;
+  }
+
+  function extractOrderDeliveryDates() {
+    const events = [];
+    document.querySelectorAll('.order-card, .order, .js-order-card').forEach(card => {
+      const orderId = (card.querySelector('[class*="order-id"], .a-col-right .a-size-mini .a-color-secondary')?.textContent || '').trim();
+      const deliveryEl = card.querySelector('[class*="delivery-date"], [class*="promise"], .delivery-box__primary-text, .a-size-medium.a-color-base');
+      const deliveryText = (deliveryEl?.textContent || '').trim();
+      const deliveryDate = parseDeliveryDate(deliveryText);
+      if (!deliveryDate) return;
+
+      const items = [];
+      card.querySelectorAll('.yohtmlc-item, .a-fixed-left-grid').forEach(it => {
+        const title = (it.querySelector('.a-link-normal, h3')?.textContent || '').trim();
+        if (title) items.push(title);
+      });
+      const summary = items.length ? items[0].slice(0, 60) : 'Amazon delivery';
+      events.push({
+        orderId,
+        date: deliveryDate,
+        summary: orderId ? `Amazon: ${summary} (${orderId})` : `Amazon: ${summary}`,
+        description: items.join('\\n')
+      });
+    });
+    return events;
+  }
+
+  function exportOrdersAsIcs() {
+    const events = extractOrderDeliveryDates();
+    if (!events.length) { toast('No delivery dates found on this page'); return; }
+    const now = new Date();
+    const stamp = formatIcsDate(now) + 'T' + String(now.getHours()).padStart(2, '0') + String(now.getMinutes()).padStart(2, '0') + '00';
+    let ics = 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//AmazonEnhanced//Delivery Export//EN\r\nCALSCALE:GREGORIAN\r\n';
+    events.forEach((ev, i) => {
+      const dateStr = formatIcsDate(ev.date);
+      const nextDay = new Date(ev.date);
+      nextDay.setDate(nextDay.getDate() + 1);
+      const endStr = formatIcsDate(nextDay);
+      ics += 'BEGIN:VEVENT\r\n';
+      ics += 'UID:amze-' + (ev.orderId || i) + '-' + dateStr + '@amazonenhanced\r\n';
+      ics += 'DTSTAMP:' + stamp + '\r\n';
+      ics += 'DTSTART;VALUE=DATE:' + dateStr + '\r\n';
+      ics += 'DTEND;VALUE=DATE:' + endStr + '\r\n';
+      ics += 'SUMMARY:' + ev.summary.replace(/[,;\\]/g, ' ') + '\r\n';
+      if (ev.description) ics += 'DESCRIPTION:' + ev.description.replace(/[,;]/g, ' ').slice(0, 200) + '\r\n';
+      ics += 'END:VEVENT\r\n';
+    });
+    ics += 'END:VCALENDAR\r\n';
+    const blob = new Blob([ics], { type: 'text/calendar' });
+    downloadBlob(blob, `amazon-deliveries-${Date.now()}.ics`);
+    toast(`Exported ${events.length} delivery dates`);
   }
 
   // -------------------------------------------------------------------
