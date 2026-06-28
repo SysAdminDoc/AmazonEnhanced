@@ -5,7 +5,7 @@
  * Declutter rules live here too, gated by data-amze-<flag> attributes.
  *
  * CSS namespace: amze-*
- * Never use backdrop-filter: blur() (CLAUDE.md).
+ * Never use backdrop-filter: blur().
  */
 
 /* ----------------------------------------------------------------------
