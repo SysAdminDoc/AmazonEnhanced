@@ -145,6 +145,10 @@
     <input type="checkbox" data-flag="listPriceWarn" class="amze-switch">
   </label>
   <label class="amze-row">
+    <span>Normalize fake deal badges<small>Hides "Limited time deal" labels when your local 30-day price history shows no real drop.</small></span>
+    <input type="checkbox" data-flag="dealBadgeNormalizer" class="amze-switch">
+  </label>
+  <label class="amze-row">
     <span>Strip affiliate / tracking URL params<small>Removes tag, ref_, pd_rd_*, pf_rd_*, etc. Shortens /dp/ links.</small></span>
     <input type="checkbox" data-flag="stripAffiliate" class="amze-switch">
   </label>
@@ -201,6 +205,18 @@
     <input type="checkbox" data-flag="revealSeller" class="amze-switch">
   </label>
   <label class="amze-row">
+    <span>Counterfeit-risk warning<small>Flags product pages where the brand name and marketplace seller name do not resemble each other.</small></span>
+    <input type="checkbox" data-flag="counterfeitWarn" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>OpenCorporates seller lookup<small>Opt-in lookup of marketplace seller names against OpenCorporates using your local API token.</small></span>
+    <input type="checkbox" data-flag="sellerLookup" class="amze-switch">
+  </label>
+  <div class="amze-field">
+    <label for="amze-oc-token">OpenCorporates API token</label>
+    <input id="amze-oc-token" type="password" spellcheck="false" autocomplete="off" placeholder="Stored locally only">
+  </div>
+  <label class="amze-row">
     <span>Variation bait warning<small>Flags listings where variant prices span more than 3× — a common bait-and-switch pattern.</small></span>
     <input type="checkbox" data-flag="variationBait" class="amze-switch">
   </label>
@@ -238,7 +254,7 @@
   </label>
   <div class="amze-privacy">
     <h3>Privacy</h3>
-    <p>AmazonEnhanced stores settings, price history, country-of-origin cache, watched-order dates, custom brand rules, and allergen terms locally in this browser profile. The current release sends no analytics, telemetry, or shopping data to external services.</p>
+    <p>AmazonEnhanced stores settings, price history, seller/origin caches, watched-order dates, custom brand rules, and allergen terms locally in this browser profile. It sends no analytics, telemetry, or shopping data to external services. If OpenCorporates seller lookup is enabled, seller names are sent to OpenCorporates using your local API token.</p>
   </div>
   <div class="amze-data-actions">
     <button id="amze-clear-data" type="button" class="amze-btn amze-btn-danger">Clear local data</button>

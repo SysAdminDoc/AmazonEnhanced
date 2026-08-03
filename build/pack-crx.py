@@ -68,7 +68,11 @@ def _build_manifest() -> bytes:
     with open(REPO / "manifest.json", "r", encoding="utf-8") as f:
         manifest = json.load(f)
     patterns = _read_locale_patterns()
-    manifest["host_permissions"] = patterns
+    extra_hosts = [
+        host for host in manifest.get("host_permissions", [])
+        if "amazon." not in host
+    ]
+    manifest["host_permissions"] = patterns + extra_hosts
     for script in manifest.get("content_scripts", []):
         script["matches"] = patterns
     for resource in manifest.get("web_accessible_resources", []):

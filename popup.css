@@ -186,7 +186,9 @@ main { padding: 10px 4px; }
   letter-spacing: .3px;
   margin-bottom: 6px;
 }
-textarea {
+textarea,
+input[type="password"],
+input[type="text"] {
   width: 100%;
   background: var(--amze-bg-alt);
   border: 1px solid var(--amze-border);
@@ -195,9 +197,11 @@ textarea {
   padding: 8px 10px;
   font-family: ui-monospace, Consolas, monospace;
   font-size: 12px;
-  resize: vertical;
 }
-textarea:focus { outline: 2px solid var(--amze-accent); border-color: var(--amze-accent); }
+textarea { resize: vertical; }
+textarea:focus,
+input[type="password"]:focus,
+input[type="text"]:focus { outline: 2px solid var(--amze-accent); border-color: var(--amze-accent); }
 
 /* Theme picker */
 .amze-theme-picker {

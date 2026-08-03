@@ -72,12 +72,15 @@ async function getAmazonUrlPatterns() {
 }
 
 const DB_NAME = 'AmazonEnhancedDB';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const PRICE_HISTORY_RETENTION_MS = 365 * 24 * 60 * 60 * 1000;
 const WATCHED_ORDER_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
+const SELLER_LOOKUP_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
+const SELLER_LOOKUP_MIN_INTERVAL_MS = 15 * 1000;
 let dbPromise = null;
 let legacyStorageMigrationPromise = null;
 let retentionPurgePromise = null;
+let lastSellerLookupAt = 0;
 
 function normalizeAsin(asin) {
   return String(asin || '').toUpperCase();
@@ -99,6 +102,9 @@ function openDb() {
         }
         if (!db.objectStoreNames.contains('origins')) {
           db.createObjectStore('origins', { keyPath: 'asin' });
+        }
+        if (!db.objectStoreNames.contains('sellerLookups')) {
+          db.createObjectStore('sellerLookups', { keyPath: 'key' });
         }
       };
       req.onsuccess = () => resolve(req.result);
@@ -214,6 +220,126 @@ async function writePriceHistory(asin, points) {
     asin: key,
     points: Array.isArray(points) ? points : []
   });
+}
+
+function normalizeSellerLookupKey(name) {
+  return String(name || '')
+    .toLowerCase()
+    .replace(/&/g, ' and ')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\b(inc|incorporated|llc|ltd|limited|corp|corporation|co|company|store|shop|seller|official|the)\b/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 120);
+}
+
+function normalizeSellerLookupName(name) {
+  return String(name || '').replace(/\s+/g, ' ').trim().slice(0, 160);
+}
+
+function mapJurisdictionCountry(code) {
+  const normalized = String(code || '').toLowerCase();
+  if (!normalized) return '';
+  const first = normalized.split('_')[0].split('-')[0];
+  const countries = {
+    au: 'Australia',
+    br: 'Brazil',
+    ca: 'Canada',
+    de: 'Germany',
+    es: 'Spain',
+    fr: 'France',
+    gb: 'United Kingdom',
+    ie: 'Ireland',
+    in: 'India',
+    it: 'Italy',
+    jp: 'Japan',
+    mx: 'Mexico',
+    nl: 'Netherlands',
+    pl: 'Poland',
+    se: 'Sweden',
+    sg: 'Singapore',
+    tr: 'Turkey',
+    us: 'United States'
+  };
+  return countries[first] || first.toUpperCase();
+}
+
+function mapOpenCorporatesCompany(company, sellerName) {
+  const c = company || {};
+  const jurisdictionCode = String(c.jurisdiction_code || '');
+  return {
+    sellerName: normalizeSellerLookupName(sellerName),
+    companyName: String(c.name || '').slice(0, 180),
+    jurisdictionCode,
+    country: mapJurisdictionCountry(jurisdictionCode),
+    status: String(c.current_status || '').slice(0, 80),
+    companyType: String(c.company_type || '').slice(0, 80),
+    url: String(c.opencorporates_url || '').slice(0, 300),
+    fetchedAt: Date.now()
+  };
+}
+
+async function readSellerLookup(sellerName) {
+  const key = normalizeSellerLookupKey(sellerName);
+  if (!key) return null;
+  const record = await idbGet('sellerLookups', key);
+  if (!record || !record.fetchedAt) return null;
+  if ((Date.now() - record.fetchedAt) > SELLER_LOOKUP_RETENTION_MS) return null;
+  return record;
+}
+
+async function writeSellerLookup(sellerName, result) {
+  const key = normalizeSellerLookupKey(sellerName);
+  if (!key) return;
+  await idbPut('sellerLookups', Object.assign({ key }, result, { fetchedAt: Date.now() }));
+}
+
+async function lookupSellerEntity(sellerName) {
+  const normalizedName = normalizeSellerLookupName(sellerName);
+  const key = normalizeSellerLookupKey(normalizedName);
+  if (key.length < 3) return { ok: false, reason: 'short_name' };
+
+  const cached = await readSellerLookup(normalizedName);
+  if (cached) return { ok: true, cached: true, result: cached };
+
+  const defaults = await getDefaultSettings();
+  const { amzeSettings } = await chrome.storage.local.get(['amzeSettings']);
+  const settings = mergeSettings(defaults, migrateSettings(amzeSettings || defaults, defaults.settingsVersion));
+  if (!settings.flags || !settings.flags.sellerLookup) return { ok: false, reason: 'disabled' };
+
+  const token = String(settings.openCorporatesToken || '').trim();
+  if (!token) return { ok: false, reason: 'missing_token' };
+
+  const now = Date.now();
+  const waitMs = SELLER_LOOKUP_MIN_INTERVAL_MS - (now - lastSellerLookupAt);
+  if (waitMs > 0) {
+    await new Promise(resolve => setTimeout(resolve, waitMs));
+  }
+  lastSellerLookupAt = Date.now();
+
+  const url = new URL('https://api.opencorporates.com/v0.4/companies/search');
+  url.searchParams.set('q', normalizedName);
+  url.searchParams.set('per_page', '3');
+  url.searchParams.set('inactive', 'false');
+  url.searchParams.set('normalise_company_name', 'true');
+  url.searchParams.set('api_token', token);
+
+  const response = await fetch(url.toString(), {
+    headers: { Accept: 'application/json' },
+    cache: 'no-store'
+  });
+  if (!response.ok) return { ok: false, reason: 'http_' + response.status };
+
+  const payload = await response.json();
+  const companies = payload && payload.results && Array.isArray(payload.results.companies)
+    ? payload.results.companies
+    : [];
+  const first = companies.map(item => item && item.company).find(Boolean);
+  const result = first
+    ? mapOpenCorporatesCompany(first, normalizedName)
+    : { sellerName: normalizedName, noMatch: true, fetchedAt: Date.now() };
+  await writeSellerLookup(normalizedName, result);
+  return { ok: true, cached: false, result };
 }
 
 async function purgePriceHistoryRetention(now = Date.now()) {
@@ -383,6 +509,7 @@ async function clearLocalDataCaches() {
   await Promise.all([
     idbClear('priceHistory'),
     idbClear('origins'),
+    idbClear('sellerLookups'),
     chrome.storage.local.remove(['amzePriceHistory', 'amzeOrigins', 'amzeWatchedOrders'])
   ]);
 }
@@ -528,7 +655,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.type === 'AMZE_CLEAR_LOCAL_DATA') {
     (async () => {
       await clearLocalDataCaches();
-      sendResponse({ ok: true, cleared: ['priceHistory', 'origins', 'watchedOrders'] });
+      sendResponse({ ok: true, cleared: ['priceHistory', 'origins', 'sellerLookups', 'watchedOrders'] });
     })().catch(() => sendResponse({ ok: false, cleared: [] }));
     return true;
   }
@@ -559,6 +686,14 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       await writePriceAlerts(alerts);
       sendResponse({ ok: true });
     })().catch(() => sendResponse({ ok: false }));
+    return true;
+  }
+
+  if (msg.type === 'AMZE_LOOKUP_SELLER') {
+    (async () => {
+      const result = await lookupSellerEntity(msg.sellerName);
+      sendResponse(result);
+    })().catch(() => sendResponse({ ok: false, reason: 'lookup_failed' }));
     return true;
   }
 

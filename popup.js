@@ -89,6 +89,8 @@
     if (ta) ta.value = current.customBrands || '';
     const al = $('#amze-allergens');
     if (al) al.value = current.allergens || '';
+    const token = $('#amze-oc-token');
+    if (token) token.value = current.openCorporatesToken || '';
   }
 
   function persistAndBroadcast() {
@@ -204,6 +206,17 @@
         }, 350);
       });
     }
+    const ocToken = $('#amze-oc-token');
+    if (ocToken) {
+      let t;
+      ocToken.addEventListener('input', () => {
+        clearTimeout(t);
+        t = setTimeout(() => {
+          current.openCorporatesToken = ocToken.value.trim();
+          persistAndBroadcast();
+        }, 350);
+      });
+    }
 
     // Reset
     const reset = $('#amze-reset');
@@ -222,7 +235,7 @@
         if (clearData.dataset.confirming !== '1') {
           clearData.dataset.confirming = '1';
           clearData.textContent = 'Click again to clear';
-          if (clearStatus) clearStatus.textContent = 'Clears local price, origin, and watched-order caches. Settings stay unchanged.';
+          if (clearStatus) clearStatus.textContent = 'Clears local price, seller/origin, and watched-order caches. Settings stay unchanged.';
           clearTimeout(clearConfirmTimer);
           clearConfirmTimer = setTimeout(() => resetClearDataButton(clearData, clearStatus), 5000);
           return;

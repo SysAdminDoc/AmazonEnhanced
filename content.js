@@ -221,6 +221,36 @@
     return isNaN(n) ? NaN : n;
   }
 
+  function normalizeReadableText(value, maxLen = 160) {
+    return String(value || '').replace(/\s+/g, ' ').trim().slice(0, maxLen);
+  }
+
+  function getPdpPrice() {
+    const priceEl = document.querySelector(
+      '#corePrice_feature_div .a-offscreen, ' +
+      '#corePriceDisplay_desktop_feature_div .a-offscreen, ' +
+      '#priceblock_ourprice, #priceblock_dealprice, .a-price .a-offscreen'
+    );
+    return priceEl ? parseNumber(priceEl.textContent) : NaN;
+  }
+
+  function median(nums) {
+    const sorted = nums.filter(Number.isFinite).slice().sort((a, b) => a - b);
+    if (!sorted.length) return NaN;
+    const mid = Math.floor(sorted.length / 2);
+    return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+  }
+
+  function normalizeCompareKey(value) {
+    return normalizeReadableText(value, 160)
+      .toLowerCase()
+      .replace(/&/g, ' and ')
+      .replace(/[^a-z0-9]+/g, ' ')
+      .replace(/\b(inc|incorporated|llc|ltd|limited|corp|corporation|co|company|store|shop|seller|official|the|brand)\b/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
   // -------------------------------------------------------------------
   // 3. Amazon brand list
   // -------------------------------------------------------------------
@@ -1061,6 +1091,16 @@
         });
         // Re-run v2.0 features under new flags.
         document.querySelectorAll('[data-amze-country="1"]').forEach(el => delete el.dataset.amzeCountry);
+        document.querySelectorAll('[data-amze-deal-normalized]').forEach(el => {
+          delete el.dataset.amzeDealNormalized;
+          el.style.display = '';
+          el.removeAttribute('title');
+        });
+        delete document.documentElement.dataset.amzeDealNormalized;
+        document.querySelector('#amze-deal-normalizer')?.remove();
+        document.querySelector('#amze-counterfeit-warn')?.remove();
+        document.querySelector('.amze-seller-lookup')?.remove();
+        document.querySelector('#amze-seller-reveal')?.removeAttribute('data-amze-seller-lookup');
         document.documentElement.toggleAttribute('data-amze-large-text',   !!settings.flags.largeText);
         document.documentElement.toggleAttribute('data-amze-high-contrast', !!settings.flags.highContrast);
         schedule();
@@ -1356,12 +1396,12 @@
   // -------------------------------------------------------------------
 
   function revealSellerPdp() {
-    if (!settings.flags.revealSeller) return;
+    if (!settings.flags.revealSeller && !settings.flags.sellerLookup) return;
     if (!isPdp()) return;
     if (document.getElementById('amze-seller-reveal')) return;
     const merchantEl = document.querySelector('#sellerProfileTriggerId, #merchant-info a');
     if (!merchantEl) return;
-    const name = (merchantEl.textContent || '').trim();
+    const name = normalizeReadableText(merchantEl.textContent);
     const href = merchantEl.href;
     const panel = document.createElement('div');
     panel.id = 'amze-seller-reveal';
@@ -1380,6 +1420,128 @@
     }
     const target = document.querySelector('#titleSection, #centerCol .a-row');
     if (target) target.parentElement.insertBefore(panel, target.nextSibling);
+    enrichSellerIdentity(panel, name);
+  }
+
+  function isAmazonSellerName(name) {
+    return /\bamazon(\.com|\s+retail|\s+services|\s+eu|\s+export)?\b/i.test(name || '');
+  }
+
+  function renderSellerLookupLine(panel, text, tone) {
+    let line = panel.querySelector('.amze-seller-lookup');
+    if (!line) {
+      line = document.createElement('div');
+      line.className = 'amze-seller-lookup';
+      panel.appendChild(line);
+    }
+    line.textContent = text;
+    line.dataset.tone = tone || 'neutral';
+    return line;
+  }
+
+  async function enrichSellerIdentity(panel, sellerName) {
+    if (!settings.flags.sellerLookup) return;
+    if (!panel || panel.dataset.amzeSellerLookup === '1') return;
+    if (!sellerName || isAmazonSellerName(sellerName)) return;
+    panel.dataset.amzeSellerLookup = '1';
+    renderSellerLookupLine(panel, 'OpenCorporates lookup queued...', 'neutral');
+    const res = await sendMessageWithTimeout({ type: 'AMZE_LOOKUP_SELLER', sellerName }, 10000);
+    if (!res || !res.ok) {
+      if (res && res.reason === 'missing_token') {
+        renderSellerLookupLine(panel, 'OpenCorporates lookup needs a local API token in settings.', 'warn');
+      } else {
+        renderSellerLookupLine(panel, 'OpenCorporates lookup unavailable right now.', 'warn');
+      }
+      return;
+    }
+    const result = res.result || {};
+    if (result.noMatch) {
+      renderSellerLookupLine(panel, 'OpenCorporates: no company match found for seller name.', 'warn');
+      return;
+    }
+    const line = renderSellerLookupLine(panel, '', 'ok');
+    appendStrong(line, 'OpenCorporates:');
+    appendText(line, ' ' + (result.companyName || sellerName));
+    const bits = [result.companyType, result.jurisdictionCode, result.country, result.status].filter(Boolean);
+    if (bits.length) appendText(line, ' - ' + bits.join(' / '));
+    if (result.url) {
+      appendText(line, ' ');
+      const a = createTextElement('a', '', 'Company record');
+      a.href = result.url;
+      a.target = '_blank';
+      a.rel = 'noreferrer noopener';
+      line.appendChild(a);
+    }
+  }
+
+  function extractPdpBrand() {
+    const byline = normalizeReadableText(document.querySelector('#bylineInfo')?.textContent || '');
+    if (byline) {
+      const cleaned = byline
+        .replace(/^visit\s+the\s+/i, '')
+        .replace(/\s+store$/i, '')
+        .replace(/^brand\s*:\s*/i, '')
+        .trim();
+      if (cleaned && cleaned.length <= 80) return cleaned;
+    }
+
+    const rows = document.querySelectorAll(
+      '#productDetails_techSpec_section_1 tr, ' +
+      '#productDetails_detailBullets_sections1 tr, ' +
+      '#detailBullets_feature_div li, ' +
+      '#prodDetails tr, table.prodDetTable tr'
+    );
+    for (const row of rows) {
+      const txt = normalizeReadableText(row.textContent || '');
+      const m = txt.match(/\bBrand\s*[:\s]+([A-Za-z0-9][A-Za-z0-9 &'._-]{1,80})/i);
+      if (m) return normalizeReadableText(m[1], 80);
+    }
+    return '';
+  }
+
+  function getPdpSellerName() {
+    const merchantEl = document.querySelector('#sellerProfileTriggerId, #merchant-info a');
+    return normalizeReadableText(merchantEl?.textContent || '');
+  }
+
+  function tokenizeForCompare(value) {
+    return normalizeCompareKey(value)
+      .split(/\s+/)
+      .filter(t => t.length >= 3 && !/^(usa|inc|llc|ltd|the|and|for|shop|store)$/.test(t));
+  }
+
+  function hasTokenOverlap(a, b) {
+    const aa = tokenizeForCompare(a);
+    const bb = new Set(tokenizeForCompare(b));
+    return aa.some(t => bb.has(t));
+  }
+
+  function detectCounterfeitRisk() {
+    if (!settings.flags.counterfeitWarn) return;
+    if (!isPdp()) return;
+    if (document.getElementById('amze-counterfeit-warn')) return;
+    const brand = extractPdpBrand();
+    const seller = getPdpSellerName();
+    if (!brand || !seller || isAmazonSellerName(seller)) return;
+    if (AMAZON_BRANDS_RE.test(brand)) return;
+    if (hasTokenOverlap(brand, seller)) return;
+
+    const sellerKey = normalizeCompareKey(seller);
+    const suspiciousSellerShape = /^[a-z]{5,10}$/.test(sellerKey.replace(/\s+/g, '')) ||
+      /\b(trading|import|export|factory|wholesale|marketplace|direct)\b/i.test(seller);
+
+    const warn = document.createElement('div');
+    warn.id = 'amze-counterfeit-warn';
+    warn.className = 'amze-pdp-badge amze-pdp-warn';
+    warn.setAttribute('role', 'alert');
+    appendStrong(warn, 'Counterfeit risk check:');
+    appendText(warn, ' product brand "' + brand + '" does not resemble seller "' + seller + '".');
+    if (suspiciousSellerShape) {
+      appendText(warn, ' Seller naming also matches a higher-risk marketplace pattern.');
+    }
+    appendText(warn, ' Verify the seller before buying.');
+    const target = document.querySelector('#amze-seller-reveal, #titleSection') || document.querySelector('#centerCol');
+    if (target) target.parentElement.insertBefore(warn, target.nextSibling);
   }
 
   // -------------------------------------------------------------------
@@ -1451,8 +1613,7 @@
     if (!settings.flags.priceHistory) return;
     if (!isPdp()) return;
     const asin = getAsin();
-    const priceEl = document.querySelector('#corePrice_feature_div .a-offscreen, #priceblock_ourprice, #priceblock_dealprice, .a-price .a-offscreen');
-    const price = priceEl ? parseNumber(priceEl.textContent) : NaN;
+    const price = getPdpPrice();
     if (!asin || !isFinite(price)) return;
     let points = await readPriceHistory(asin);
     const last = points[points.length - 1];
@@ -1463,6 +1624,53 @@
       await writePriceHistory(asin, points);
     }
     renderSparkline(asin, points);
+  }
+
+  function findDealBadgeElements() {
+    return Array.from(document.querySelectorAll(
+      '#dealBadge_feature_div, [id*="dealBadge"], .dealBadge, .badge-link, .a-badge, .a-color-price'
+    )).filter(el => /limited\s+time\s+deal|deal|discount|coupon/i.test(el.textContent || ''));
+  }
+
+  function renderDealNormalizerNote(currentPrice, baselinePrice, pointCount) {
+    if (document.getElementById('amze-deal-normalizer')) return;
+    const note = document.createElement('div');
+    note.id = 'amze-deal-normalizer';
+    note.className = 'amze-pdp-badge amze-pdp-warn';
+    appendStrong(note, 'Deal label normalized:');
+    appendText(note, ' current price $' + currentPrice.toFixed(2));
+    appendText(note, ' matches your recent local baseline of $' + baselinePrice.toFixed(2));
+    appendText(note, ' from ' + pointCount + ' price-history points.');
+    const target = document.querySelector('#corePriceDisplay_desktop_feature_div, #price, #centerCol');
+    if (target) target.parentElement.insertBefore(note, target.nextSibling);
+  }
+
+  async function normalizeDealBadges() {
+    if (!settings.flags.dealBadgeNormalizer) return;
+    if (!isPdp()) return;
+    if (document.documentElement.dataset.amzeDealNormalized === '1') return;
+    const badges = findDealBadgeElements();
+    if (!badges.length) return;
+    const asin = getAsin();
+    const currentPrice = getPdpPrice();
+    if (!asin || !isFinite(currentPrice)) return;
+    const points = await readPriceHistory(asin);
+    const cutoff = Date.now() - (30 * 24 * 60 * 60 * 1000);
+    const recent = points
+      .filter(pt => pt && pt.t >= cutoff && Number.isFinite(pt.p))
+      .map(pt => pt.p);
+    if (recent.length < 2) return;
+    const baseline = median(recent);
+    if (!isFinite(baseline) || baseline <= 0) return;
+    const tolerance = Math.max(0.50, baseline * 0.02);
+    if (Math.abs(currentPrice - baseline) > tolerance) return;
+    document.documentElement.dataset.amzeDealNormalized = '1';
+    badges.forEach(badge => {
+      badge.dataset.amzeDealNormalized = '1';
+      badge.style.display = 'none';
+      badge.title = 'AmazonEnhanced hid this deal badge because local price history shows no real discount.';
+    });
+    renderDealNormalizerNote(currentPrice, baseline, recent.length);
   }
 
   function renderSparkline(asin, points) {
@@ -1566,8 +1774,7 @@
     const asin = getAsin();
     if (!asin) return;
 
-    const priceEl = document.querySelector('#corePrice_feature_div .a-offscreen, #priceblock_ourprice, #priceblock_dealprice, .a-price .a-offscreen');
-    const currentPrice = priceEl ? parseNumber(priceEl.textContent) : NaN;
+    const currentPrice = getPdpPrice();
     const titleEl = document.querySelector('#productTitle');
     const productTitle = (titleEl?.textContent || '').trim().slice(0, 100);
 
@@ -1993,8 +2200,10 @@
     try { injectCpuTamer(); } catch (e) {}
     try { annotateCountry(); } catch (e) {}
     try { revealSellerPdp(); } catch (e) {}
+    try { detectCounterfeitRisk(); } catch (e) {}
     try { detectVariationBait(); } catch (e) {}
     try { logAndRenderPrice(); } catch (e) {}
+    try { normalizeDealBadges(); } catch (e) {}
     try { injectPriceAlertUI(); } catch (e) {}
     try { injectCopyLinkButton(); } catch (e) {}
     try { injectOrderExportButton(); } catch (e) {}

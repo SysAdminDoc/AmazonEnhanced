@@ -1328,6 +1328,14 @@ html[data-amze-theme="amoled"] .a-badge-text {
   background: linear-gradient(90deg, rgba(249,226,175,0.06), var(--amze-bg-alt, #181825) 30%);
 }
 
+.amze-seller-lookup {
+  margin-top: 6px;
+  color: var(--amze-text-muted, #9399b2);
+  font-size: 12px;
+}
+.amze-seller-lookup[data-tone="ok"] { color: var(--amze-success, #a6e3a1); }
+.amze-seller-lookup[data-tone="warn"] { color: var(--amze-warn, #f9e2af); }
+
 .amze-badge-country {
   background: var(--amze-bg-raise, #313244);
   color: var(--amze-success, #a6e3a1);

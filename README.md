@@ -5,7 +5,7 @@
 <h1 align="center">AmazonEnhanced</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-2.0.14-89b4fa?style=flat-square" alt="version" />
+  <img src="https://img.shields.io/badge/version-2.0.15-89b4fa?style=flat-square" alt="version" />
   <img src="https://img.shields.io/badge/license-MIT-a6e3a1?style=flat-square" alt="license" />
   <img src="https://img.shields.io/badge/platform-Chrome%20MV3-f9e2af?style=flat-square" alt="platform" />
 </p>
@@ -35,6 +35,8 @@
 ### Transparency & trust
 - **Country-of-origin badge** on PDPs + cached search-tile badges.
 - **Reveal seller.** Actual third-party seller name + link near the product title.
+- **OpenCorporates seller lookup.** Optional, token-backed, rate-limited seller entity lookup.
+- **Counterfeit-risk warning.** Flags brand / marketplace-seller name mismatches.
 - **Variation bait warning.** Flags listings with >3× price spread across variants.
 - **Local price history.** IndexedDB-backed sparkline of every price you've seen on that ASIN. No external API, no Keepa account.
 - **Review-quality scoring.** Polarization, 1-star share, verified-sample ratio, volume.
@@ -42,7 +44,9 @@
 ### Price tools
 - Inline price-per-unit badges (auto $/oz, $/kg, $/ct; locale-safe EU decimal parsing)
 - Suspicious-MSRP flag (>70% above actual)
+- Local deal-badge normalizer when "Limited time deal" matches the 30-day local baseline
 - Affiliate/tracking URL stripper + `/dp/ASIN` canonicalization
+- Price drop alerts from local price history
 - Extra "Sort by" options: *Most reviews*, *Newest*, *Best $/unit*
 
 ### Tools & data portability
@@ -77,8 +81,8 @@
 
 From the [Releases page](https://github.com/SysAdminDoc/AmazonEnhanced/releases):
 
-- `AmazonEnhanced-v2.0.14.zip` — extract, then **Load unpacked** in `chrome://extensions/` (Developer mode).
-- `AmazonEnhanced-v2.0.14.crx` — drag into `chrome://extensions/`.
+- `AmazonEnhanced-v2.0.15.zip` — extract, then **Load unpacked** in `chrome://extensions/` (Developer mode).
+- `AmazonEnhanced-v2.0.15.crx` — secondary package for enterprise/self-host tooling that accepts CRX files.
 
 ## Settings
 
@@ -86,7 +90,7 @@ Toolbar popup with 10 tabs: Ads, Declutter, Reviews, Price, Cart, Trust, Tools, 
 
 ## Privacy
 
-AmazonEnhanced stores settings, local price history, country-of-origin cache entries, watched-order dates, custom brand rules, and allergen terms only in the browser profile. The current release does not send analytics, telemetry, browsing history, shopping data, or affiliate data to external services. The Tools tab includes a local data clear action for price, origin, and watched-order caches.
+AmazonEnhanced stores settings, local price history, seller/origin cache entries, watched-order dates, custom brand rules, OpenCorporates API token, and allergen terms only in the browser profile. It does not send analytics, telemetry, browsing history, shopping data, or affiliate data to external services. If OpenCorporates seller lookup is enabled, seller names are sent to OpenCorporates with your local API token. The Tools tab includes a local data clear action for price, seller/origin, and watched-order caches.
 
 ## Architecture
 
@@ -96,8 +100,8 @@ locales.json         Amazon locale/domain/pattern source of truth
 _locales/en/         Chrome Web Store name/description strings
 early-inject.js      document_start: theme + a11y attributes
 theme.css            document_start: theme + declutter + image-mode + feature chrome
-content.js           document_end: 15 feature modules + MutationObserver
-background.js        Service worker: defaults, late-delivery alarm, tab broadcast
+content.js           document_end: feature runtime + MutationObserver
+background.js        Service worker: defaults, IDB caches, alarms, DNR, tab broadcast
 popup.html/css/js    10-tab settings UI
 icons/               16/32/48/128/512 PNGs
 build/pack-crx.py    CRX3 packer

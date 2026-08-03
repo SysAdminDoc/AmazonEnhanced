@@ -1,5 +1,5 @@
 {
-  "settingsVersion": 1,
+  "settingsVersion": 2,
   "theme": "dark",
   "density": "comfortable",
   "imageMode": "tile",
@@ -48,9 +48,13 @@
     "allergenScan": false,
     "trustBadge": true,
     "hideRufus": true,
-    "priceAlert": false
+    "priceAlert": false,
+    "dealBadgeNormalizer": true,
+    "counterfeitWarn": true,
+    "sellerLookup": false
   },
   "customBrands": "",
   "allergens": "",
+  "openCorporatesToken": "",
   "toastsEnabled": true
 }
