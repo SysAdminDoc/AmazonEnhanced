@@ -17,6 +17,7 @@ Thumbs.db
 # Extension packaging — release artifacts, not tracked in-tree
 *.zip
 *.crx
+*.xpi
 *.pem
 
 # Signing key — NEVER commit. Losing this changes the extension ID.

@@ -1,7 +1,9 @@
-importScripts('price-history-io.js');
-importScripts('wishlist-import.js');
-importScripts('feature-modules.js');
-importScripts('service-worker-warm.js');
+if (typeof importScripts === 'function') {
+  importScripts('price-history-io.js');
+  importScripts('wishlist-import.js');
+  importScripts('feature-modules.js');
+  importScripts('service-worker-warm.js');
+}
 
 /**
  * AmazonEnhanced — background.js (MV3 service worker)

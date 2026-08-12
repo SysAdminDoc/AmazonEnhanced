@@ -7,7 +7,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/version-2.0.15-89b4fa?style=flat-square" alt="version" />
   <img src="https://img.shields.io/badge/license-MIT-a6e3a1?style=flat-square" alt="license" />
-  <img src="https://img.shields.io/badge/platform-Chrome%20MV3-f9e2af?style=flat-square" alt="platform" />
+  <img src="https://img.shields.io/badge/platform-Chrome%20%2B%20Firefox%20MV3-f9e2af?style=flat-square" alt="platform" />
 </p>
 
 <p align="center">
@@ -92,6 +92,9 @@ From the [Releases page](https://github.com/SysAdminDoc/AmazonEnhanced/releases)
 
 - `AmazonEnhanced-v2.0.15.zip` — extract, then **Load unpacked** in `chrome://extensions/` (Developer mode).
 - `AmazonEnhanced-v2.0.15.crx` — secondary package for enterprise/self-host tooling that accepts CRX files.
+- `AmazonEnhanced-v2.0.15.xpi` — Firefox package; install from `about:addons` when using a signed build or a Firefox development profile.
+
+The Firefox package uses a fixed Gecko add-on ID, a background event page fallback, Firefox's `sidebar_action` equivalent for the price-history panel, and Mozilla's `webextension-polyfill` 0.12.0 runtime. Build it with `python build/pack-firefox.py`.
 
 ## Settings
 
@@ -107,6 +110,7 @@ AmazonEnhanced stores settings, local price history, seller/origin cache entries
 manifest.json        MV3 manifest, 20 Amazon locales
 locales.json         Amazon locale/domain/pattern source of truth
 _locales/en/         Chrome Web Store name/description strings
+browser-polyfill.min.js Mozilla browser/browser.* compatibility runtime
 early-inject.js      document_start: theme + a11y attributes
 theme.css            document_start: theme + declutter + image-mode + feature chrome
 content.js           document_end: feature runtime + MutationObserver
@@ -123,6 +127,7 @@ background.js        Service worker: defaults, IDB caches, alarms, DNR, tab broa
 popup.html/css/js    10-tab settings UI
 icons/               16/32/48/128/512 PNGs
 build/pack-crx.py    CRX3 packer
+build/pack-firefox.py XPI packer with Firefox manifest adaptation and 20-locale validation
 ```
 
 Feature helper bundles are injected into the isolated content-script world only after the active settings flags are known; the static content entry point keeps the settings/observer core small. For performance profiling on an Amazon page, inspect `window.__amzeMutationMetrics` in the console. It records full-document versus targeted scan counts and elapsed work, plus queue coalescing statistics; counters reset when the content script reloads.

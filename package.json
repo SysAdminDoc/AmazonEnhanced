@@ -1,0 +1,8 @@
+{
+  "name": "amazonenhanced-build",
+  "private": true,
+  "license": "MIT",
+  "devDependencies": {
+    "webextension-polyfill": "0.12.0"
+  }
+}

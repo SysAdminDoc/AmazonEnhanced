@@ -37,6 +37,7 @@ KEY_PATH = REPO / "build" / "amazonenhanced.pem"
 
 INCLUDE_FILES = [
     "manifest.json",
+    "browser-polyfill.min.js",
     "defaults.json",
     "locales.json",
     "selectors.json",
@@ -66,6 +67,7 @@ INCLUDE_FILES = [
     "popup.js",
     "sidepanel.html",
     "sidepanel.js",
+    "THIRD_PARTY_NOTICES.txt",
 ]
 INCLUDE_DIRS = ["icons", "_locales"]
 

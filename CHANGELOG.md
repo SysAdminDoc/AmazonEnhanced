@@ -18,6 +18,7 @@
 - Added conditional content-module injection: helper bundles such as price history, variant pricing, checkout guards, order exports, and wishlist import load only when their active flags require them.
 - Isolated injected PDP badges, panels, warnings, and controls inside Shadow DOM hosts with extension-owned styles.
 - Added a periodic MV3 service-worker warm-start alarm that refreshes retained data and affiliate-rule state after worker suspension or browser startup.
+- Added a Firefox XPI build with a Gecko ID, event-page background fallback, sidebar mapping, 20-locale validation, and Mozilla's browser API polyfill.
 
 ## [2.0.15] - 2026-06-27
 
