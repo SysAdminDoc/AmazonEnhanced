@@ -13,6 +13,7 @@
     "hideCustomBrands": false,
     "hideCN": false,
     "reviewScore": true,
+    "reviewCorpus": true,
     "pricePerUnit": true,
     "listPriceWarn": true,
     "stripAffiliate": true,

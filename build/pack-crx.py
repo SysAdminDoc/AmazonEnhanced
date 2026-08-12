@@ -49,6 +49,7 @@ INCLUDE_FILES = [
     "session-state.js",
     "shadow-ui.js",
     "shadow-ui.css",
+    "review-corpus.js",
     "unit-price.js",
     "price-history.js",
     "variant-price.js",

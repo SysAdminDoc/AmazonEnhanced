@@ -4,6 +4,7 @@ if (typeof importScripts === 'function') {
   importScripts('feature-modules.js');
   importScripts('service-worker-warm.js');
   importScripts('error-buffer.js');
+  importScripts('review-corpus.js');
 }
 
 const AMZE_ERROR_REPORTER = globalThis.AmzeErrorBuffer && globalThis.AmzeErrorBuffer.createReporter
@@ -98,10 +99,11 @@ async function getAmazonUrlPatterns() {
 }
 
 const DB_NAME = 'AmazonEnhancedDB';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 const PRICE_HISTORY_RETENTION_MS = 365 * 24 * 60 * 60 * 1000;
 const WATCHED_ORDER_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
 const SELLER_LOOKUP_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
+const REVIEW_CORPUS_RETENTION_MS = 365 * 24 * 60 * 60 * 1000;
 const SELLER_LOOKUP_MIN_INTERVAL_MS = 15 * 1000;
 let dbPromise = null;
 let legacyStorageMigrationPromise = null;
@@ -136,6 +138,9 @@ function openDb() {
         }
         if (!db.objectStoreNames.contains('sellerLookups')) {
           db.createObjectStore('sellerLookups', { keyPath: 'key' });
+        }
+        if (!db.objectStoreNames.contains('reviewCorpus')) {
+          db.createObjectStore('reviewCorpus', { keyPath: 'asin' });
         }
       };
       req.onsuccess = () => resolve(req.result);
@@ -181,6 +186,13 @@ async function idbClear(storeName) {
   const db = await openDb();
   const tx = db.transaction(storeName, 'readwrite');
   tx.objectStore(storeName).clear();
+  return idbTransactionDone(tx);
+}
+
+async function idbDelete(storeName, key) {
+  const db = await openDb();
+  const tx = db.transaction(storeName, 'readwrite');
+  tx.objectStore(storeName).delete(key);
   return idbTransactionDone(tx);
 }
 
@@ -251,6 +263,25 @@ async function writePriceHistory(asin, points) {
     asin: key,
     points: Array.isArray(points) ? points : []
   });
+}
+
+async function readReviewCorpus(asin) {
+  const key = normalizeAsin(asin);
+  if (!key || !globalThis.AmzeReviewCorpus) return null;
+  const record = await idbGet('reviewCorpus', key);
+  if (!record || !Array.isArray(record.reviews)) return null;
+  if (record.updatedAt && Date.now() - record.updatedAt > REVIEW_CORPUS_RETENTION_MS) return null;
+  return globalThis.AmzeReviewCorpus.createCorpus(key, record.reviews, record.updatedAt);
+}
+
+async function mergeReviewCorpus(asin, reviews) {
+  const key = normalizeAsin(asin);
+  if (!key || !globalThis.AmzeReviewCorpus) return null;
+  const existing = await idbGet('reviewCorpus', key);
+  const merged = globalThis.AmzeReviewCorpus.mergeReviews(existing && existing.reviews, reviews);
+  const corpus = globalThis.AmzeReviewCorpus.createCorpus(key, merged, Date.now());
+  await idbPut('reviewCorpus', corpus);
+  return corpus;
 }
 
 function normalizeSellerLookupKey(name) {
@@ -544,10 +575,19 @@ async function purgeWatchedOrderRetention(now = Date.now()) {
   if (dirty) await writeWatchedOrders(map);
 }
 
+async function purgeReviewCorpusRetention(now = Date.now()) {
+  const cutoff = now - REVIEW_CORPUS_RETENTION_MS;
+  const entries = await idbGetAll('reviewCorpus');
+  await Promise.all(entries
+    .filter(entry => !entry || !entry.updatedAt || entry.updatedAt < cutoff)
+    .map(entry => entry && entry.asin ? idbDelete('reviewCorpus', entry.asin) : null));
+}
+
 async function purgeRetainedData(now = Date.now()) {
   await Promise.all([
     purgePriceHistoryRetention(now),
-    purgeWatchedOrderRetention(now)
+    purgeWatchedOrderRetention(now),
+    purgeReviewCorpusRetention(now)
   ]);
 }
 
@@ -556,6 +596,7 @@ async function clearLocalDataCaches() {
     idbClear('priceHistory'),
     idbClear('origins'),
     idbClear('sellerLookups'),
+    idbClear('reviewCorpus'),
     chrome.storage.local.remove(['amzePriceHistory', 'amzeOrigins', 'amzeWatchedOrders', 'amzeErrorBuffer'])
   ]);
 }
@@ -1012,10 +1053,26 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return true;
   }
 
+  if (msg.type === 'AMZE_IDB_GET_REVIEW_CORPUS') {
+    (async () => {
+      const corpus = await readReviewCorpus(msg.asin);
+      sendResponse({ ok: true, corpus });
+    })().catch(() => sendResponse({ ok: false, corpus: null }));
+    return true;
+  }
+
+  if (msg.type === 'AMZE_IDB_UPSERT_REVIEW_CORPUS') {
+    (async () => {
+      const corpus = await mergeReviewCorpus(msg.asin, msg.reviews);
+      sendResponse({ ok: !!corpus, corpus });
+    })().catch(() => sendResponse({ ok: false, corpus: null }));
+    return true;
+  }
+
   if (msg.type === 'AMZE_CLEAR_LOCAL_DATA') {
     (async () => {
       await clearLocalDataCaches();
-      sendResponse({ ok: true, cleared: ['priceHistory', 'origins', 'sellerLookups', 'watchedOrders', 'errorBuffer'] });
+      sendResponse({ ok: true, cleared: ['priceHistory', 'origins', 'sellerLookups', 'reviewCorpus', 'watchedOrders', 'errorBuffer'] });
     })().catch(() => sendResponse({ ok: false, cleared: [] }));
     return true;
   }

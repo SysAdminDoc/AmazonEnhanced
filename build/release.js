@@ -13,6 +13,7 @@ const JS_FILES = [
   'error-buffer.js',
   'session-state.js',
   'shadow-ui.js',
+  'review-corpus.js',
   'unit-price.js',
   'price-history.js',
   'variant-price.js',

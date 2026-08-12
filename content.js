@@ -11,6 +11,7 @@
  *   - User-defined brand blocklist (regex-friendly)                      [hideCustomBrands]
  *   - Seller-country hide (China-origin heuristics)                      [hideCN]
  *   - Local review-quality scoring on PDP                                [reviewScore]
+ *   - Local visible-review corpus with top/bottom excerpts              [reviewCorpus]
  *   - Inline price-per-unit computation on result tiles                  [pricePerUnit]
  *   - List-price (MSRP) inflation warning                                [listPriceWarn]
  *   - Affiliate/tracking link stripper                                   [stripAffiliate]
@@ -50,6 +51,7 @@
   const INVOICE_EXPORT = createLazyModuleApi('AmzeInvoiceExport');
   const ZIP_STORE = createLazyModuleApi('AmzeZipStore');
   const RECEIPT_MARKDOWN = createLazyModuleApi('AmzeReceiptMarkdown');
+  const REVIEW_CORPUS = createLazyModuleApi('AmzeReviewCorpus');
 
   // -------------------------------------------------------------------
   // 1. Defaults + storage
@@ -252,6 +254,15 @@
   let wishlistImportItems = [];
   let wishlistImportJobId = '';
   let invoiceExportState = null;
+  let reviewPanelElement = null;
+  let reviewCorpusPanel = null;
+  let reviewCorpusState = {
+    asin: '',
+    loaded: false,
+    corpus: null,
+    visibleSignature: ''
+  };
+  let reviewCorpusRequest = null;
   let mutationQueue = null;
   function getSessionPageKey() {
     const origin = String(location.origin || location.hostname || 'amazon');
@@ -978,8 +989,175 @@
     // Insert above review list or histogram.
     const insertBefore = document.querySelector('#reviewsMedley, #cm_cr-review_list, #reviews-medley-footer') || histogram;
     if (insertBefore && insertBefore.parentElement) {
-      mountPdpElement(panel, insertBefore, 'before');
+      const mounted = mountPdpElement(panel, insertBefore, 'before');
+      if (mounted) {
+        reviewPanelElement = panel;
+        if (reviewCorpusPanel && reviewCorpusPanel !== panel) {
+          reviewCorpusPanel.remove();
+          reviewCorpusPanel = null;
+        }
+        if (reviewCorpusState.corpus) renderReviewCorpus(reviewCorpusState.corpus);
+      }
     }
+  }
+
+  function reviewTextFrom(element, selectors, maxLength) {
+    if (!element) return '';
+    for (const selector of selectors) {
+      const match = element.querySelector(selector);
+      if (!match) continue;
+      const value = normalizeReadableText(match.getAttribute('aria-label') || match.textContent || '', maxLength);
+      if (value) return value;
+    }
+    return '';
+  }
+
+  function parseReviewRating(element) {
+    const value = reviewTextFrom(element, [
+      '[data-hook="review-star-rating"] .a-icon-alt',
+      '[data-hook="review-star-rating"]',
+      '.review-rating .a-icon-alt',
+      '[aria-label*="out of 5" i]',
+      '[title*="out of 5" i]'
+    ], 80);
+    const match = value.match(/([\d.]+)\s*(?:out\s*of\s*5|stars?)/i);
+    if (!match) return null;
+    const rating = Number(match[1]);
+    return typeof REVIEW_CORPUS.normalizeRating === 'function'
+      ? REVIEW_CORPUS.normalizeRating(rating)
+      : (Number.isFinite(rating) && rating >= 1 && rating <= 5 ? rating : null);
+  }
+
+  function collectVisibleReviewCorpus() {
+    if (!isPdp() || typeof REVIEW_CORPUS.normalizeReviews !== 'function') return [];
+    const elements = Array.from(document.querySelectorAll(
+      '[data-hook="review"], [id^="customer_review-"], .review'
+    )).slice(0, REVIEW_CORPUS.MAX_VISIBLE_REVIEWS || 20);
+    const capturedAt = Date.now();
+    return REVIEW_CORPUS.normalizeReviews(elements.map((element, index) => ({
+      id: element.getAttribute('data-review-id') || element.getAttribute('data-csa-c-review-id') || element.id || `visible-${index}`,
+      title: reviewTextFrom(element, ['[data-hook="review-title"]', '.review-title'], 180),
+      text: reviewTextFrom(element, [
+        '[data-hook="review-body"]',
+        '[data-hook="review-collapsed-content"]',
+        '.cr-original-review-text',
+        '.review-text'
+      ], 600),
+      rating: parseReviewRating(element),
+      verified: !!element.querySelector('[data-hook="avp-badge"], .avp-badge-linkless, [data-hook="avp-badge-linkless"]'),
+      author: reviewTextFrom(element, ['[data-hook="review-author"]', '.a-profile-name'], 100),
+      capturedAt
+    })));
+  }
+
+  function reviewCorpusTarget() {
+    return document.querySelector('#reviewsMedley, #cm_cr-review_list, #reviews-medley-footer, #histogramTable, #cm_cr_dp_d_rating_histogram');
+  }
+
+  function ensureReviewCorpusPanel() {
+    if (reviewPanelElement && reviewPanelElement.isConnected) return reviewPanelElement;
+    if (reviewCorpusPanel && reviewCorpusPanel.isConnected) return reviewCorpusPanel;
+    const target = reviewCorpusTarget();
+    if (!target) return null;
+    const panel = document.createElement('div');
+    panel.id = 'amze-review-excerpts';
+    panel.className = 'amze-pdp-badge amze-review-excerpts-panel';
+    const mounted = mountPdpElement(panel, target, 'before');
+    if (!mounted) return null;
+    reviewCorpusPanel = panel;
+    return panel;
+  }
+
+  function renderReviewCorpus(corpus) {
+    if (!corpus || !Array.isArray(corpus.reviews) || !corpus.reviews.length) return;
+    const target = ensureReviewCorpusPanel();
+    if (!target) return;
+    target.querySelector('.amze-review-excerpts')?.remove();
+    const extremes = typeof REVIEW_CORPUS.selectExtremes === 'function'
+      ? REVIEW_CORPUS.selectExtremes(corpus.reviews, REVIEW_CORPUS.MAX_EXCERPTS || 3)
+      : { top: [], bottom: [] };
+    if (!extremes.top.length && !extremes.bottom.length) return;
+
+    const section = document.createElement('section');
+    section.className = 'amze-review-excerpts';
+    section.dataset.signature = typeof REVIEW_CORPUS.signature === 'function'
+      ? REVIEW_CORPUS.signature(corpus.reviews)
+      : '';
+    const heading = createTextElement('h4', '', 'Local review sample');
+    section.appendChild(heading);
+    const note = createTextElement('p', 'amze-review-excerpts-note',
+      `Top and bottom excerpts from ${corpus.reviews.length} visible review${corpus.reviews.length === 1 ? '' : 's'} cached locally for this product.`);
+    section.appendChild(note);
+
+    const renderGroup = (label, reviews) => {
+      if (!reviews.length) return;
+      const group = document.createElement('div');
+      group.className = 'amze-review-excerpt-group';
+      group.appendChild(createTextElement('h5', '', label));
+      reviews.forEach(review => {
+        const card = document.createElement('article');
+        card.className = 'amze-review-excerpt';
+        const rating = review.rating === null ? 'Unrated' : `${Number(review.rating).toFixed(1)}★`;
+        const ratingEl = createTextElement('span', 'amze-review-excerpt-rating', rating);
+        card.appendChild(ratingEl);
+        if (review.title) card.appendChild(createTextElement('strong', 'amze-review-excerpt-title', review.title));
+        card.appendChild(createTextElement('p', 'amze-review-excerpt-body', review.text));
+        const meta = [review.author, review.verified ? 'Verified purchase' : ''].filter(Boolean).join(' · ');
+        if (meta) card.appendChild(createTextElement('small', 'amze-review-excerpt-meta', meta));
+        group.appendChild(card);
+      });
+      section.appendChild(group);
+    };
+
+    renderGroup('Top-rated excerpts', extremes.top);
+    renderGroup('Lowest-rated excerpts', extremes.bottom);
+    target.appendChild(section);
+  }
+
+  function resetReviewCorpusUi(removePanel = false) {
+    if (removePanel) document.querySelector('#amze-review-excerpts')?.remove();
+    reviewPanelElement?.querySelector('.amze-review-excerpts')?.remove();
+    reviewCorpusPanel = null;
+    reviewCorpusState = { asin: '', loaded: false, corpus: null, visibleSignature: '' };
+  }
+
+  function refreshReviewCorpus() {
+    if (!settings.flags.reviewCorpus || !isPdp() || typeof REVIEW_CORPUS.normalizeReviews !== 'function') return;
+    const asin = getAsin();
+    if (!asin) return;
+    if (reviewCorpusState.asin !== asin) {
+      reviewCorpusState = { asin, loaded: false, corpus: null, visibleSignature: '' };
+      reviewCorpusPanel = null;
+    }
+    if (reviewCorpusRequest) return;
+    reviewCorpusRequest = (async () => {
+      if (!reviewCorpusState.loaded) {
+        const stored = await sendMessageWithTimeout({ type: 'AMZE_IDB_GET_REVIEW_CORPUS', asin }, 10000);
+        if (!settings.flags.reviewCorpus || getAsin() !== asin) return;
+        reviewCorpusState.loaded = true;
+        reviewCorpusState.corpus = stored && stored.corpus ? stored.corpus : null;
+        if (reviewCorpusState.corpus) renderReviewCorpus(reviewCorpusState.corpus);
+      }
+      const reviews = collectVisibleReviewCorpus();
+      const signature = typeof REVIEW_CORPUS.signature === 'function' ? REVIEW_CORPUS.signature(reviews) : '';
+      if (!reviews.length || signature === reviewCorpusState.visibleSignature) {
+        if (reviewCorpusState.corpus) renderReviewCorpus(reviewCorpusState.corpus);
+        return;
+      }
+      reviewCorpusState.visibleSignature = signature;
+      const stored = await sendMessageWithTimeout({
+        type: 'AMZE_IDB_UPSERT_REVIEW_CORPUS',
+        asin,
+        reviews
+      }, 10000);
+      if (!settings.flags.reviewCorpus || getAsin() !== asin) return;
+      if (stored && stored.corpus) {
+        reviewCorpusState.corpus = stored.corpus;
+        renderReviewCorpus(stored.corpus);
+      }
+    })().catch(() => {}).finally(() => {
+      reviewCorpusRequest = null;
+    });
   }
 
   // -------------------------------------------------------------------
@@ -1371,6 +1549,11 @@
         document.querySelector('#amze-deal-normalizer')?.remove();
         document.querySelector('#amze-counterfeit-warn')?.remove();
         document.querySelector('#amze-seller-reveal')?.remove();
+        if (!settings.flags.reviewScore) {
+          document.querySelector('#amze-review-panel')?.remove();
+          reviewPanelElement = null;
+        }
+        if (!settings.flags.reviewCorpus) resetReviewCorpusUi(true);
         sparklineRenderState = null;
         document.querySelector('#amze-sparkline')?.remove();
         removeVariantPriceMap();
@@ -3519,6 +3702,7 @@
 
   function runFeaturePack() {
     if (!settings) return;
+    try { refreshReviewCorpus(); } catch (e) {}
     try { autoDeclineWarranty(); } catch (e) {}
     try { forceOneTimePurchase(); } catch (e) {}
     try { autoUncheckDarkPatterns(); } catch (e) {}

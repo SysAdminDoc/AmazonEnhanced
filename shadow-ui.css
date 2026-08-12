@@ -73,6 +73,65 @@
 #amze-review-panel .amze-score-mixed { color: var(--amze-warn, #f9e2af); }
 #amze-review-panel .amze-score-bad { color: var(--amze-danger, #f38ba8); }
 
+.amze-review-excerpts {
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px solid var(--amze-border-soft, #313244);
+}
+.amze-review-excerpts h4,
+.amze-review-excerpt-group h5 {
+  margin: 0;
+  color: var(--amze-text, #cdd6f4);
+  font-weight: 600;
+}
+.amze-review-excerpts h4 { font-size: 13px; }
+.amze-review-excerpt-group { margin-top: 8px; }
+.amze-review-excerpt-group h5 {
+  font-size: 11px;
+  color: var(--amze-text-muted, #9399b2);
+  text-transform: uppercase;
+  letter-spacing: .3px;
+}
+.amze-review-excerpt {
+  position: relative;
+  margin-top: 5px;
+  padding: 7px 8px 7px 40px;
+  border: 1px solid var(--amze-border-soft, #313244);
+  border-radius: 6px;
+  background: var(--amze-bg-raise, #313244);
+}
+.amze-review-excerpt-rating {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  color: var(--amze-warn, #f9e2af);
+  font-size: 11px;
+  font-weight: 700;
+}
+.amze-review-excerpt-title,
+.amze-review-excerpt-body,
+.amze-review-excerpt-meta {
+  display: block;
+}
+.amze-review-excerpt-title { font-size: 11px; }
+.amze-review-excerpt-body {
+  margin: 2px 0 0;
+  color: var(--amze-text-dim, #bac2de);
+  font-size: 11px;
+  line-height: 1.4;
+}
+.amze-review-excerpt-meta {
+  margin-top: 4px;
+  color: var(--amze-text-muted, #9399b2);
+  font-size: 10px;
+}
+.amze-review-excerpts-note {
+  margin: 3px 0 0;
+  color: var(--amze-text-muted, #9399b2);
+  font-size: 10px;
+  line-height: 1.35;
+}
+
 .amze-action-btn {
   display: inline-flex;
   align-items: center;

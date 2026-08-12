@@ -46,6 +46,7 @@
 - **Local price history.** IndexedDB-backed sparkline of every price you've seen on that ASIN, with 90 / 180 / 365-day range controls. No external API, no Keepa account.
 - Price history JSON import/export for moving local history between browser installs; the PDP sparkline exports the full current-ASIN history.
 - **Review-quality scoring.** Polarization, 1-star share, verified-sample ratio, volume.
+- **Visible review excerpts.** Caches up to 20 visible review bodies per ASIN locally and surfaces distinct top-rated and lowest-rated excerpts beside the review analysis.
 
 ### Price tools
 - Inline price-per-unit badges (auto $/oz, $/kg, $/ct; locale-safe EU decimal parsing), including Fresh / Whole Foods product cards
@@ -105,7 +106,7 @@ Toolbar popup with 10 tabs: Ads, Declutter, Reviews, Price, Cart, Trust, Tools, 
 
 ## Privacy
 
-AmazonEnhanced stores settings, local price history, seller/origin cache entries, watched-order dates, the bounded error buffer, custom brand rules, OpenCorporates API token, and allergen terms only in the browser profile. It does not send analytics, telemetry, browsing history, shopping data, or affiliate data to external services. Invoice PDF ZIP export fetches same-origin invoice candidates through the signed-in Amazon page session and assembles the ZIP locally; it does not upload invoices. If OpenCorporates seller lookup is enabled, seller names are sent to OpenCorporates with your local API token. The Tools tab includes local price-history JSON import, a manual local error-report export, and local data-clear actions.
+AmazonEnhanced stores settings, local price history, sampled review excerpts, seller/origin cache entries, watched-order dates, the bounded error buffer, custom brand rules, OpenCorporates API token, and allergen terms only in the browser profile. It does not send analytics, telemetry, browsing history, shopping data, or affiliate data to external services. Invoice PDF ZIP export fetches same-origin invoice candidates through the signed-in Amazon page session and assembles the ZIP locally; it does not upload invoices. If OpenCorporates seller lookup is enabled, seller names are sent to OpenCorporates with your local API token. The Tools tab includes local price-history JSON import, a manual local error-report export, and local data-clear actions.
 
 ## Architecture
 
@@ -121,6 +122,7 @@ feature-modules.js   active-flag-to-bundle map for conditional content injection
 mutation-queue.js    WeakRef-backed debounced mutation roots and profiling counters
 shadow-ui.js         isolated Shadow DOM host lifecycle for injected PDP UI
 shadow-ui.css        isolated styles for Shadow DOM PDP panels and controls
+review-corpus.js     bounded local visible-review normalization and excerpt selection
 error-buffer.js      bounded local runtime-error buffer and report formatter
 session-state.js     bounded chrome.storage.session scan markers per document
 service-worker-warm.js periodic MV3 service-worker wake/alarm helper

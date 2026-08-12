@@ -23,6 +23,7 @@
 - Added an esbuild release target that minifies each extension file independently, preserves dynamic-module boundaries, and emits a deterministic release ZIP.
 - Added a bounded local runtime-error buffer with manual JSON report export and clear controls in the Tools tab.
 - Added bounded `chrome.storage.session` page markers for processed result tiles and scan batches; durable settings and price data remain in their existing stores.
+- Added a bounded per-ASIN visible-review corpus with one-year local retention, top/bottom excerpt selection, IndexedDB clear-data support, and a Reviews-tab toggle.
 
 ## [2.0.15] - 2026-06-27
 
