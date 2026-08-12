@@ -8,6 +8,7 @@
 - Added a PDP variant local-price map for color / size options, backed by the lowest price recorded per ASIN in IndexedDB.
 - Added versioned JSON price-history import in the Tools tab, legacy ASIN-map compatibility, and full current-ASIN JSON export beside the PDP sparkline CSV action.
 - Added an opt-in-by-setting recommended-upgrade skipper for cart and post-add-to-cart prompts, limited to explicit decline actions.
+- Added checkout-only Prime free-trial pre-check handling for 30-day/free-month copy and explicit no-trial alternatives.
 
 ## [2.0.15] - 2026-06-27
 

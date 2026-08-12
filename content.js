@@ -27,6 +27,7 @@
   const VARIANT_PRICE = globalThis.AmzeVariantPrice || {};
   const PRICE_HISTORY_IO = globalThis.AmzePriceHistoryIO || {};
   const UPGRADE_SKIP = globalThis.AmzeUpgradeSkip || {};
+  const PRIME_TRIAL = globalThis.AmzePrimeTrial || {};
 
   // -------------------------------------------------------------------
   // 1. Defaults + storage
@@ -1384,6 +1385,77 @@
   }
 
   // -------------------------------------------------------------------
+  // 12.3c Disable Prime 30-day-trial pre-checks at checkout.
+  // -------------------------------------------------------------------
+
+  function getPrimeChoiceText(control) {
+    const parts = [control.getAttribute('aria-label'), control.getAttribute('title'), control.value, control.textContent];
+    if (control.id) {
+      document.querySelectorAll('label[for]').forEach(label => {
+        if (label.getAttribute('for') === control.id) parts.push(label.textContent);
+      });
+    }
+    const ownLabel = control.closest('label');
+    if (ownLabel) parts.push(ownLabel.textContent);
+    return parts.filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
+  }
+
+  function getPrimeControlScope(control) {
+    return control.closest('fieldset, [role="radiogroup"], [role="group"], .a-box-inner, .a-section') || control.parentElement;
+  }
+
+  function isPrimeTrialControl(control, scope) {
+    const attrs = [control.id, control.name, control.className, control.getAttribute('data-testid'), control.getAttribute('data-feature-name')]
+      .filter(Boolean).join(' ');
+    const text = getPrimeChoiceText(control) + ' ' + attrs + ' ' + (scope?.textContent || '');
+    return typeof PRIME_TRIAL.isPrimeTrialText === 'function'
+      ? PRIME_TRIAL.isPrimeTrialText(text)
+      : (/\bprime\b/i.test(text) && (/\btrial\b/i.test(text) || /\b30\s*[- ]?\s*day/i.test(text)));
+  }
+
+  function isPrimeTrialDecline(control) {
+    const text = getPrimeChoiceText(control);
+    return typeof PRIME_TRIAL.isPrimeTrialDeclineText === 'function'
+      ? PRIME_TRIAL.isPrimeTrialDeclineText(text)
+      : /^(?:no\s*,?\s*thanks|continue\s+without\s+(?:prime|the\s+trial)|not\s+now|decline)$/i.test(text);
+  }
+
+  function disablePrimeTrialPrechecks() {
+    if (!settings.flags.disablePrimeTrial || !isCheckoutPage()) return;
+    const controls = document.querySelectorAll('input[type="checkbox"], input[type="radio"], [role="checkbox"], [role="radio"]');
+    let disabled = 0;
+    controls.forEach(control => {
+      if (control.dataset.amzePrimeTrialDisabled === '1') return;
+      const scope = getPrimeControlScope(control);
+      if (!scope || !isPrimeTrialControl(control, scope)) return;
+      const selected = control.checked || control.getAttribute('aria-checked') === 'true';
+      if (!selected) return;
+
+      if (control.matches('input[type="radio"], [role="radio"]')) {
+        const choices = scope.querySelectorAll('input[type="radio"], [role="radio"]');
+        for (const choice of choices) {
+          if (!isPrimeTrialDecline(choice)) continue;
+          choice.dataset.amzePrimeTrialDisabled = '1';
+          control.dataset.amzePrimeTrialDisabled = '1';
+          try { choice.click(); disabled++; } catch (e) {}
+          break;
+        }
+        return;
+      }
+
+      control.dataset.amzePrimeTrialDisabled = '1';
+      try {
+        // Native click preserves Amazon's input/change handlers and toggles
+        // a checked checkbox off. Custom role=checkbox controls get the same
+        // click opportunity without assuming their implementation details.
+        control.click();
+        disabled++;
+      } catch (e) {}
+    });
+    if (disabled) toast(`Disabled ${disabled} Prime free-trial pre-check${disabled === 1 ? '' : 's'}`);
+  }
+
+  // -------------------------------------------------------------------
   // 12.4 Extra "Sort by" options — inject Review-count, Newest, Best $/unit.
   //      Client-side DOM reorder only; works on search + category pages.
   // -------------------------------------------------------------------
@@ -2607,6 +2679,7 @@
     try { forceOneTimePurchase(); } catch (e) {}
     try { autoUncheckDarkPatterns(); } catch (e) {}
     try { skipRecommendedUpgradePrompts(); } catch (e) {}
+    try { disablePrimeTrialPrechecks(); } catch (e) {}
     try { injectExtraSortOptions(); } catch (e) {}
     try { injectCpuTamer(); } catch (e) {}
     try { annotateCountry(); } catch (e) {}

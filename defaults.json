@@ -33,6 +33,7 @@
     "forceOneTimePurchase": true,
     "autoUncheckDarkPatterns": true,
     "skipRecommendedUpgrade": true,
+    "disablePrimeTrial": true,
     "extraSortOptions": true,
     "cpuTamer": false,
     "countryBadge": true,

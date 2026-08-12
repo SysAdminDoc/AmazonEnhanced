@@ -30,6 +30,7 @@
 ### Cart, checkout & dark patterns
 - **Auto-decline warranty / protection plan.** SquareTrade/Allstate upsell: "No thanks" is selected automatically.
 - **Skip recommended upgrades.** Cart and post-add-to-cart prompts with explicit "No thanks" / "Continue without upgrade" actions are declined automatically.
+- **Disable Prime free-trial pre-checks.** A checked 30-day/free-trial Prime control is cleared at checkout, or an explicit no-trial radio option is selected.
 - **Force one-time purchase.** Detects pre-selected Subscribe & Save radios and switches back.
 - **Auto-uncheck** gift-receipt, share-info, and add-on dark patterns at checkout.
 
