@@ -46,6 +46,7 @@ INCLUDE_FILES = [
     "price-history.js",
     "variant-price.js",
     "price-history-io.js",
+    "upgrade-skip.js",
     "content.js",
     "background.js",
     "popup.html",

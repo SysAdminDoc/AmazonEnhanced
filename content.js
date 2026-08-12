@@ -26,6 +26,7 @@
   const PRICE_HISTORY = globalThis.AmzePriceHistory || {};
   const VARIANT_PRICE = globalThis.AmzeVariantPrice || {};
   const PRICE_HISTORY_IO = globalThis.AmzePriceHistoryIO || {};
+  const UPGRADE_SKIP = globalThis.AmzeUpgradeSkip || {};
 
   // -------------------------------------------------------------------
   // 1. Defaults + storage
@@ -1318,6 +1319,71 @@
   }
 
   // -------------------------------------------------------------------
+  // 12.3b Skip recommended-upgrade prompts in cart / post-ATC flows.
+  //      Only explicit decline actions are eligible; generic Continue or
+  //      recommendation controls are intentionally left untouched.
+  // -------------------------------------------------------------------
+
+  function isUpgradeFlowContext() {
+    if (isCartPage() || isCheckoutPage()) return true;
+    return !!document.querySelector(
+      '#addToCartLayer, #add-to-cart-confirmation, #sw-atc-details-single-container, ' +
+      '#attach-warranty-pane, [data-feature-name*="upgrade" i], [data-csa-c-content-id*="upgrade" i]'
+    );
+  }
+
+  function getUpgradeControlText(control) {
+    return [
+      control.getAttribute('aria-label'),
+      control.getAttribute('title'),
+      control.value,
+      control.textContent
+    ].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
+  }
+
+  function skipRecommendedUpgradePrompts() {
+    if (!settings.flags.skipRecommendedUpgrade || !isUpgradeFlowContext()) return;
+    const promptSelectors = [
+      'div[role="dialog"]',
+      '[id*="upgrade" i]',
+      '[class*="upgrade" i]',
+      '[data-feature-name*="upgrade" i]',
+      '[data-cel-widget*="upgrade" i]',
+      '.a-box',
+      '.a-popover'
+    ].join(',');
+    const prompts = document.querySelectorAll(promptSelectors);
+    const clicked = new Set();
+    let skipped = 0;
+    prompts.forEach(prompt => {
+      const text = (prompt.textContent || '').replace(/\s+/g, ' ').trim();
+      if (!text || text.length > 1600) return;
+      const isPrompt = typeof UPGRADE_SKIP.isRecommendedUpgradePrompt === 'function'
+        ? UPGRADE_SKIP.isRecommendedUpgradePrompt(text)
+        : (/\brecommended\b/i.test(text) && /\bupgrade\b/i.test(text));
+      if (!isPrompt) return;
+      const controls = prompt.querySelectorAll('button, input[type="button"], input[type="submit"], [role="button"], a');
+      for (const control of controls) {
+        if (clicked.has(control) || control.disabled || control.dataset.amzeUpgradeSkipped === '1') continue;
+        const actionText = getUpgradeControlText(control);
+        const safe = typeof UPGRADE_SKIP.isSafeSkipAction === 'function'
+          ? UPGRADE_SKIP.isSafeSkipAction(actionText)
+          : /^(?:no\s*,?\s*thanks|skip(?:\s+upgrade)?|continue\s+without\s+(?:the\s+)?upgrade|not\s+now)$/i.test(actionText);
+        if (!safe) continue;
+        control.dataset.amzeUpgradeSkipped = '1';
+        prompt.dataset.amzeUpgradeSkipped = '1';
+        clicked.add(control);
+        try {
+          control.click();
+          skipped++;
+        } catch (e) {}
+        break;
+      }
+    });
+    if (skipped) toast(`Skipped ${skipped} recommended upgrade${skipped === 1 ? '' : 's'}`);
+  }
+
+  // -------------------------------------------------------------------
   // 12.4 Extra "Sort by" options — inject Review-count, Newest, Best $/unit.
   //      Client-side DOM reorder only; works on search + category pages.
   // -------------------------------------------------------------------
@@ -2540,6 +2606,7 @@
     try { autoDeclineWarranty(); } catch (e) {}
     try { forceOneTimePurchase(); } catch (e) {}
     try { autoUncheckDarkPatterns(); } catch (e) {}
+    try { skipRecommendedUpgradePrompts(); } catch (e) {}
     try { injectExtraSortOptions(); } catch (e) {}
     try { injectCpuTamer(); } catch (e) {}
     try { annotateCountry(); } catch (e) {}

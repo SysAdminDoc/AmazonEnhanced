@@ -32,6 +32,7 @@
     "autoDeclineWarranty": true,
     "forceOneTimePurchase": true,
     "autoUncheckDarkPatterns": true,
+    "skipRecommendedUpgrade": true,
     "extraSortOptions": true,
     "cpuTamer": false,
     "countryBadge": true,
