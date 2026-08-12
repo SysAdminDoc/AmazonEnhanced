@@ -253,6 +253,19 @@
   let wishlistImportJobId = '';
   let invoiceExportState = null;
   let mutationQueue = null;
+  function getSessionPageKey() {
+    const origin = String(location.origin || location.hostname || 'amazon');
+    const path = String(location.pathname || '/');
+    const timeOrigin = typeof performance !== 'undefined' && Number.isFinite(performance.timeOrigin)
+      ? performance.timeOrigin
+      : 'unknown';
+    return `${origin}${path}|${timeOrigin}`;
+  }
+  const AMZE_SESSION_STORAGE = chrome.storage && chrome.storage.session;
+  const AMZE_SESSION_STATE = globalThis.AmzeSessionState && globalThis.AmzeSessionState.createSessionState
+    ? globalThis.AmzeSessionState.createSessionState(AMZE_SESSION_STORAGE, getSessionPageKey())
+    : null;
+  const AMZE_SESSION_READY = AMZE_SESSION_STATE ? AMZE_SESSION_STATE.hydrate() : Promise.resolve();
   const mutationScanMetrics = {
     observerCallbacks: 0,
     mutationRecords: 0,
@@ -267,6 +280,7 @@
     try {
       globalThis.__amzeMutationMetrics = Object.assign({}, mutationScanMetrics, {
         queue: mutationQueue ? mutationQueue.getStats() : null,
+        session: AMZE_SESSION_STATE ? AMZE_SESSION_STATE.snapshot() : null,
         note: 'Compare targetedScanWorkMs with fullScanWorkMs while profiling equivalent page activity.'
       });
     } catch (e) {}
@@ -457,10 +471,30 @@
     return !el || !el.parentNode || !document.contains(el);
   }
 
+  function getResultTileSessionKey(el) {
+    if (!el) return '';
+    const asin = String(el.getAttribute('data-asin') || '').trim().toUpperCase();
+    const widget = String(el.getAttribute('data-cel-widget') || el.id || '').trim();
+    const link = el.querySelector('a[href*="/dp/"], a[href*="/gp/product/"]');
+    const href = link && String(link.href || '').match(/\/(?:dp|gp\/product)\/([A-Z0-9]{10})/i);
+    const identity = asin || (href && href[1] ? href[1].toUpperCase() : '') || widget;
+    if (!identity) return '';
+    // Include a stable widget/id when Amazon exposes one. ASIN-only tiles are
+    // deliberately left to the DOM marker so duplicate placements are safe.
+    if (!widget && !el.id) return '';
+    return `tile:${identity}:${widget || el.id}`;
+  }
+
   function processResultTile(el) {
     if (!el || el.dataset.amzeProcessed) return;
     if (isNodeRemoved(el)) return;
+    const sessionKey = getResultTileSessionKey(el);
+    if (sessionKey && AMZE_SESSION_STATE && AMZE_SESSION_STATE.hasProcessed(sessionKey)) {
+      el.dataset.amzeProcessed = '1';
+      return;
+    }
     el.dataset.amzeProcessed = '1';
+    if (sessionKey && AMZE_SESSION_STATE) AMZE_SESSION_STATE.markProcessed(sessionKey);
 
     const flags = settings.flags;
 
@@ -1225,6 +1259,7 @@
     scanImagesForSmart();
     requestWhiteBackgroundSweep();
     runFeaturePack();
+    if (AMZE_SESSION_STATE) AMZE_SESSION_STATE.markScan('full');
     mutationScanMetrics.fullScanBatches++;
     mutationScanMetrics.fullScanWorkMs += (typeof performance !== 'undefined' ? performance.now() : Date.now()) - started;
     exposeMutationScanMetrics();
@@ -1262,6 +1297,7 @@
     scoreReviews();
     requestWhiteBackgroundSweep();
     runFeaturePack();
+    if (AMZE_SESSION_STATE) AMZE_SESSION_STATE.markScan('targeted');
     mutationScanMetrics.targetedScanBatches++;
     mutationScanMetrics.targetedRootScans += compacted.length;
     mutationScanMetrics.targetedScanWorkMs += (typeof performance !== 'undefined' ? performance.now() : Date.now()) - started;
@@ -1305,6 +1341,7 @@
       if (!msg || !msg.type) return;
       if (msg.type === 'AMZE_SETTINGS_UPDATED') {
         settings = mergeSettings(msg.settings);
+        if (AMZE_SESSION_STATE) AMZE_SESSION_STATE.resetProcessed();
         applyFlagAttributes();
         // Re-scan fresh tiles under new rules.
         document.querySelectorAll('[data-amze-processed]').forEach(el => delete el.dataset.amzeProcessed);
@@ -3534,6 +3571,7 @@
 
   async function boot() {
     try {
+      await AMZE_SESSION_READY;
       await hydrateLocaleFromCatalog();
       await loadSelectorPack();
       DEFAULT_SETTINGS = await loadDefaultSettings();

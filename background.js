@@ -13,6 +13,17 @@ if (AMZE_ERROR_REPORTER && globalThis.AmzeErrorBuffer.attachGlobalListeners) {
   globalThis.AmzeErrorBuffer.attachGlobalListeners(globalThis, AMZE_ERROR_REPORTER, 'background');
 }
 
+function configureSessionStorageAccess() {
+  const session = chrome.storage && chrome.storage.session;
+  if (!session || typeof session.setAccessLevel !== 'function') return;
+  try {
+    const result = session.setAccessLevel({ accessLevel: 'TRUSTED_AND_UNTRUSTED_CONTEXTS' });
+    if (result && typeof result.catch === 'function') result.catch(() => {});
+  } catch (e) {}
+}
+
+configureSessionStorageAccess();
+
 /**
  * AmazonEnhanced — background.js (MV3 service worker)
  *

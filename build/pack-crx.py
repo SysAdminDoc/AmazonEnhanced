@@ -46,6 +46,7 @@ INCLUDE_FILES = [
     "feature-modules.js",
     "service-worker-warm.js",
     "error-buffer.js",
+    "session-state.js",
     "shadow-ui.js",
     "shadow-ui.css",
     "unit-price.js",

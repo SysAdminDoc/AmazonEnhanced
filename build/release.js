@@ -11,6 +11,7 @@ const JS_FILES = [
   'feature-modules.js',
   'service-worker-warm.js',
   'error-buffer.js',
+  'session-state.js',
   'shadow-ui.js',
   'unit-price.js',
   'price-history.js',

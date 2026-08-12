@@ -122,6 +122,7 @@ mutation-queue.js    WeakRef-backed debounced mutation roots and profiling count
 shadow-ui.js         isolated Shadow DOM host lifecycle for injected PDP UI
 shadow-ui.css        isolated styles for Shadow DOM PDP panels and controls
 error-buffer.js      bounded local runtime-error buffer and report formatter
+session-state.js     bounded chrome.storage.session scan markers per document
 service-worker-warm.js periodic MV3 service-worker wake/alarm helper
 wishlist-import.js   JSON parser and bounded ASIN helpers for wishlist import
 invoice-export.js    visible order invoice-link discovery and PDF validation
