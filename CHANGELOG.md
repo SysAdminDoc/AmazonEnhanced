@@ -19,6 +19,7 @@
 - Isolated injected PDP badges, panels, warnings, and controls inside Shadow DOM hosts with extension-owned styles.
 - Added a periodic MV3 service-worker warm-start alarm that refreshes retained data and affiliate-rule state after worker suspension or browser startup.
 - Added a Firefox XPI build with a Gecko ID, event-page background fallback, sidebar mapping, 20-locale validation, and Mozilla's browser API polyfill.
+- Added a Microsoft Edge Add-ons ZIP build with Chromium MV3 validation and documented sideload / Partner Center installation paths.
 
 ## [2.0.15] - 2026-06-27
 

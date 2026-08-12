@@ -94,7 +94,10 @@ From the [Releases page](https://github.com/SysAdminDoc/AmazonEnhanced/releases)
 - `AmazonEnhanced-v2.0.15.crx` — secondary package for enterprise/self-host tooling that accepts CRX files.
 - `AmazonEnhanced-v2.0.15.xpi` — Firefox package; install from `about:addons` when using a signed build or a Firefox development profile.
 
+- `AmazonEnhanced-v2.0.15-edge.zip` — Microsoft Edge Add-ons package; upload this ZIP through Partner Center.
+
 The Firefox package uses a fixed Gecko add-on ID, a background event page fallback, Firefox's `sidebar_action` equivalent for the price-history panel, and Mozilla's `webextension-polyfill` 0.12.0 runtime. Build it with `python build/pack-firefox.py`.
+The Edge package keeps the Chromium MV3 service worker and side panel unchanged. Build it with `python build/pack-edge.py`; for local testing, open `edge://extensions`, enable Developer mode, and choose **Load unpacked** on the repository directory.
 
 ## Settings
 
@@ -128,6 +131,7 @@ popup.html/css/js    10-tab settings UI
 icons/               16/32/48/128/512 PNGs
 build/pack-crx.py    CRX3 packer
 build/pack-firefox.py XPI packer with Firefox manifest adaptation and 20-locale validation
+build/pack-edge.py   Edge Add-ons ZIP packer with MV3 and 20-locale validation
 ```
 
 Feature helper bundles are injected into the isolated content-script world only after the active settings flags are known; the static content entry point keeps the settings/observer core small. For performance profiling on an Amazon page, inspect `window.__amzeMutationMetrics` in the console. It records full-document versus targeted scan counts and elapsed work, plus queue coalescing statistics; counters reset when the content script reloads.
