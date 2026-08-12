@@ -114,6 +114,7 @@ feature-modules.js   active-flag-to-bundle map for conditional content injection
 mutation-queue.js    WeakRef-backed debounced mutation roots and profiling counters
 shadow-ui.js         isolated Shadow DOM host lifecycle for injected PDP UI
 shadow-ui.css        isolated styles for Shadow DOM PDP panels and controls
+service-worker-warm.js periodic MV3 service-worker wake/alarm helper
 wishlist-import.js   JSON parser and bounded ASIN helpers for wishlist import
 invoice-export.js    visible order invoice-link discovery and PDF validation
 zip-store.js         dependency-free store-only ZIP writer

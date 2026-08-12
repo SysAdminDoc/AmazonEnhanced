@@ -43,6 +43,7 @@ INCLUDE_FILES = [
     "early-inject.js",
     "theme.css",
     "feature-modules.js",
+    "service-worker-warm.js",
     "shadow-ui.js",
     "shadow-ui.css",
     "unit-price.js",

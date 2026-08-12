@@ -1,6 +1,7 @@
 importScripts('price-history-io.js');
 importScripts('wishlist-import.js');
 importScripts('feature-modules.js');
+importScripts('service-worker-warm.js');
 
 /**
  * AmazonEnhanced — background.js (MV3 service worker)
@@ -433,7 +434,22 @@ async function syncAffiliateStripRule(enabled) {
   } catch (e) {}
 }
 
+async function warmStartServiceWorker() {
+  const [defaults, stored] = await Promise.all([
+    getDefaultSettings().catch(() => null),
+    chrome.storage.local.get(['amzeSettings'])
+  ]);
+  const settings = defaults
+    ? mergeSettings(defaults, stored.amzeSettings)
+    : stored.amzeSettings;
+  await Promise.all([
+    scheduleRetentionPurge(),
+    syncAffiliateStripRule(!!(settings && settings.flags && settings.flags.stripAffiliate))
+  ]);
+}
+
 chrome.runtime.onInstalled.addListener(async (details) => {
+  globalThis.AmzeWarmStart.scheduleWarmStartAlarm(chrome.alarms);
   const defaults = await getDefaultSettings();
   const { amzeSettings } = await chrome.storage.local.get(['amzeSettings']);
   if (!amzeSettings) {
@@ -602,6 +618,10 @@ async function checkPriceAlerts() {
 
 chrome.alarms.create('amze-late-watch', { periodInMinutes: 60 * 6, delayInMinutes: 5 });
 chrome.alarms.onAlarm.addListener((a) => {
+  if (globalThis.AmzeWarmStart.isWarmStartAlarm(a)) {
+    warmStartServiceWorker().catch(() => {});
+    return;
+  }
   if (a.name === 'amze-late-watch') {
     scheduleRetentionPurge()
       .finally(() => scanLateOrders())
@@ -610,12 +630,14 @@ chrome.alarms.onAlarm.addListener((a) => {
 });
 
 chrome.runtime.onStartup.addListener(async () => {
+  globalThis.AmzeWarmStart.scheduleWarmStartAlarm(chrome.alarms);
   scheduleRetentionPurge();
   // Sync DNR affiliate-strip rule on browser start
   const { amzeSettings } = await chrome.storage.local.get(['amzeSettings']);
   await syncAffiliateStripRule(!!(amzeSettings && amzeSettings.flags && amzeSettings.flags.stripAffiliate));
 });
 
+globalThis.AmzeWarmStart.scheduleWarmStartAlarm(chrome.alarms);
 scheduleRetentionPurge();
 
 // -------------------------------------------------------------------
