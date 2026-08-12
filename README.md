@@ -21,7 +21,7 @@
 ### Ads & sponsored
 - Sponsored-result removal (search pages, PDP carousels, infinite scroll)
 - Optional shade mode (keeps tiles visible but dimmed + outlined)
-- Video-ad and Prime-upsell nag removal
+- Video-ad and Prime-upsell nag removal on Amazon, plus Prime Video self-promotion/ad-break decluttering using the same existing toggles
 - Hero banner / promo strip removal
 
 ### Section declutter
@@ -129,6 +129,7 @@ shadow-ui.css        isolated styles for Shadow DOM PDP panels and controls
 review-corpus.js     bounded local visible-review normalization and excerpt selection
 review-score-kernel.js shared bounded scoring kernel for Amazon and supported retail sites
 cross-site-reviews.js Walmart / Target / Best Buy / Etsy review-panel adapter
+prime-video-declutter.js document-start Prime Video ad/self-promotion suppressor
 error-buffer.js      bounded local runtime-error buffer and report formatter
 session-state.js     bounded chrome.storage.session scan markers per document
 service-worker-warm.js periodic MV3 service-worker wake/alarm helper

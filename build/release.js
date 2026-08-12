@@ -16,6 +16,7 @@ const JS_FILES = [
   'review-corpus.js',
   'review-score-kernel.js',
   'cross-site-reviews.js',
+  'prime-video-declutter.js',
   'unit-price.js',
   'price-history.js',
   'variant-price.js',
