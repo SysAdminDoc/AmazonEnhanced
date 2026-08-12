@@ -5,6 +5,7 @@ if (typeof importScripts === 'function') {
   importScripts('service-worker-warm.js');
   importScripts('error-buffer.js');
   importScripts('review-corpus.js');
+  importScripts('pdp-diff.js');
 }
 
 const AMZE_ERROR_REPORTER = globalThis.AmzeErrorBuffer && globalThis.AmzeErrorBuffer.createReporter
@@ -99,11 +100,13 @@ async function getAmazonUrlPatterns() {
 }
 
 const DB_NAME = 'AmazonEnhancedDB';
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 const PRICE_HISTORY_RETENTION_MS = 365 * 24 * 60 * 60 * 1000;
 const WATCHED_ORDER_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
 const SELLER_LOOKUP_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
 const REVIEW_CORPUS_RETENTION_MS = 365 * 24 * 60 * 60 * 1000;
+const PDP_SNAPSHOT_RETENTION_MS = 365 * 24 * 60 * 60 * 1000;
+const PDP_SNAPSHOT_MAX = 200;
 const SELLER_LOOKUP_MIN_INTERVAL_MS = 15 * 1000;
 let dbPromise = null;
 let legacyStorageMigrationPromise = null;
@@ -141,6 +144,9 @@ function openDb() {
         }
         if (!db.objectStoreNames.contains('reviewCorpus')) {
           db.createObjectStore('reviewCorpus', { keyPath: 'asin' });
+        }
+        if (!db.objectStoreNames.contains('pdpSnapshots')) {
+          db.createObjectStore('pdpSnapshots', { keyPath: 'asin' });
         }
       };
       req.onsuccess = () => resolve(req.result);
@@ -282,6 +288,32 @@ async function mergeReviewCorpus(asin, reviews) {
   const corpus = globalThis.AmzeReviewCorpus.createCorpus(key, merged, Date.now());
   await idbPut('reviewCorpus', corpus);
   return corpus;
+}
+
+async function readPdpSnapshots() {
+  if (!globalThis.AmzePdpDiff) return [];
+  const cutoff = Date.now() - PDP_SNAPSHOT_RETENTION_MS;
+  const entries = await idbGetAll('pdpSnapshots');
+  return entries
+    .map(entry => globalThis.AmzePdpDiff.normalizeSnapshot(entry))
+    .filter(entry => entry && entry.updatedAt >= cutoff)
+    .sort((a, b) => b.updatedAt - a.updatedAt)
+    .slice(0, PDP_SNAPSHOT_MAX);
+}
+
+async function writePdpSnapshot(snapshot) {
+  if (!globalThis.AmzePdpDiff) return [];
+  const normalized = globalThis.AmzePdpDiff.normalizeSnapshot(snapshot);
+  if (!normalized) return [];
+  await idbPut('pdpSnapshots', normalized);
+  const entries = await idbGetAll('pdpSnapshots');
+  const cutoff = Date.now() - PDP_SNAPSHOT_RETENTION_MS;
+  const valid = entries
+    .map(entry => globalThis.AmzePdpDiff.normalizeSnapshot(entry))
+    .filter(entry => entry && entry.updatedAt >= cutoff)
+    .sort((a, b) => b.updatedAt - a.updatedAt);
+  await Promise.all(valid.slice(PDP_SNAPSHOT_MAX).map(entry => idbDelete('pdpSnapshots', entry.asin)));
+  return valid.slice(0, PDP_SNAPSHOT_MAX);
 }
 
 function normalizeSellerLookupKey(name) {
@@ -583,11 +615,27 @@ async function purgeReviewCorpusRetention(now = Date.now()) {
     .map(entry => entry && entry.asin ? idbDelete('reviewCorpus', entry.asin) : null));
 }
 
+async function purgePdpSnapshotRetention(now = Date.now()) {
+  const cutoff = now - PDP_SNAPSHOT_RETENTION_MS;
+  const entries = await idbGetAll('pdpSnapshots');
+  const valid = entries
+    .map(entry => globalThis.AmzePdpDiff && globalThis.AmzePdpDiff.normalizeSnapshot(entry))
+    .filter(entry => entry && entry.updatedAt >= cutoff)
+    .sort((a, b) => b.updatedAt - a.updatedAt);
+  const stale = entries
+    .filter(entry => !entry || !entry.updatedAt || entry.updatedAt < cutoff)
+    .map(entry => entry && entry.asin)
+    .filter(Boolean);
+  const overflow = valid.slice(PDP_SNAPSHOT_MAX).map(entry => entry.asin);
+  await Promise.all([...new Set([...stale, ...overflow])].map(asin => idbDelete('pdpSnapshots', asin)));
+}
+
 async function purgeRetainedData(now = Date.now()) {
   await Promise.all([
     purgePriceHistoryRetention(now),
     purgeWatchedOrderRetention(now),
-    purgeReviewCorpusRetention(now)
+    purgeReviewCorpusRetention(now),
+    purgePdpSnapshotRetention(now)
   ]);
 }
 
@@ -597,6 +645,7 @@ async function clearLocalDataCaches() {
     idbClear('origins'),
     idbClear('sellerLookups'),
     idbClear('reviewCorpus'),
+    idbClear('pdpSnapshots'),
     chrome.storage.local.remove(['amzePriceHistory', 'amzeOrigins', 'amzeWatchedOrders', 'amzeErrorBuffer'])
   ]);
 }
@@ -1069,10 +1118,26 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return true;
   }
 
+  if (msg.type === 'AMZE_IDB_GET_PDP_SNAPSHOTS') {
+    (async () => {
+      const snapshots = await readPdpSnapshots();
+      sendResponse({ ok: true, snapshots });
+    })().catch(() => sendResponse({ ok: false, snapshots: [] }));
+    return true;
+  }
+
+  if (msg.type === 'AMZE_IDB_PUT_PDP_SNAPSHOT') {
+    (async () => {
+      const snapshots = await writePdpSnapshot(msg.snapshot);
+      sendResponse({ ok: snapshots.length > 0, snapshots });
+    })().catch(() => sendResponse({ ok: false, snapshots: [] }));
+    return true;
+  }
+
   if (msg.type === 'AMZE_CLEAR_LOCAL_DATA') {
     (async () => {
       await clearLocalDataCaches();
-      sendResponse({ ok: true, cleared: ['priceHistory', 'origins', 'sellerLookups', 'reviewCorpus', 'watchedOrders', 'errorBuffer'] });
+      sendResponse({ ok: true, cleared: ['priceHistory', 'origins', 'sellerLookups', 'reviewCorpus', 'pdpSnapshots', 'watchedOrders', 'errorBuffer'] });
     })().catch(() => sendResponse({ ok: false, cleared: [] }));
     return true;
   }

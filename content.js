@@ -13,6 +13,7 @@
  *   - Local review-quality scoring on PDP                                [reviewScore]
  *   - Local visible-review corpus with top/bottom excerpts              [reviewCorpus]
  *   - Weighted client-side result sorting                                 [weightedSmartSort]
+ *   - Local side-by-side PDP duplicate/A-B listing diffs                  [pdpDiff]
  *   - Inline price-per-unit computation on result tiles                  [pricePerUnit]
  *   - List-price (MSRP) inflation warning                                [listPriceWarn]
  *   - Affiliate/tracking link stripper                                   [stripAffiliate]
@@ -55,6 +56,7 @@
   const REVIEW_CORPUS = createLazyModuleApi('AmzeReviewCorpus');
   const SMART_SORT = createLazyModuleApi('AmzeSmartSort');
   const REDIRECT_STRIPPER = createLazyModuleApi('AmzeRedirectStripper');
+  const PDP_DIFF = createLazyModuleApi('AmzePdpDiff');
 
   // -------------------------------------------------------------------
   // 1. Defaults + storage
@@ -276,6 +278,9 @@
   };
   let smartSortActive = false;
   let attributionClickListenerAttached = false;
+  let pdpDiffPanel = null;
+  let pdpDiffRequest = null;
+  let pdpDiffState = { asin: '', signature: '' };
   let mutationQueue = null;
   function getSessionPageKey() {
     const origin = String(location.origin || location.hostname || 'amazon');
@@ -1620,6 +1625,7 @@
           smartSortActive = false;
           smartSortWeights = Object.assign({}, SMART_SORT.DEFAULT_WEIGHTS || smartSortWeights);
         }
+        if (!settings.flags.pdpDiff) removePdpDiff();
         sparklineRenderState = null;
         document.querySelector('#amze-sparkline')?.remove();
         removeVariantPriceMap();
@@ -2830,6 +2836,154 @@
     variantPriceMapState = { signature };
   }
 
+  function readPdpSnapshotText(selectors, maxLength = 180) {
+    for (const selector of selectors) {
+      const node = document.querySelector(selector);
+      if (!node) continue;
+      const value = normalizeReadableText(node.getAttribute('aria-label') || node.textContent || '', maxLength);
+      if (value) return value;
+    }
+    return '';
+  }
+
+  function getSelectedPdpVariantLabel() {
+    const labels = [];
+    document.querySelectorAll(VARIATION_GROUP_SELECTORS).forEach(group => {
+      const selected = group.querySelector(
+        '.a-button-selected, .a-button-selected .a-button-text, [aria-checked="true"], [aria-selected="true"], .swatchSelect'
+      );
+      if (!selected) return;
+      labels.push(variantOptionLabel(selected, variationGroupLabel(group)));
+    });
+    return labels.join(' / ');
+  }
+
+  function collectPdpSnapshot() {
+    if (!isPdp() || typeof PDP_DIFF.normalizeSnapshot !== 'function') return null;
+    const asin = getAsin();
+    const title = normalizeReadableText(document.querySelector('#productTitle')?.textContent || '', 220);
+    const price = getPdpPrice();
+    const quantity = extractQuantity(title);
+    return PDP_DIFF.normalizeSnapshot({
+      asin,
+      title,
+      brand: typeof extractPdpBrand === 'function' ? extractPdpBrand() : '',
+      price: Number.isFinite(price) ? price : null,
+      unitPrice: quantity && Number.isFinite(price) && quantity.qty > 0 ? price / quantity.qty : null,
+      seller: typeof getPdpSellerName === 'function' ? getPdpSellerName() : '',
+      availability: readPdpSnapshotText(['#availability', '#availability_feature_div', '#outOfStock'], 120),
+      shipping: readPdpSnapshotText([
+        '#deliveryBlockMessage',
+        '#mir-layout-DELIVERY_BLOCK-slot-PRIMARY_DELIVERY_MESSAGE_LARGE',
+        '#delivery-message',
+        '[data-csa-c-delivery-time]'
+      ], 180),
+      variant: getSelectedPdpVariantLabel(),
+      updatedAt: Date.now()
+    });
+  }
+
+  function removePdpDiff() {
+    pdpDiffRequest = null;
+    pdpDiffState = { asin: '', signature: '' };
+    pdpDiffPanel = null;
+    document.getElementById('amze-pdp-diff')?.remove();
+  }
+
+  function renderPdpDiff(snapshot, candidates) {
+    const target = document.querySelector('#corePriceDisplay_desktop_feature_div, #price, #centerCol');
+    if (!target || !candidates.length) {
+      removePdpDiff();
+      return;
+    }
+    document.getElementById('amze-pdp-diff')?.remove();
+    const panel = document.createElement('section');
+    panel.id = 'amze-pdp-diff';
+    panel.className = 'amze-pdp-badge amze-pdp-diff';
+    panel.setAttribute('aria-labelledby', 'amze-pdp-diff-title');
+    const heading = createTextElement('h3', '', 'Local PDP comparison');
+    heading.id = 'amze-pdp-diff-title';
+    panel.appendChild(heading);
+    panel.appendChild(createTextElement('p', 'amze-pdp-diff-note',
+      'Compares this listing with previously visited listings whose title and brand overlap. No other listing is fetched.'));
+
+    const choiceLabel = createTextElement('label', 'amze-pdp-diff-choice', 'Compare with:');
+    const select = document.createElement('select');
+    select.setAttribute('aria-label', 'Choose a previously visited matching listing');
+    candidates.forEach((candidate, index) => {
+      const option = document.createElement('option');
+      option.value = String(index);
+      const price = candidate.price === null ? 'price not recorded' : '$' + candidate.price.toFixed(2);
+      option.textContent = `${candidate.title || candidate.asin} · ${candidate.asin} · ${price}`;
+      select.appendChild(option);
+    });
+    choiceLabel.appendChild(select);
+    panel.appendChild(choiceLabel);
+
+    const body = document.createElement('div');
+    body.className = 'amze-pdp-diff-body';
+    const renderRows = candidate => {
+      body.replaceChildren();
+      const columns = document.createElement('div');
+      columns.className = 'amze-pdp-diff-columns';
+      columns.appendChild(createTextElement('div', 'amze-pdp-diff-column-title', 'Current listing'));
+      columns.appendChild(createTextElement('div', 'amze-pdp-diff-column-title', `Previously visited · ${candidate.asin}`));
+      body.appendChild(columns);
+      const table = document.createElement('table');
+      table.className = 'amze-pdp-diff-table';
+      table.setAttribute('aria-label', 'Side-by-side PDP listing differences');
+      const rows = typeof PDP_DIFF.diffSnapshots === 'function' ? PDP_DIFF.diffSnapshots(snapshot, candidate) : [];
+      rows.forEach(row => {
+        const tr = document.createElement('tr');
+        if (row.changed) tr.className = 'amze-pdp-diff-changed';
+        const label = document.createElement('th');
+        label.scope = 'row';
+        label.textContent = row.label;
+        const left = document.createElement('td');
+        left.textContent = row.left;
+        const right = document.createElement('td');
+        right.textContent = row.right;
+        tr.append(label, left, right);
+        table.appendChild(tr);
+      });
+      body.appendChild(table);
+      body.appendChild(createTextElement('p', 'amze-pdp-diff-note',
+        `Snapshot recorded ${new Date(candidate.updatedAt).toLocaleDateString()} in this browser.`));
+    };
+    select.addEventListener('change', () => renderRows(candidates[Number(select.value)] || candidates[0]));
+    renderRows(candidates[0]);
+    panel.appendChild(body);
+    const mounted = mountPdpElement(panel, target, 'after');
+    if (mounted) pdpDiffPanel = panel;
+  }
+
+  async function refreshPdpDiff() {
+    if (!settings.flags.pdpDiff || !isPdp() || typeof PDP_DIFF.findDuplicateCandidates !== 'function') {
+      removePdpDiff();
+      return;
+    }
+    if (pdpDiffRequest) return;
+    const snapshot = collectPdpSnapshot();
+    if (!snapshot) return;
+    const asin = snapshot.asin;
+    pdpDiffRequest = (async () => {
+      const response = await sendMessageWithTimeout({ type: 'AMZE_IDB_PUT_PDP_SNAPSHOT', snapshot }, 10000);
+      if (!settings.flags.pdpDiff || getAsin() !== asin) return;
+      const snapshots = response && Array.isArray(response.snapshots) ? response.snapshots : [];
+      const candidates = PDP_DIFF.findDuplicateCandidates(snapshot, snapshots);
+      const signature = `${asin}|${candidates.map(candidate => `${candidate.asin}:${candidate.updatedAt}:${candidate.price}`).join('|')}`;
+      if (!candidates.length) {
+        removePdpDiff();
+        return;
+      }
+      if (pdpDiffState.asin === asin && pdpDiffState.signature === signature && pdpDiffPanel?.isConnected) return;
+      pdpDiffState = { asin, signature };
+      renderPdpDiff(snapshot, candidates);
+    })().catch(() => {}).finally(() => {
+      pdpDiffRequest = null;
+    });
+  }
+
   // -------------------------------------------------------------------
   // 12.9 Local price history sparkline
   // -------------------------------------------------------------------
@@ -3919,6 +4073,7 @@
     if (!settings) return;
     try { refreshReviewCorpus(); } catch (e) {}
     try { injectWeightedSmartSort(); } catch (e) {}
+    try { refreshPdpDiff(); } catch (e) {}
     try { autoDeclineWarranty(); } catch (e) {}
     try { forceOneTimePurchase(); } catch (e) {}
     try { autoUncheckDarkPatterns(); } catch (e) {}

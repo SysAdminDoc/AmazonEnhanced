@@ -11,6 +11,7 @@
     { flag: 'dealBadgeNormalizer', files: ['price-history.js'] },
     { flag: 'stripAffiliate', files: ['redirect-stripper.js'] },
     { flag: 'variantPriceMap', files: ['variant-price.js'] },
+    { flag: 'pdpDiff', files: ['pdp-diff.js'] },
     { flag: 'skipRecommendedUpgrade', files: ['upgrade-skip.js'] },
     { flag: 'disablePrimeTrial', files: ['prime-trial.js'] },
     { flag: 'warnShippingChange', files: ['shipping-diff.js'] },

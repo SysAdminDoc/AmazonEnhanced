@@ -28,6 +28,7 @@
 - Added safe Honey and common attribution-redirect unwrapping for Amazon-target links, including capture-phase click and middle-click navigation handling.
 - Added the shared review-scoring kernel and visible-review panels for Walmart, Target, Best Buy, and Etsy product pages, with site-scoped selectors and local-only processing.
 - Added a Prime Video document-start declutter adapter that reuses the existing video-ad, Prime-nag, banner, and sponsored-content flags for self-promotion and ad-break overlays.
+- Added local PDP snapshots and a side-by-side duplicate/A-B listing diff view, including bounded retention, clear-data support, title/brand matching, and changed-field highlighting.
 
 ## [2.0.15] - 2026-06-27
 

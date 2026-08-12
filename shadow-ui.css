@@ -164,6 +164,16 @@
 .amze-variant-price-table tbody td { color: var(--amze-success, #a6e3a1); font-weight: 600; }
 .amze-variant-price-table .amze-variant-current { background: rgba(137,180,250,.08); }
 .amze-variant-price-table .amze-variant-no-history { color: var(--amze-text-muted, #9399b2); font-weight: 400; }
+.amze-pdp-diff-note { margin: 4px 0; color: var(--amze-text-muted, #9399b2); font-size: 10px; line-height: 1.35; }
+.amze-pdp-diff-choice { display: flex; align-items: center; gap: 7px; margin-top: 7px; color: var(--amze-text-muted, #9399b2); font-size: 11px; }
+.amze-pdp-diff-choice select { min-width: 0; flex: 1; padding: 3px 5px; border: 1px solid var(--amze-border, #45475a); border-radius: 4px; background: var(--amze-bg-raise, #313244); color: var(--amze-text, #cdd6f4); font-size: 11px; }
+.amze-pdp-diff-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+.amze-pdp-diff-column-title { color: var(--amze-text-muted, #9399b2); font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .25px; }
+.amze-pdp-diff-table { width: 100%; border-collapse: collapse; margin-top: 4px; font-size: 11px; }
+.amze-pdp-diff-table th, .amze-pdp-diff-table td { padding: 4px 5px; border-bottom: 1px solid var(--amze-border-soft, #313244); text-align: left; vertical-align: top; }
+.amze-pdp-diff-table th { width: 22%; color: var(--amze-text-muted, #9399b2); font-weight: 500; }
+.amze-pdp-diff-table td { width: 39%; color: var(--amze-text-dim, #bac2de); overflow-wrap: anywhere; }
+.amze-pdp-diff-table .amze-pdp-diff-changed td { color: var(--amze-warn, #f9e2af); font-weight: 600; }
 .amze-return-reasons { margin: 5px 0 0 18px; padding: 0; }
 .amze-return-reasons li { margin: 2px 0; }
 

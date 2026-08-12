@@ -27,6 +27,7 @@ FIREFOX_BACKGROUND_SCRIPTS = [
     "feature-modules.js",
     "service-worker-warm.js",
     "error-buffer.js",
+    "pdp-diff.js",
     "background.js",
 ]
 

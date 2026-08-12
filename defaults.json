@@ -44,6 +44,7 @@
     "revealSeller": true,
     "variationBait": true,
     "variantPriceMap": true,
+    "pdpDiff": true,
     "priceHistory": true,
     "copyCleanLink": true,
     "orderExport": true,

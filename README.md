@@ -43,6 +43,7 @@
 - **Counterfeit-risk warning.** Flags brand / marketplace-seller name mismatches.
 - **Variation bait warning.** Flags listings with >3× price spread across variants.
 - **Variant local price map.** Shows every color / size option with its lowest price seen in this browser.
+- **Local PDP diff view.** Stores a bounded snapshot of visited PDPs and compares matching duplicate/A-B listings side by side without fetching another product page.
 - **Local price history.** IndexedDB-backed sparkline of every price you've seen on that ASIN, with 90 / 180 / 365-day range controls. No external API, no Keepa account.
 - Price history JSON import/export for moving local history between browser installs; the PDP sparkline exports the full current-ASIN history.
 - **Review-quality scoring.** Polarization, 1-star share, verified-sample ratio, volume.
@@ -108,7 +109,7 @@ Toolbar popup with 10 tabs: Ads, Declutter, Reviews, Price, Cart, Trust, Tools, 
 
 ## Privacy
 
-AmazonEnhanced stores settings, local price history, sampled review excerpts, seller/origin cache entries, watched-order dates, the bounded error buffer, custom brand rules, OpenCorporates API token, and allergen terms only in the browser profile. It does not send analytics, telemetry, browsing history, shopping data, or affiliate data to external services. Invoice PDF ZIP export fetches same-origin invoice candidates through the signed-in Amazon page session and assembles the ZIP locally; it does not upload invoices. If OpenCorporates seller lookup is enabled, seller names are sent to OpenCorporates with your local API token. The Tools tab includes local price-history JSON import, a manual local error-report export, and local data-clear actions.
+AmazonEnhanced stores settings, local price history, sampled review excerpts, bounded PDP snapshots, seller/origin cache entries, watched-order dates, the bounded error buffer, custom brand rules, OpenCorporates API token, and allergen terms only in the browser profile. It does not send analytics, telemetry, browsing history, shopping data, or affiliate data to external services. Invoice PDF ZIP export fetches same-origin invoice candidates through the signed-in Amazon page session and assembles the ZIP locally; it does not upload invoices. If OpenCorporates seller lookup is enabled, seller names are sent to OpenCorporates with your local API token. The Tools tab includes local price-history JSON import, a manual local error-report export, and local data-clear actions.
 
 ## Architecture
 
@@ -122,6 +123,7 @@ theme.css            document_start: theme + declutter + image-mode + feature ch
 content.js           document_end: feature runtime + MutationObserver
 feature-modules.js   active-flag-to-bundle map for conditional content injection
 smart-sort.js        bounded weighted ranking kernel for visible search results
+pdp-diff.js          bounded PDP snapshot normalization and duplicate matching
 redirect-stripper.js safe Amazon-target extraction from Honey/attribution redirect links
 mutation-queue.js    WeakRef-backed debounced mutation roots and profiling counters
 shadow-ui.js         isolated Shadow DOM host lifecycle for injected PDP UI
