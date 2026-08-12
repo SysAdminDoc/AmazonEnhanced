@@ -111,14 +111,14 @@
         "*://*.amazon.ae/*",
         "*://*.amazon.eg/*"
       ],
-      "js": ["feature-modules.js", "mutation-queue.js", "content.js"],
+      "js": ["feature-modules.js", "mutation-queue.js", "shadow-ui.js", "content.js"],
       "run_at": "document_end",
       "all_frames": false
     }
   ],
   "web_accessible_resources": [
     {
-      "resources": ["icons/*", "defaults.json", "locales.json", "selectors.json"],
+      "resources": ["icons/*", "defaults.json", "locales.json", "selectors.json", "shadow-ui.css"],
       "matches": [
         "*://*.amazon.com/*",
         "*://*.amazon.co.uk/*",

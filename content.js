@@ -214,6 +214,19 @@
     return btn;
   }
 
+  function mountPdpElement(element, target, position = 'after') {
+    if (!element || !target) return null;
+    if (globalThis.AmzeShadowUI && typeof globalThis.AmzeShadowUI.mountElement === 'function') {
+      return globalThis.AmzeShadowUI.mountElement(element, target, position);
+    }
+    if (position === 'append') {
+      target.appendChild(element);
+    } else if (target.parentElement) {
+      target.parentElement.insertBefore(element, position === 'before' ? target : target.nextSibling);
+    }
+    return { host: element, element };
+  }
+
   function debounce(fn, wait) {
     let t;
     return function () {
@@ -924,7 +937,7 @@
     // Insert above review list or histogram.
     const insertBefore = document.querySelector('#reviewsMedley, #cm_cr-review_list, #reviews-medley-footer') || histogram;
     if (insertBefore && insertBefore.parentElement) {
-      insertBefore.parentElement.insertBefore(panel, insertBefore);
+      mountPdpElement(panel, insertBefore, 'before');
     }
   }
 
@@ -1313,8 +1326,7 @@
         delete document.documentElement.dataset.amzeDealNormalized;
         document.querySelector('#amze-deal-normalizer')?.remove();
         document.querySelector('#amze-counterfeit-warn')?.remove();
-        document.querySelector('.amze-seller-lookup')?.remove();
-        document.querySelector('#amze-seller-reveal')?.removeAttribute('data-amze-seller-lookup');
+        document.querySelector('#amze-seller-reveal')?.remove();
         sparklineRenderState = null;
         document.querySelector('#amze-sparkline')?.remove();
         removeVariantPriceMap();
@@ -1706,7 +1718,13 @@
     });
     appendText(warning, ' Verify the shipping choice before placing the order.');
     const target = document.querySelector('#shippingOptionForm, #shipping-options, #deliveryOptions, main, #centerCol');
-    if (target) target.insertBefore(warning, target.firstChild);
+    if (target) {
+      const first = target.firstChild;
+      if (first) mountPdpElement(warning, first, 'before');
+      else mountPdpElement(warning, target, 'append');
+    }
+    const mounted = document.getElementById('amze-shipping-change-warn');
+    if (mounted) mounted.dataset.messageKey = messageKey;
   }
 
   function inspectShippingChange() {
@@ -1799,7 +1817,7 @@
       appendText(warning, ' Amazon did not expose a reason breakdown on this page.');
     }
     const target = document.querySelector('#titleSection, #centerCol, #productFactsDesktopExpander') || container;
-    if (target.parentElement) target.parentElement.insertBefore(warning, target.nextSibling);
+    if (target) mountPdpElement(warning, target, 'after');
   }
 
   function detectFrequentlyReturnedItem() {
@@ -1974,7 +1992,7 @@
     badge.setAttribute('aria-label', 'Country of Origin: ' + country);
     appendStrong(badge, 'Country of Origin:');
     appendText(badge, ' ' + country);
-    title.parentElement.insertBefore(badge, title.nextSibling);
+    mountPdpElement(badge, title, 'after');
   }
 
   // -------------------------------------------------------------------
@@ -2005,7 +2023,7 @@
       panel.appendChild(link);
     }
     const target = document.querySelector('#titleSection, #centerCol .a-row');
-    if (target) target.parentElement.insertBefore(panel, target.nextSibling);
+    if (target) mountPdpElement(panel, target, 'after');
     enrichSellerIdentity(panel, name);
   }
 
@@ -2127,7 +2145,7 @@
     }
     appendText(warn, ' Verify the seller before buying.');
     const target = document.querySelector('#amze-seller-reveal, #titleSection') || document.querySelector('#centerCol');
-    if (target) target.parentElement.insertBefore(warn, target.nextSibling);
+    if (target) mountPdpElement(warn, target, 'after');
   }
 
   // -------------------------------------------------------------------
@@ -2175,7 +2193,11 @@
       appendStrong(warn, max.toFixed(2));
       appendText(warn, ` (${ratio.toFixed(1)}× spread). Reviews may apply to very different products.`);
       const target = document.querySelector('#titleSection') || document.querySelector('#centerCol');
-      if (target) target.insertBefore(warn, target.firstChild);
+      if (target) {
+        const first = target.firstChild;
+        if (first) mountPdpElement(warn, first, 'before');
+        else mountPdpElement(warn, target, 'append');
+      }
     }
   }
 
@@ -2337,7 +2359,7 @@
     panel.appendChild(table);
 
     const target = variantPriceMapTarget();
-    if (target && target.parentElement) target.parentElement.insertBefore(panel, target.nextSibling);
+    if (target) mountPdpElement(panel, target, 'after');
     return panel;
   }
 
@@ -2435,7 +2457,7 @@
     appendText(note, ' matches your recent local baseline of $' + baselinePrice.toFixed(2));
     appendText(note, ' from ' + pointCount + ' price-history points.');
     const target = document.querySelector('#corePriceDisplay_desktop_feature_div, #price, #centerCol');
-    if (target) target.parentElement.insertBefore(note, target.nextSibling);
+    if (target) mountPdpElement(note, target, 'after');
   }
 
   async function normalizeDealBadges() {
@@ -2595,7 +2617,7 @@
     panel.appendChild(exportRow);
 
     const target = document.querySelector('#corePriceDisplay_desktop_feature_div, #price, #centerCol');
-    if (target) target.parentElement.insertBefore(panel, target.nextSibling);
+    if (target) mountPdpElement(panel, target, 'after');
   }
 
   // -------------------------------------------------------------------
@@ -2699,7 +2721,7 @@
     panel.appendChild(status);
 
     const target = document.querySelector('#amze-sparkline, #corePriceDisplay_desktop_feature_div, #price, #centerCol');
-    if (target) target.parentElement.insertBefore(panel, target.nextSibling);
+    if (target) mountPdpElement(panel, target, 'after');
   }
 
   // -------------------------------------------------------------------
@@ -2737,7 +2759,7 @@
         ta.remove();
       }
     });
-    host.appendChild(btn);
+    mountPdpElement(btn, host, 'append');
   }
 
   // -------------------------------------------------------------------
@@ -3440,7 +3462,11 @@
       warn.appendChild(chip);
     });
     const target = document.querySelector('#titleSection') || document.querySelector('#centerCol');
-    if (target) target.insertBefore(warn, target.firstChild);
+    if (target) {
+      const first = target.firstChild;
+      if (first) mountPdpElement(warn, first, 'before');
+      else mountPdpElement(warn, target, 'append');
+    }
   }
 
   // -------------------------------------------------------------------
