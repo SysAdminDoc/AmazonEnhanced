@@ -25,6 +25,7 @@
   const UNIT_PRICE = globalThis.AmzeUnitPrice || {};
   const PRICE_HISTORY = globalThis.AmzePriceHistory || {};
   const VARIANT_PRICE = globalThis.AmzeVariantPrice || {};
+  const PRICE_HISTORY_IO = globalThis.AmzePriceHistoryIO || {};
 
   // -------------------------------------------------------------------
   // 1. Defaults + storage
@@ -2088,6 +2089,18 @@
       toast('Exported ' + visiblePoints.length + ' price points from the last ' + rangeDays + ' days');
     });
     exportRow.appendChild(csvBtn);
+    const jsonBtn = createActionButton('amze-sparkline-json', 'Export JSON', 'Export full local price history as JSON for ' + asin);
+    jsonBtn.style.fontSize = '10px';
+    jsonBtn.style.padding = '3px 8px';
+    jsonBtn.addEventListener('click', () => {
+      const payload = typeof PRICE_HISTORY_IO.serializePriceHistory === 'function'
+        ? PRICE_HISTORY_IO.serializePriceHistory([{ asin, points }])
+        : JSON.stringify({ format: 'AmazonEnhanced price history', version: 1, exportedAt: Date.now(), entries: [{ asin, points }] }, null, 2);
+      const blob = new Blob([payload], { type: 'application/json' });
+      downloadBlob(blob, `amazon-price-history-${asin}-${Date.now()}.json`);
+      toast('Exported full JSON history for ' + asin);
+    });
+    exportRow.appendChild(jsonBtn);
     panel.appendChild(exportRow);
 
     const target = document.querySelector('#corePriceDisplay_desktop_feature_div, #price, #centerCol');

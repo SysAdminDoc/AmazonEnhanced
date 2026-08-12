@@ -261,6 +261,11 @@
     <p>AmazonEnhanced stores settings, price history, seller/origin caches, watched-order dates, custom brand rules, and allergen terms locally in this browser profile. It sends no analytics, telemetry, or shopping data to external services. If OpenCorporates seller lookup is enabled, seller names are sent to OpenCorporates using your local API token.</p>
   </div>
   <div class="amze-data-actions">
+    <input id="amze-price-history-import-file" type="file" accept=".json,application/json" hidden>
+    <button id="amze-import-price-history" type="button" class="amze-btn">Import price history JSON</button>
+    <span id="amze-import-status" role="status" aria-live="polite"></span>
+  </div>
+  <div class="amze-data-actions">
     <button id="amze-clear-data" type="button" class="amze-btn amze-btn-danger">Clear local data</button>
     <span id="amze-clear-status" role="status" aria-live="polite"></span>
   </div>
@@ -344,6 +349,7 @@
   <a href="https://github.com/SysAdminDoc/AmazonEnhanced" target="_blank" rel="noreferrer noopener">GitHub</a>
 </footer>
 
+<script src="price-history-io.js"></script>
 <script src="popup.js"></script>
 </body>
 </html>

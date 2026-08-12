@@ -1,3 +1,5 @@
+importScripts('price-history-io.js');
+
 /**
  * AmazonEnhanced — background.js (MV3 service worker)
  *
@@ -642,6 +644,17 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       const entries = await idbGetAll('priceHistory');
       sendResponse({ ok: true, entries: entries || [] });
     })().catch(() => sendResponse({ ok: false, entries: [] }));
+    return true;
+  }
+
+  if (msg.type === 'AMZE_IDB_MERGE_PRICE_HISTORY') {
+    (async () => {
+      await migrateLegacyStorageToIndexedDb();
+      const existing = await idbGetAll('priceHistory');
+      const merged = globalThis.AmzePriceHistoryIO.mergeHistoryEntries(existing, msg.entries);
+      for (const entry of merged) await idbPut('priceHistory', entry);
+      sendResponse({ ok: true, imported: merged.length });
+    })().catch(() => sendResponse({ ok: false, imported: 0 }));
     return true;
   }
 

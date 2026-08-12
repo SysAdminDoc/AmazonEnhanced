@@ -9,6 +9,7 @@
   let DEFAULT_SETTINGS = null;
   let current = null;
   let clearConfirmTimer = null;
+  const PRICE_HISTORY_IO = globalThis.AmzePriceHistoryIO || {};
 
   function $(sel, root) { return (root || document).querySelector(sel); }
   function $$(sel, root) { return Array.from((root || document).querySelectorAll(sel)); }
@@ -113,6 +114,19 @@
         });
       } catch (e) {
         resolve({ ok: false });
+      }
+    });
+  }
+
+  function mergeImportedPriceHistory(entries) {
+    return new Promise(resolve => {
+      try {
+        chrome.runtime.sendMessage({ type: 'AMZE_IDB_MERGE_PRICE_HISTORY', entries }, response => {
+          if (chrome.runtime.lastError) resolve({ ok: false, imported: 0 });
+          else resolve(response || { ok: false, imported: 0 });
+        });
+      } catch (e) {
+        resolve({ ok: false, imported: 0 });
       }
     });
   }
@@ -252,6 +266,33 @@
           clearStatus.textContent = result.ok
             ? 'Local data cleared. Settings were kept.'
             : 'Could not clear local data. Reload the popup and try again.';
+        }
+      });
+    }
+
+    const importButton = $('#amze-import-price-history');
+    const importFile = $('#amze-price-history-import-file');
+    const importStatus = $('#amze-import-status');
+    if (importButton && importFile) {
+      importButton.addEventListener('click', () => importFile.click());
+      importFile.addEventListener('change', async () => {
+        const file = importFile.files && importFile.files[0];
+        if (!file) return;
+        importButton.disabled = true;
+        if (importStatus) importStatus.textContent = 'Reading price history...';
+        try {
+          const parsed = typeof PRICE_HISTORY_IO.parsePriceHistoryImport === 'function'
+            ? PRICE_HISTORY_IO.parsePriceHistoryImport(await file.text())
+            : null;
+          if (!parsed || !parsed.entries.length) throw new Error('No usable price history found.');
+          const result = await mergeImportedPriceHistory(parsed.entries);
+          if (!result.ok) throw new Error('The extension could not save the imported history.');
+          if (importStatus) importStatus.textContent = `Imported history for ${result.imported} ASIN${result.imported === 1 ? '' : 's'}.`;
+        } catch (error) {
+          if (importStatus) importStatus.textContent = error.message || 'Could not import price history.';
+        } finally {
+          importButton.disabled = false;
+          importFile.value = '';
         }
       });
     }

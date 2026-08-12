@@ -40,6 +40,7 @@
 - **Variation bait warning.** Flags listings with >3× price spread across variants.
 - **Variant local price map.** Shows every color / size option with its lowest price seen in this browser.
 - **Local price history.** IndexedDB-backed sparkline of every price you've seen on that ASIN, with 90 / 180 / 365-day range controls. No external API, no Keepa account.
+- Price history JSON import/export for moving local history between browser installs; the PDP sparkline exports the full current-ASIN history.
 - **Review-quality scoring.** Polarization, 1-star share, verified-sample ratio, volume.
 
 ### Price tools
@@ -91,7 +92,7 @@ Toolbar popup with 10 tabs: Ads, Declutter, Reviews, Price, Cart, Trust, Tools, 
 
 ## Privacy
 
-AmazonEnhanced stores settings, local price history, seller/origin cache entries, watched-order dates, custom brand rules, OpenCorporates API token, and allergen terms only in the browser profile. It does not send analytics, telemetry, browsing history, shopping data, or affiliate data to external services. If OpenCorporates seller lookup is enabled, seller names are sent to OpenCorporates with your local API token. The Tools tab includes a local data clear action for price, seller/origin, and watched-order caches.
+AmazonEnhanced stores settings, local price history, seller/origin cache entries, watched-order dates, custom brand rules, OpenCorporates API token, and allergen terms only in the browser profile. It does not send analytics, telemetry, browsing history, shopping data, or affiliate data to external services. If OpenCorporates seller lookup is enabled, seller names are sent to OpenCorporates with your local API token. The Tools tab includes local price-history JSON import and a local data clear action for price, seller/origin, and watched-order caches.
 
 ## Architecture
 
