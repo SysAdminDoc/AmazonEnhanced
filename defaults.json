@@ -46,6 +46,7 @@
     "copyCleanLink": true,
     "orderExport": true,
     "wishlistExport": true,
+    "wishlistImport": true,
     "lateDeliveryWatch": false,
     "largeText": false,
     "highContrast": false,

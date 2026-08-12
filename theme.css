@@ -1433,6 +1433,26 @@ html[data-amze-theme="amoled"] .a-badge-text {
   letter-spacing: .4px;
   margin-bottom: 6px;
 }
+.amze-wl-import-box {
+  border-top: 1px solid var(--amze-border-soft, #313244);
+  margin-top: 8px;
+  padding-top: 8px;
+}
+.amze-wl-import-target {
+  color: var(--amze-text, #cdd6f4);
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 3px;
+}
+.amze-wl-import-help,
+.amze-wl-import-status {
+  color: var(--amze-text-muted, #9399b2);
+  font-size: 11px;
+  line-height: 1.4;
+  margin: 3px 0 6px;
+  max-width: 560px;
+}
+.amze-wl-import-status { color: var(--amze-text, #cdd6f4); }
 
 /* Accessibility: large-text mode */
 html[data-amze-large-text] body {

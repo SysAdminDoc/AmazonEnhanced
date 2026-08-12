@@ -50,6 +50,7 @@ INCLUDE_FILES = [
     "prime-trial.js",
     "shipping-diff.js",
     "return-reasons.js",
+    "wishlist-import.js",
     "content.js",
     "background.js",
     "popup.html",

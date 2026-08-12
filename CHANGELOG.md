@@ -11,6 +11,7 @@
 - Added checkout-only Prime free-trial pre-check handling for 30-day/free-month copy and explicit no-trial alternatives.
 - Added a stable-baseline checkout warning when the selected shipping tier or delivery slot changes after initial rendering.
 - Added a PDP frequently-returned warning with bounded reason extraction from Amazon's nearby list/table disclosure content.
+- Added wishlist JSON import with a bounded, user-started, rate-limited queue that uses Amazon's visible Add to List controls and reports per-item results.
 
 ## [2.0.15] - 2026-06-27
 

@@ -30,6 +30,7 @@
   const PRIME_TRIAL = globalThis.AmzePrimeTrial || {};
   const SHIPPING_DIFF = globalThis.AmzeShippingDiff || {};
   const RETURN_REASONS = globalThis.AmzeReturnReasons || {};
+  const WISHLIST_IMPORT = globalThis.AmzeWishlistImport || {};
 
   // -------------------------------------------------------------------
   // 1. Defaults + storage
@@ -201,6 +202,8 @@
   let variantPriceMapState = null;
   let variantPriceMapRequest = 0;
   let checkoutShippingState = null;
+  let wishlistImportItems = [];
+  let wishlistImportJobId = '';
 
   function requestWhiteBackgroundSweep() {
     if (whiteBgIdleHandle !== null) return;
@@ -1204,6 +1207,10 @@
         checkoutShippingState = null;
         document.querySelector('#amze-shipping-change-warn')?.remove();
         document.querySelector('#amze-frequently-returned-warn')?.remove();
+        if (!wishlistImportJobId) {
+          document.querySelector('#amze-wl-tools')?.remove();
+          wishlistImportItems = [];
+        }
         document.documentElement.toggleAttribute('data-amze-large-text',   !!settings.flags.largeText);
         document.documentElement.toggleAttribute('data-amze-high-contrast', !!settings.flags.highContrast);
         schedule();
@@ -1212,6 +1219,14 @@
         sendResponse({ ok: true });
       } else if (msg.type === 'AMZE_GET_STATE') {
         sendResponse({ ok: true, locale: LOCALE_TLD });
+      } else if (msg.type === 'AMZE_WISHLIST_IMPORT_ITEM') {
+        processWishlistImportItem(msg)
+          .then(result => sendResponse(result))
+          .catch(() => sendResponse({ ok: false, asin: msg.asin || '', reason: 'item_processing_failed' }));
+        return true;
+      } else if (msg.type === 'AMZE_WISHLIST_IMPORT_PROGRESS') {
+        updateWishlistImportUi(msg);
+        sendResponse({ ok: true });
       }
       return true;
     });
@@ -2754,25 +2769,159 @@
   // 12.12 Wishlist export
   // -------------------------------------------------------------------
 
+  function getWishlistImportTarget() {
+    const idMatch = location.pathname.match(/\/hz\/wishlist\/ls\/([A-Z0-9-]+)/i);
+    const nameEl = document.querySelector('#profile-list-name, #wl-list-info h1, #wl-list-info .a-size-large');
+    let listName = (nameEl?.textContent || '').replace(/\s+/g, ' ').trim();
+    if (!listName) {
+      const infoText = document.querySelector('#wl-list-info')?.textContent || '';
+      listName = infoText.replace(/\s+/g, ' ').replace(/\b\d+\s+(?:items?|products?)\b.*$/i, '').trim();
+    }
+    listName = listName.slice(0, 120) || 'Wish List';
+    return { listId: idMatch ? idMatch[1] : '', listName };
+  }
+
+  function updateWishlistImportUi(progress) {
+    const status = document.querySelector('#amze-wl-import-status');
+    if (!status || !progress) return;
+    if (wishlistImportJobId && progress.jobId && progress.jobId !== wishlistImportJobId) return;
+    if (progress.jobId && !wishlistImportJobId) wishlistImportJobId = progress.jobId;
+
+    const startButton = document.querySelector('#amze-wl-import-start');
+    const cancelButton = document.querySelector('#amze-wl-import-cancel');
+    const fileInput = document.querySelector('#amze-wl-import-file');
+    const chooseButton = document.querySelector('#amze-wl-import-choose');
+    const total = Number(progress.total) || wishlistImportItems.length;
+    const completed = Number(progress.completed) || 0;
+    const succeeded = Number(progress.succeeded) || 0;
+    const failed = Number(progress.failed) || 0;
+
+    if (progress.status === 'running') {
+      status.textContent = `Importing ${completed}/${total}: ${progress.current || progress.asin || 'next item'}... (${succeeded} added, ${failed} failed)`;
+      if (startButton) startButton.disabled = true;
+      if (fileInput) fileInput.disabled = true;
+      if (cancelButton) cancelButton.disabled = false;
+      return;
+    }
+
+    wishlistImportJobId = '';
+    if (fileInput) fileInput.disabled = false;
+    if (chooseButton) chooseButton.disabled = false;
+    if (cancelButton) cancelButton.disabled = true;
+    if (startButton) startButton.disabled = true;
+    if (progress.status === 'complete') {
+      status.textContent = `Import complete: ${succeeded} added, ${failed} failed out of ${total}.`;
+      toast(`Wishlist import finished: ${succeeded} added`);
+    } else if (progress.status === 'canceled') {
+      status.textContent = `Import canceled after ${completed}/${total}: ${succeeded} added, ${failed} failed.`;
+      toast('Wishlist import canceled');
+    }
+  }
+
   function injectWishlistExportButton() {
-    if (!settings.flags.wishlistExport) return;
+    const exportEnabled = !!settings.flags.wishlistExport;
+    const importEnabled = !!settings.flags.wishlistImport;
+    if (!exportEnabled && !importEnabled) return;
     if (!isWishlistPage()) return;
-    if (document.getElementById('amze-wl-export-btn')) return;
+    if (document.getElementById('amze-wl-tools')) return;
     const host = document.querySelector('#profile-list-name, #wl-list-info, main, #left-nav');
     if (!host) return;
     const wrap = document.createElement('div');
+    wrap.id = 'amze-wl-tools';
     wrap.className = 'amze-export-wrap';
-    wrap.appendChild(createTextElement('div', 'amze-export-title', 'Export wishlist'));
-    const csvButton = createActionButton('amze-wl-export-btn', 'CSV', 'Export wishlist as CSV');
-    const jsonButton = createActionButton('amze-wl-export-json', 'JSON', 'Export wishlist as JSON');
-    const mdButton = createActionButton('amze-wl-export-md', 'Markdown', 'Export wishlist as Markdown');
-    wrap.appendChild(csvButton);
-    wrap.appendChild(jsonButton);
-    wrap.appendChild(mdButton);
+    wrap.appendChild(createTextElement('div', 'amze-export-title', exportEnabled && importEnabled ? 'Wishlist tools' : (exportEnabled ? 'Export wishlist' : 'Import wishlist')));
+    if (exportEnabled) {
+      const csvButton = createActionButton('amze-wl-export-btn', 'CSV', 'Export wishlist as CSV');
+      const jsonButton = createActionButton('amze-wl-export-json', 'JSON', 'Export wishlist as JSON');
+      const mdButton = createActionButton('amze-wl-export-md', 'Markdown', 'Export wishlist as Markdown');
+      wrap.appendChild(csvButton);
+      wrap.appendChild(jsonButton);
+      wrap.appendChild(mdButton);
+      csvButton.addEventListener('click', () => exportWishlist('csv'));
+      jsonButton.addEventListener('click', () => exportWishlist('json'));
+      mdButton.addEventListener('click', () => exportWishlist('md'));
+    }
+    if (importEnabled) {
+      const importBox = createTextElement('div', 'amze-wl-import-box');
+      const target = getWishlistImportTarget();
+      importBox.appendChild(createTextElement('div', 'amze-wl-import-target', `Target list: ${target.listName}`));
+      importBox.appendChild(createTextElement('div', 'amze-wl-import-help', 'Choose an AmazonEnhanced wishlist JSON export. Items are added one at a time through Amazon controls.'));
+      const fileInput = document.createElement('input');
+      fileInput.id = 'amze-wl-import-file';
+      fileInput.type = 'file';
+      fileInput.accept = '.json,application/json';
+      fileInput.hidden = true;
+      const chooseButton = createActionButton('amze-wl-import-choose', 'Choose JSON', 'Choose a wishlist JSON export');
+      const startButton = createActionButton('amze-wl-import-start', 'Import items', 'Start importing wishlist items');
+      const cancelButton = createActionButton('amze-wl-import-cancel', 'Cancel', 'Cancel wishlist import');
+      startButton.disabled = true;
+      cancelButton.disabled = true;
+      const status = createTextElement('div', 'amze-wl-import-status', 'No file selected.');
+      status.id = 'amze-wl-import-status';
+      importBox.appendChild(fileInput);
+      importBox.appendChild(chooseButton);
+      importBox.appendChild(startButton);
+      importBox.appendChild(cancelButton);
+      importBox.appendChild(status);
+      wrap.appendChild(importBox);
+
+      chooseButton.addEventListener('click', () => fileInput.click());
+      fileInput.addEventListener('change', async () => {
+        const file = fileInput.files && fileInput.files[0];
+        if (!file) return;
+        try {
+          if (typeof WISHLIST_IMPORT.parseWishlistImport !== 'function') throw new Error('Wishlist import is unavailable');
+          const text = typeof file.text === 'function'
+            ? await file.text()
+            : await new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result);
+              reader.onerror = () => reject(reader.error || new Error('Could not read file'));
+              reader.readAsText(file);
+            });
+          wishlistImportItems = WISHLIST_IMPORT.parseWishlistImport(text);
+          startButton.disabled = false;
+          status.textContent = `Loaded ${wishlistImportItems.length} items. Review the count, then click Import items.`;
+        } catch (e) {
+          wishlistImportItems = [];
+          startButton.disabled = true;
+          status.textContent = e && e.message ? e.message : 'Could not read wishlist JSON.';
+        }
+      });
+      startButton.addEventListener('click', async () => {
+        if (!wishlistImportItems.length || wishlistImportJobId) return;
+        startButton.disabled = true;
+        chooseButton.disabled = true;
+        status.textContent = 'Starting wishlist import...';
+        const response = await sendMessageWithTimeout({
+          type: 'AMZE_START_WISHLIST_IMPORT',
+          items: wishlistImportItems,
+          wishlist: getWishlistImportTarget()
+        }, 7000);
+        if (!response || !response.ok || !response.jobId) {
+          startButton.disabled = false;
+          chooseButton.disabled = false;
+          status.textContent = response && response.reason
+            ? `Could not start import: ${response.reason}`
+            : 'Could not start wishlist import. Keep this wishlist tab open and try again.';
+          return;
+        }
+        wishlistImportJobId = response.jobId;
+        cancelButton.disabled = false;
+        status.textContent = `Queued ${response.total || wishlistImportItems.length} items...`;
+      });
+      cancelButton.addEventListener('click', async () => {
+        if (!wishlistImportJobId) return;
+        cancelButton.disabled = true;
+        const jobId = wishlistImportJobId;
+        const response = await sendMessageWithTimeout({ type: 'AMZE_CANCEL_WISHLIST_IMPORT', jobId }, 5000);
+        if (!response || !response.ok) {
+          cancelButton.disabled = false;
+          status.textContent = 'Could not cancel yet; the current item may still be finishing.';
+        }
+      });
+    }
     host.parentElement.insertBefore(wrap, host);
-    csvButton.addEventListener('click', () => exportWishlist('csv'));
-    jsonButton.addEventListener('click', () => exportWishlist('json'));
-    mdButton.addEventListener('click', () => exportWishlist('md'));
   }
 
   function extractWishlistItems() {
@@ -2809,6 +2958,159 @@
     }
     downloadBlob(blob, `amazon-wishlist-${Date.now()}.${format === 'md' ? 'md' : format}`);
     toast(`Exported ${items.length} wishlist items`);
+  }
+
+  function wishlistImportElementLabel(el) {
+    return [el.getAttribute('aria-label'), el.getAttribute('title'), el.value, el.textContent]
+      .filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
+  }
+
+  function isWishlistImportVisible(el) {
+    if (!el || el.hidden || el.disabled) return false;
+    const style = window.getComputedStyle(el);
+    return style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
+  }
+
+  function normalizeWishlistImportLabel(value) {
+    return String(value || '').toLowerCase()
+      .replace(/\(\s*\d+\s*\)/g, '')
+      .replace(/\s+/g, ' ').trim();
+  }
+
+  function wishlistImportTargetMatches(el, target) {
+    const targetId = String(target.listId || '').toLowerCase();
+    if (targetId) {
+      const attributes = ['data-list-id', 'data-listid', 'data-list-id-value']
+        .map(name => String(el.getAttribute(name) || '').toLowerCase());
+      const href = String(el.getAttribute('href') || '').toLowerCase();
+      if (attributes.includes(targetId) || href.includes(targetId)) return true;
+    }
+    const targetName = normalizeWishlistImportLabel(target.listName);
+    if (!targetName) return false;
+    const label = normalizeWishlistImportLabel(wishlistImportElementLabel(el));
+    return label === targetName || label.startsWith(targetName + ' ') || label.includes(targetName);
+  }
+
+  function collectWishlistImportListControls() {
+    const scopes = document.querySelectorAll(
+      '[data-add-to-list-popover], [id*="add-to-list"], [id*="wishlist"], [class*="add-to-list"], [class*="wishlist"], [role="menu"], [role="listbox"]'
+    );
+    const controls = [];
+    const seen = new Set();
+    scopes.forEach(scope => {
+      if (scope.matches('[data-list-id], [data-listid], [role="option"], [role="menuitem"]') && !seen.has(scope)) {
+        seen.add(scope);
+        controls.push(scope);
+      }
+      scope.querySelectorAll('button, a, input, label, li, [data-list-id], [data-listid], [role="option"], [role="menuitem"]')
+        .forEach(el => {
+          if (!seen.has(el)) {
+            seen.add(el);
+            controls.push(el);
+          }
+        });
+    });
+    return controls;
+  }
+
+  function findWishlistImportTargetControl(target) {
+    return collectWishlistImportListControls()
+      .find(el => isWishlistImportVisible(el) && wishlistImportTargetMatches(el, target)) || null;
+  }
+
+  function wishlistImportChooserVisible() {
+    const selectors = [
+      '[role="menu"]',
+      '[role="listbox"]',
+      '.a-popover:not([aria-hidden="true"])',
+      '[data-add-to-list-popover]'
+    ];
+    return selectors.some(selector => Array.from(document.querySelectorAll(selector)).some(isWishlistImportVisible));
+  }
+
+  function findWishlistImportAddControl() {
+    const selectors = [
+      '#add-to-wishlist-button-submit',
+      '#add-to-list-button',
+      '#add-to-list-button-announce',
+      '[data-action="add-to-list"] button',
+      '[data-action="add-to-list"] input',
+      'input[name*="add-to-list"]',
+      'input[name*="add-to-registry.wishlist"]',
+      'button[aria-label*="add to list" i]',
+      'input[aria-label*="add to list" i]'
+    ];
+    const candidates = [];
+    const seen = new Set();
+    selectors.forEach(selector => document.querySelectorAll(selector).forEach(el => {
+      if (!seen.has(el)) {
+        seen.add(el);
+        candidates.push(el);
+      }
+    }));
+    return candidates.find(el => {
+      if (!isWishlistImportVisible(el)) return false;
+      const label = wishlistImportElementLabel(el);
+      return el.id === 'add-to-wishlist-button-submit' || /add to (?:wish )?list|save to list/i.test(label);
+    }) || null;
+  }
+
+  function wishlistImportSuccessVisible(target) {
+    const successText = Array.from(document.querySelectorAll(
+      '.add-to-list-success-label, [class*="add-to-list"][class*="success"], [data-add-to-list-success]'
+    )).filter(isWishlistImportVisible).map(el => el.textContent || '').join(' ');
+    const normalizedSuccess = normalizeWishlistImportLabel(successText);
+    if (!normalizedSuccess) return false;
+    const targetName = normalizeWishlistImportLabel(target && target.listName);
+    const namedSuccess = /(?:added|saved) to|already (?:in|on)/i.test(normalizedSuccess);
+    if (!namedSuccess) return false;
+    if (targetName && targetName !== 'wish list') return normalizedSuccess.includes(targetName);
+    return true;
+  }
+
+  function waitForWishlistImport(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  async function processWishlistImportItem(msg) {
+    const asin = typeof WISHLIST_IMPORT.extractAsin === 'function'
+      ? WISHLIST_IMPORT.extractAsin(msg && msg.asin)
+      : String(msg && msg.asin || '').toUpperCase();
+    if (!asin || asin !== getAsin()) return { ok: false, asin, reason: 'asin_mismatch' };
+    const addControl = findWishlistImportAddControl();
+    if (!addControl) return { ok: false, asin, reason: 'add_to_list_control_not_found' };
+    const beforeLabel = wishlistImportElementLabel(addControl);
+    if (/already (?:in|on)|added to|in your wish list/i.test(beforeLabel)) {
+      return { ok: true, asin, reason: 'already_present' };
+    }
+
+    try { addControl.click(); } catch (e) { return { ok: false, asin, reason: 'add_to_list_click_failed' }; }
+    const target = {
+      listId: String(msg && msg.targetListId || ''),
+      listName: String(msg && msg.targetListName || '')
+    };
+    let chosenTarget = false;
+    for (let attempt = 0; attempt < 4; attempt++) {
+      await waitForWishlistImport(300);
+      const targetControl = findWishlistImportTargetControl(target);
+      if (targetControl) {
+        try { targetControl.click(); chosenTarget = true; } catch (e) {}
+        break;
+      }
+      if (!wishlistImportChooserVisible()) break;
+    }
+
+    if (!chosenTarget && wishlistImportChooserVisible() && target.listName) {
+      return { ok: false, asin, reason: 'target_list_not_found' };
+    }
+    await waitForWishlistImport(chosenTarget ? 650 : 350);
+    const afterControl = findWishlistImportAddControl();
+    const changed = !addControl.isConnected || !afterControl ||
+      wishlistImportElementLabel(afterControl) !== beforeLabel || !!afterControl.disabled;
+    if (chosenTarget || wishlistImportSuccessVisible(target) || (changed && target.listName === 'Wish List')) {
+      return { ok: true, asin, reason: chosenTarget ? 'added_to_target_list' : 'added' };
+    }
+    return { ok: false, asin, reason: 'add_to_list_not_confirmed' };
   }
 
   // -------------------------------------------------------------------

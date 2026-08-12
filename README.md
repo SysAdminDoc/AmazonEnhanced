@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  Chrome extension that de-clutters Amazon, blocks dark patterns, adds seller transparency, price history, order/wishlist export, and accessibility tools.
+  Chrome extension that de-clutters Amazon, blocks dark patterns, adds seller transparency, price history, order/wishlist portability, and accessibility tools.
 </p>
 
 ---
@@ -59,6 +59,7 @@
 - **Copy clean product link** button on PDPs (Markdown-formatted)
 - **Order history export** (CSV / JSON) on `/your-orders` pages
 - **Wishlist export** (CSV / JSON / Markdown) on wishlist pages
+- **Wishlist import** from an AmazonEnhanced JSON export, using a user-started, rate-limited queue of Amazon's visible Add to List controls; keep the source wishlist tab open while it runs
 - **Late-delivery watcher** — background alarm notifies you when a promised delivery date passes without "Delivered"
 - **CPU Tamer** — throttles Amazon's background `setInterval`s when the tab is hidden
 
@@ -107,6 +108,7 @@ _locales/en/         Chrome Web Store name/description strings
 early-inject.js      document_start: theme + a11y attributes
 theme.css            document_start: theme + declutter + image-mode + feature chrome
 content.js           document_end: feature runtime + MutationObserver
+wishlist-import.js   JSON parser and bounded ASIN helpers for wishlist import
 background.js        Service worker: defaults, IDB caches, alarms, DNR, tab broadcast
 popup.html/css/js    10-tab settings UI
 icons/               16/32/48/128/512 PNGs

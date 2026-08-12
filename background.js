@@ -1,4 +1,5 @@
 importScripts('price-history-io.js');
+importScripts('wishlist-import.js');
 
 /**
  * AmazonEnhanced — background.js (MV3 service worker)
@@ -83,6 +84,11 @@ let dbPromise = null;
 let legacyStorageMigrationPromise = null;
 let retentionPurgePromise = null;
 let lastSellerLookupAt = 0;
+
+const WISHLIST_IMPORT_DELAY_MS = 1800;
+const WISHLIST_IMPORT_RESPONSE_TIMEOUT_MS = 12000;
+const WISHLIST_IMPORT_MAX_DISPATCH_ATTEMPTS = 5;
+const wishlistImportJobs = new Map();
 
 function normalizeAsin(asin) {
   return String(asin || '').toUpperCase();
@@ -611,8 +617,281 @@ chrome.runtime.onStartup.addListener(async () => {
 
 scheduleRetentionPurge();
 
+// -------------------------------------------------------------------
+// Wishlist import — user-started, visible-control queue
+//
+// Amazon does not provide a stable extension API for importing a wishlist.
+// Each queued ASIN therefore opens in a background tab and lets the content
+// script use the visible Add to List controls. The source wishlist tab stays
+// in charge of the job, and a deliberate delay limits request/navigation rate.
+// -------------------------------------------------------------------
+
+function createWishlistImportJobId() {
+  try {
+    if (globalThis.crypto && typeof globalThis.crypto.randomUUID === 'function') {
+      return globalThis.crypto.randomUUID();
+    }
+  } catch (e) {}
+  return 'wl-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+}
+
+function sendWishlistImportProgress(job, status, extra = {}) {
+  const message = Object.assign({
+    type: 'AMZE_WISHLIST_IMPORT_PROGRESS',
+    jobId: job.id,
+    status,
+    total: job.items.length,
+    completed: job.completed,
+    succeeded: job.succeeded,
+    failed: job.failed
+  }, extra);
+  try {
+    chrome.tabs.sendMessage(job.sourceTabId, message, () => {
+      void chrome.runtime.lastError;
+    });
+  } catch (e) {}
+}
+
+function clearWishlistImportTimers(job) {
+  if (job.dispatchTimer) clearTimeout(job.dispatchTimer);
+  if (job.responseTimer) clearTimeout(job.responseTimer);
+  if (job.advanceTimer) clearTimeout(job.advanceTimer);
+  job.dispatchTimer = null;
+  job.responseTimer = null;
+  job.advanceTimer = null;
+}
+
+function closeWishlistImportTab(job) {
+  const tabId = job.activeTabId;
+  job.activeTabId = null;
+  if (tabId === null || tabId === undefined) return;
+  try { chrome.tabs.remove(tabId, () => { void chrome.runtime.lastError; }); } catch (e) {}
+}
+
+function finishWishlistImportJob(job) {
+  if (wishlistImportJobs.get(job.id) !== job) return;
+  clearWishlistImportTimers(job);
+  closeWishlistImportTab(job);
+  wishlistImportJobs.delete(job.id);
+  sendWishlistImportProgress(job, 'complete');
+}
+
+function recordWishlistImportResult(job, result) {
+  if (wishlistImportJobs.get(job.id) !== job || job.resultHandled) return;
+  job.resultHandled = true;
+  clearWishlistImportTimers(job);
+  const item = job.items[job.index];
+  const ok = !!(result && result.ok && result.asin === item.asin);
+  if (ok) job.succeeded++;
+  else job.failed++;
+  job.completed++;
+  const reason = ok ? (result.reason || '') : (result && result.reason) || 'item_failed';
+  closeWishlistImportTab(job);
+  sendWishlistImportProgress(job, job.completed >= job.items.length ? 'running' : 'running', {
+    asin: item.asin,
+    current: item.title || item.asin,
+    result: ok ? 'added' : 'failed',
+    reason
+  });
+  job.index++;
+  if (job.index >= job.items.length) {
+    finishWishlistImportJob(job);
+    return;
+  }
+  job.advanceTimer = setTimeout(() => advanceWishlistImport(job), WISHLIST_IMPORT_DELAY_MS);
+}
+
+function retryWishlistImportDispatch(job, reason) {
+  if (wishlistImportJobs.get(job.id) !== job || job.resultHandled) return;
+  job.awaitingResponse = false;
+  if (job.dispatchAttempts >= WISHLIST_IMPORT_MAX_DISPATCH_ATTEMPTS) {
+    recordWishlistImportResult(job, { ok: false, asin: job.items[job.index].asin, reason });
+    return;
+  }
+  job.dispatchTimer = setTimeout(() => dispatchWishlistImportItem(job), 900);
+}
+
+function dispatchWishlistImportItem(job) {
+  if (wishlistImportJobs.get(job.id) !== job || job.resultHandled || job.activeTabId === null) return;
+  if (job.awaitingResponse) return;
+  const item = job.items[job.index];
+  job.dispatchAttempts++;
+  job.awaitingResponse = true;
+  const message = {
+    type: 'AMZE_WISHLIST_IMPORT_ITEM',
+    asin: item.asin,
+    targetListId: job.targetListId,
+    targetListName: job.targetListName
+  };
+  const callback = (response) => {
+    const lastError = chrome.runtime.lastError;
+    if (wishlistImportJobs.get(job.id) !== job || job.resultHandled || !job.awaitingResponse) return;
+    if (lastError || !response) {
+      retryWishlistImportDispatch(job, lastError ? 'content_script_unavailable' : 'empty_response');
+      return;
+    }
+    recordWishlistImportResult(job, response);
+  };
+  try {
+    chrome.tabs.sendMessage(job.activeTabId, message, callback);
+  } catch (e) {
+    retryWishlistImportDispatch(job, 'message_failed');
+    return;
+  }
+  job.responseTimer = setTimeout(() => {
+    if (job.awaitingResponse) retryWishlistImportDispatch(job, 'item_timeout');
+  }, WISHLIST_IMPORT_RESPONSE_TIMEOUT_MS);
+}
+
+function advanceWishlistImport(job) {
+  if (wishlistImportJobs.get(job.id) !== job) return;
+  job.advanceTimer = null;
+  if (job.index >= job.items.length) {
+    finishWishlistImportJob(job);
+    return;
+  }
+  job.resultHandled = false;
+  job.awaitingResponse = false;
+  job.dispatchAttempts = 0;
+  const item = job.items[job.index];
+  let productUrl = '';
+  try {
+    productUrl = globalThis.AmzeWishlistImport.buildProductUrl(job.targetHost, item.asin);
+  } catch (e) {}
+  if (!productUrl) {
+    recordWishlistImportResult(job, { ok: false, asin: item.asin, reason: 'invalid_product_url' });
+    return;
+  }
+  sendWishlistImportProgress(job, 'running', { asin: item.asin, current: item.title || item.asin });
+  try {
+    chrome.tabs.create({ url: productUrl, active: false }, (tab) => {
+      const lastError = chrome.runtime.lastError;
+      if (wishlistImportJobs.get(job.id) !== job) {
+        if (tab && tab.id !== undefined) closeWishlistImportTab(Object.assign(job, { activeTabId: tab.id }));
+        return;
+      }
+      if (lastError || !tab || tab.id === undefined) {
+        recordWishlistImportResult(job, { ok: false, asin: item.asin, reason: 'tab_create_failed' });
+        return;
+      }
+      job.activeTabId = tab.id;
+      job.loadDispatchScheduled = false;
+      job.dispatchTimer = setTimeout(() => dispatchWishlistImportItem(job), 6000);
+    });
+  } catch (e) {
+    recordWishlistImportResult(job, { ok: false, asin: item.asin, reason: 'tab_create_failed' });
+  }
+}
+
+function startWishlistImport(msg, sender, sendResponse) {
+  const sourceTab = sender && sender.tab;
+  if (!sourceTab || sourceTab.id === undefined || !sourceTab.url) {
+    sendResponse({ ok: false, reason: 'wishlist_tab_required' });
+    return;
+  }
+  if (Array.from(wishlistImportJobs.values()).some(job => job.sourceTabId === sourceTab.id)) {
+    sendResponse({ ok: false, reason: 'import_already_running' });
+    return;
+  }
+  let sourceUrl;
+  try { sourceUrl = new URL(sourceTab.url); } catch (e) {
+    sendResponse({ ok: false, reason: 'invalid_wishlist_url' });
+    return;
+  }
+  if (!/amazon\./i.test(sourceUrl.hostname)) {
+    sendResponse({ ok: false, reason: 'amazon_wishlist_required' });
+    return;
+  }
+  let items;
+  try {
+    items = globalThis.AmzeWishlistImport.normalizeWishlistItems(msg && msg.items);
+  } catch (e) {
+    sendResponse({ ok: false, reason: e && e.message ? e.message : 'invalid_wishlist_items' });
+    return;
+  }
+  const wishlist = msg && msg.wishlist || {};
+  const job = {
+    id: createWishlistImportJobId(),
+    sourceTabId: sourceTab.id,
+    targetHost: sourceUrl.hostname,
+    targetListId: String(wishlist.listId || '').slice(0, 120),
+    targetListName: String(wishlist.listName || 'Wish List').replace(/\s+/g, ' ').trim().slice(0, 120),
+    items,
+    index: 0,
+    completed: 0,
+    succeeded: 0,
+    failed: 0,
+    activeTabId: null,
+    dispatchAttempts: 0,
+    awaitingResponse: false,
+    resultHandled: false,
+    dispatchTimer: null,
+    responseTimer: null,
+    advanceTimer: null
+  };
+  wishlistImportJobs.set(job.id, job);
+  sendResponse({ ok: true, jobId: job.id, total: items.length });
+  sendWishlistImportProgress(job, 'running', { asin: items[0].asin, current: items[0].title || items[0].asin });
+  advanceWishlistImport(job);
+}
+
+function cancelWishlistImport(job) {
+  clearWishlistImportTimers(job);
+  wishlistImportJobs.delete(job.id);
+  job.completed = Math.min(job.completed, job.items.length);
+  closeWishlistImportTab(job);
+  sendWishlistImportProgress(job, 'canceled');
+}
+
+chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+  if (changeInfo.status !== 'complete') return;
+  for (const job of wishlistImportJobs.values()) {
+    if (job.activeTabId !== tabId || job.resultHandled) continue;
+    if (job.dispatchTimer) clearTimeout(job.dispatchTimer);
+    job.dispatchTimer = setTimeout(() => dispatchWishlistImportItem(job), 700);
+    break;
+  }
+});
+
+chrome.tabs.onRemoved.addListener((tabId) => {
+  for (const job of wishlistImportJobs.values()) {
+    if (job.sourceTabId === tabId) {
+      cancelWishlistImport(job);
+    } else if (job.activeTabId === tabId && !job.resultHandled) {
+      recordWishlistImportResult(job, { ok: false, asin: job.items[job.index].asin, reason: 'tab_closed' });
+    }
+  }
+});
+
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (!msg || !msg.type) return;
+
+  if (msg.type === 'AMZE_START_WISHLIST_IMPORT') {
+    startWishlistImport(msg, sender, sendResponse);
+    return false;
+  }
+
+  if (msg.type === 'AMZE_CANCEL_WISHLIST_IMPORT') {
+    const job = wishlistImportJobs.get(String(msg.jobId || ''));
+    if (!job || !sender.tab || sender.tab.id !== job.sourceTabId) {
+      sendResponse({ ok: false, reason: 'import_job_not_found' });
+      return false;
+    }
+    cancelWishlistImport(job);
+    sendResponse({ ok: true });
+    return false;
+  }
+
+  if (msg.type === 'AMZE_WISHLIST_IMPORT_RESULT') {
+    const job = wishlistImportJobs.get(String(msg.jobId || ''));
+    if (!job || !sender.tab || sender.tab.id !== job.activeTabId || msg.asin !== job.items[job.index].asin) {
+      sendResponse({ ok: false, reason: 'import_result_rejected' });
+      return false;
+    }
+    recordWishlistImportResult(job, msg);
+    sendResponse({ ok: true });
+    return false;
+  }
 
   if (msg.type === 'AMZE_IDB_GET_ORIGINS') {
     (async () => {
