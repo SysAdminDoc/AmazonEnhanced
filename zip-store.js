@@ -62,15 +62,20 @@
     };
   }
 
-  function createZip(files, now = new Date()) {
+  function createZip(files, now = new Date(), options = {}) {
     const encoder = new TextEncoder();
+    const preservePaths = !!options.preservePaths;
     const localParts = [];
     const centralParts = [];
     let offset = 0;
     const stamp = dosDateTime(now);
 
     for (const file of (files || [])) {
-      const name = encoder.encode(String(file.name || 'file.bin').replace(/[\\/]+/g, '-'));
+      const rawName = String(file.name || 'file.bin');
+      const safeName = preservePaths
+        ? rawName.replace(/\\/g, '/').split('/').filter(part => part && part !== '.' && part !== '..').join('/')
+        : rawName.replace(/[\\/]+/g, '-');
+      const name = encoder.encode(safeName || 'file.bin');
       const data = toBytes(file.data);
       const crc = crc32(data);
       const local = concat([

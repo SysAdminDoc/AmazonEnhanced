@@ -17,6 +17,17 @@ test('creates a readable store-only ZIP with central directory entries', () => {
   assert.deepEqual(Array.from(zip.slice(-22, -18)), [0x50, 0x4b, 0x05, 0x06]);
 });
 
+test('can preserve trusted release-tree paths when requested', () => {
+  const zip = createZip([
+    { name: 'icons/128.png', data: new Uint8Array([1, 2, 3]) },
+    { name: 'nested\\messages.json', data: new Uint8Array([4]) }
+  ], new Date('2026-01-02T03:04:06Z'), { preservePaths: true });
+  const text = decode(zip);
+  assert.ok(text.includes('icons/128.png'));
+  assert.ok(text.includes('nested/messages.json'));
+  assert.ok(!text.includes('../'));
+});
+
 test('calculates the standard CRC32 for file data', () => {
   assert.equal(crc32(new TextEncoder().encode('hello')), 0x3610a686);
 });
