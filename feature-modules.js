@@ -9,6 +9,7 @@
     { flag: 'pricePerUnit', files: ['unit-price.js'] },
     { flag: 'priceHistory', files: ['price-history.js', 'price-history-io.js'] },
     { flag: 'dealBadgeNormalizer', files: ['price-history.js'] },
+    { flag: 'stripAffiliate', files: ['redirect-stripper.js'] },
     { flag: 'variantPriceMap', files: ['variant-price.js'] },
     { flag: 'skipRecommendedUpgrade', files: ['upgrade-skip.js'] },
     { flag: 'disablePrimeTrial', files: ['prime-trial.js'] },

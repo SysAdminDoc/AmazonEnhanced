@@ -54,6 +54,7 @@
   const RECEIPT_MARKDOWN = createLazyModuleApi('AmzeReceiptMarkdown');
   const REVIEW_CORPUS = createLazyModuleApi('AmzeReviewCorpus');
   const SMART_SORT = createLazyModuleApi('AmzeSmartSort');
+  const REDIRECT_STRIPPER = createLazyModuleApi('AmzeRedirectStripper');
 
   // -------------------------------------------------------------------
   // 1. Defaults + storage
@@ -274,6 +275,7 @@
     trustScore: 15
   };
   let smartSortActive = false;
+  let attributionClickListenerAttached = false;
   let mutationQueue = null;
   function getSessionPageKey() {
     const origin = String(location.origin || location.hostname || 'amazon');
@@ -1406,10 +1408,57 @@
     }
   }
 
+  function unwrapAttributionHref(href) {
+    if (typeof REDIRECT_STRIPPER.unwrapAmazonRedirect !== 'function') return href;
+    const unwrapped = REDIRECT_STRIPPER.unwrapAmazonRedirect(href, location.href);
+    return unwrapped === href ? href : cleanAmazonHref(unwrapped);
+  }
+
+  function stripAttributionRedirects(scope) {
+    if (typeof REDIRECT_STRIPPER.unwrapAmazonRedirect !== 'function') return;
+    const anchors = collectMatchingElements(scope, 'a[href]');
+    anchors.forEach(anchor => {
+      if (!anchor.href) return;
+      const clean = unwrapAttributionHref(anchor.href);
+      if (clean !== anchor.href) {
+        anchor.href = clean;
+        anchor.dataset.amzeRedirectCleaned = '1';
+      }
+    });
+  }
+
+  function handleAttributionNavigation(event) {
+    if (!settings.flags.stripAffiliate || typeof REDIRECT_STRIPPER.unwrapAmazonRedirect !== 'function') return;
+    const origin = event.target;
+    const anchor = origin && origin.closest ? origin.closest('a[href]') : null;
+    if (!anchor || !anchor.href) return;
+    const unwrapped = REDIRECT_STRIPPER.unwrapAmazonRedirect(anchor.href, location.href);
+    if (unwrapped === anchor.href) return;
+    const destination = cleanAmazonHref(unwrapped);
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const openInNewContext = event.type === 'auxclick' || event.button === 1 || event.metaKey || event.ctrlKey || event.shiftKey || anchor.target === '_blank';
+    if (openInNewContext) {
+      const opened = window.open(destination, anchor.target && anchor.target !== '_self' ? anchor.target : '_blank', 'noopener,noreferrer');
+      if (!opened) location.assign(destination);
+    } else {
+      location.assign(destination);
+    }
+  }
+
+  function installAttributionNavigationGuard() {
+    if (attributionClickListenerAttached || !settings.flags.stripAffiliate) return;
+    if (typeof REDIRECT_STRIPPER.unwrapAmazonRedirect !== 'function') return;
+    document.addEventListener('click', handleAttributionNavigation, true);
+    document.addEventListener('auxclick', handleAttributionNavigation, true);
+    attributionClickListenerAttached = true;
+  }
+
   function stripAffiliate(root) {
     if (!settings.flags.stripAffiliate) return;
     const scope = root === document ? document.body : root;
     if (!scope || !scope.querySelectorAll) return;
+    stripAttributionRedirects(scope);
     const anchors = collectMatchingElements(scope, 'a[href*="amazon."]:not([data-amze-cleaned])');
     anchors.forEach(a => {
       if (!a.href) return;
@@ -1587,6 +1636,7 @@
         document.documentElement.toggleAttribute('data-amze-large-text',   !!settings.flags.largeText);
         document.documentElement.toggleAttribute('data-amze-high-contrast', !!settings.flags.highContrast);
         loadActiveFeatureModules(settings.flags).finally(() => {
+          installAttributionNavigationGuard();
           schedule();
           try { runFeaturePack(); } catch (e) {}
           toast('AmazonEnhanced settings updated');
@@ -3905,6 +3955,7 @@
     }
     exposeMutationScanMetrics();
     applyFlagAttributes();
+    installAttributionNavigationGuard();
     schedule();
     startObserver();
     runFeaturePack();

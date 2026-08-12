@@ -18,6 +18,7 @@ const JS_FILES = [
   'price-history.js',
   'variant-price.js',
   'price-history-io.js',
+  'redirect-stripper.js',
   'upgrade-skip.js',
   'prime-trial.js',
   'shipping-diff.js',

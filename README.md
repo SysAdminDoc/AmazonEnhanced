@@ -52,7 +52,7 @@
 - Inline price-per-unit badges (auto $/oz, $/kg, $/ct; locale-safe EU decimal parsing), including Fresh / Whole Foods product cards
 - Suspicious-MSRP flag (>70% above actual)
 - Local deal-badge normalizer when "Limited time deal" matches the 30-day local baseline
-- Affiliate/tracking URL stripper + `/dp/ASIN` canonicalization
+- Affiliate/tracking URL stripper + `/dp/ASIN` canonicalization, including direct navigation around Honey and known attribution redirects
 - Price drop alerts from local price history
 - Extra "Sort by" options: *Most reviews*, *Newest*, *Best $/unit*
 - Weighted smart sort with live sliders for rating, review count, price, unit price, and trust score; rankings apply to currently loaded search results only
@@ -121,6 +121,7 @@ theme.css            document_start: theme + declutter + image-mode + feature ch
 content.js           document_end: feature runtime + MutationObserver
 feature-modules.js   active-flag-to-bundle map for conditional content injection
 smart-sort.js        bounded weighted ranking kernel for visible search results
+redirect-stripper.js safe Amazon-target extraction from Honey/attribution redirect links
 mutation-queue.js    WeakRef-backed debounced mutation roots and profiling counters
 shadow-ui.js         isolated Shadow DOM host lifecycle for injected PDP UI
 shadow-ui.css        isolated styles for Shadow DOM PDP panels and controls
