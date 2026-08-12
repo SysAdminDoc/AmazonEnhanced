@@ -37,9 +37,9 @@ def build_zip() -> Path:
     if len(patterns) != 20:
         raise ValueError(f"expected 20 Amazon locale patterns, found {len(patterns)}")
     expected = set(patterns)
-    if any(set(script.get("matches", [])) != expected for script in manifest.get("content_scripts", [])):
+    if any(any("amazon." in match for match in script.get("matches", [])) and set(script.get("matches", [])) != expected for script in manifest.get("content_scripts", [])):
         raise ValueError("content-script locale patterns do not match locales.json")
-    if any(set(resource.get("matches", [])) != expected for resource in manifest.get("web_accessible_resources", [])):
+    if any(any("amazon." in match for match in resource.get("matches", [])) and not expected.issubset(set(resource.get("matches", []))) for resource in manifest.get("web_accessible_resources", [])):
         raise ValueError("web-accessible locale patterns do not match locales.json")
 
     with zipfile.ZipFile(output, "w", zipfile.ZIP_DEFLATED) as archive:

@@ -26,6 +26,7 @@
 - Added a bounded per-ASIN visible-review corpus with one-year local retention, top/bottom excerpt selection, IndexedDB clear-data support, and a Reviews-tab toggle.
 - Added weighted smart sorting for currently loaded search results, with live rating, review-count, price, unit-price, and trust-score sliders plus a tested ranking kernel.
 - Added safe Honey and common attribution-redirect unwrapping for Amazon-target links, including capture-phase click and middle-click navigation handling.
+- Added the shared review-scoring kernel and visible-review panels for Walmart, Target, Best Buy, and Etsy product pages, with site-scoped selectors and local-only processing.
 
 ## [2.0.15] - 2026-06-27
 

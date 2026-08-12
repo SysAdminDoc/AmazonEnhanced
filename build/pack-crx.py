@@ -50,6 +50,8 @@ INCLUDE_FILES = [
     "shadow-ui.js",
     "shadow-ui.css",
     "review-corpus.js",
+    "review-score-kernel.js",
+    "cross-site-reviews.js",
     "unit-price.js",
     "price-history.js",
     "variant-price.js",
@@ -98,9 +100,13 @@ def _build_manifest() -> bytes:
     ]
     manifest["host_permissions"] = patterns + extra_hosts
     for script in manifest.get("content_scripts", []):
-        script["matches"] = patterns
+        existing = script.get("matches", [])
+        if any("amazon." in match for match in existing):
+            script["matches"] = patterns + [match for match in existing if "amazon." not in match]
     for resource in manifest.get("web_accessible_resources", []):
-        resource["matches"] = patterns
+        existing = resource.get("matches", [])
+        if any("amazon." in match for match in existing):
+            resource["matches"] = patterns + [match for match in existing if "amazon." not in match]
     return (json.dumps(manifest, indent=2) + "\n").encode("utf-8")
 
 

@@ -14,6 +14,8 @@ const JS_FILES = [
   'session-state.js',
   'shadow-ui.js',
   'review-corpus.js',
+  'review-score-kernel.js',
+  'cross-site-reviews.js',
   'unit-price.js',
   'price-history.js',
   'variant-price.js',
@@ -55,8 +57,16 @@ async function writeReleaseManifest() {
   const locales = await readJson('locales.json');
   const patterns = locales.locales.map(entry => entry.pattern).filter(Boolean);
   if (patterns.length !== 20) throw new Error(`expected 20 locale patterns, found ${patterns.length}`);
-  for (const script of manifest.content_scripts || []) script.matches = patterns;
-  for (const resource of manifest.web_accessible_resources || []) resource.matches = patterns;
+  for (const script of manifest.content_scripts || []) {
+    if ((script.matches || []).some(match => match.includes('amazon.'))) {
+      script.matches = patterns.concat((script.matches || []).filter(match => !match.includes('amazon.')));
+    }
+  }
+  for (const resource of manifest.web_accessible_resources || []) {
+    if ((resource.matches || []).some(match => match.includes('amazon.'))) {
+      resource.matches = patterns.concat((resource.matches || []).filter(match => !match.includes('amazon.')));
+    }
+  }
   await fs.writeFile(path.join(DIST, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
   return manifest;
 }

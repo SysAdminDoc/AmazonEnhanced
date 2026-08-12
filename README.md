@@ -47,6 +47,7 @@
 - Price history JSON import/export for moving local history between browser installs; the PDP sparkline exports the full current-ASIN history.
 - **Review-quality scoring.** Polarization, 1-star share, verified-sample ratio, volume.
 - **Visible review excerpts.** Caches up to 20 visible review bodies per ASIN locally and surfaces distinct top-rated and lowest-rated excerpts beside the review analysis.
+- **Cross-site review scoring.** Uses the same local heuristic kernel for visible reviews on Walmart, Target, Best Buy, and Etsy product pages; review text remains in the page and is never uploaded.
 
 ### Price tools
 - Inline price-per-unit badges (auto $/oz, $/kg, $/ct; locale-safe EU decimal parsing), including Fresh / Whole Foods product cards
@@ -126,6 +127,8 @@ mutation-queue.js    WeakRef-backed debounced mutation roots and profiling count
 shadow-ui.js         isolated Shadow DOM host lifecycle for injected PDP UI
 shadow-ui.css        isolated styles for Shadow DOM PDP panels and controls
 review-corpus.js     bounded local visible-review normalization and excerpt selection
+review-score-kernel.js shared bounded scoring kernel for Amazon and supported retail sites
+cross-site-reviews.js Walmart / Target / Best Buy / Etsy review-panel adapter
 error-buffer.js      bounded local runtime-error buffer and report formatter
 session-state.js     bounded chrome.storage.session scan markers per document
 service-worker-warm.js periodic MV3 service-worker wake/alarm helper

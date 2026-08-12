@@ -27,7 +27,6 @@ FIREFOX_BACKGROUND_SCRIPTS = [
     "feature-modules.js",
     "service-worker-warm.js",
     "error-buffer.js",
-    "review-corpus.js",
     "background.js",
 ]
 
@@ -65,17 +64,21 @@ def build_manifest() -> dict:
     }
 
     for script in manifest.get("content_scripts", []):
-        script["matches"] = patterns
+        existing = script.get("matches", [])
+        if any("amazon." in match for match in existing):
+            script["matches"] = patterns + [match for match in existing if "amazon." not in match]
         if "browser-polyfill.min.js" not in script.get("js", []):
             script["js"] = ["browser-polyfill.min.js"] + script.get("js", [])
     for resource in manifest.get("web_accessible_resources", []):
-        resource["matches"] = patterns
+        existing = resource.get("matches", [])
+        if any("amazon." in match for match in existing):
+            resource["matches"] = patterns + [match for match in existing if "amazon." not in match]
 
     for script in manifest.get("content_scripts", []):
-        if set(script.get("matches", [])) != set(patterns):
+        if any("amazon." in match for match in script.get("matches", [])) and set(script.get("matches", [])) != set(patterns):
             raise ValueError("content-script locale patterns do not match locales.json")
     for resource in manifest.get("web_accessible_resources", []):
-        if set(resource.get("matches", [])) != set(patterns):
+        if any("amazon." in match for match in resource.get("matches", [])) and not set(patterns).issubset(set(resource.get("matches", []))):
             raise ValueError("web-accessible locale patterns do not match locales.json")
     return manifest
 

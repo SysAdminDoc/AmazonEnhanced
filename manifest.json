@@ -41,6 +41,10 @@
     "*://*.amazon.sa/*",
     "*://*.amazon.ae/*",
     "*://*.amazon.eg/*",
+    "*://*.walmart.com/*",
+    "*://*.target.com/*",
+    "*://*.bestbuy.com/*",
+    "*://*.etsy.com/*",
     "https://api.opencorporates.com/*"
   ],
   "action": {
@@ -114,6 +118,17 @@
       "js": ["feature-modules.js", "mutation-queue.js", "shadow-ui.js", "error-buffer.js", "session-state.js", "review-corpus.js", "content.js"],
       "run_at": "document_end",
       "all_frames": false
+    },
+    {
+      "matches": [
+        "*://*.walmart.com/*",
+        "*://*.target.com/*",
+        "*://*.bestbuy.com/*",
+        "*://*.etsy.com/*"
+      ],
+      "js": ["shadow-ui.js", "review-score-kernel.js", "cross-site-reviews.js"],
+      "run_at": "document_end",
+      "all_frames": false
     }
   ],
   "web_accessible_resources": [
@@ -139,7 +154,11 @@
         "*://*.amazon.sg/*",
         "*://*.amazon.sa/*",
         "*://*.amazon.ae/*",
-        "*://*.amazon.eg/*"
+        "*://*.amazon.eg/*",
+        "*://*.walmart.com/*",
+        "*://*.target.com/*",
+        "*://*.bestbuy.com/*",
+        "*://*.etsy.com/*"
       ]
     }
   ]
