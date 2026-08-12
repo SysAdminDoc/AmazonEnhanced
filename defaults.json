@@ -34,6 +34,7 @@
     "autoUncheckDarkPatterns": true,
     "skipRecommendedUpgrade": true,
     "disablePrimeTrial": true,
+    "warnShippingChange": true,
     "extraSortOptions": true,
     "cpuTamer": false,
     "countryBadge": true,

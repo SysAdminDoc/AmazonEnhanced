@@ -28,6 +28,7 @@
   const PRICE_HISTORY_IO = globalThis.AmzePriceHistoryIO || {};
   const UPGRADE_SKIP = globalThis.AmzeUpgradeSkip || {};
   const PRIME_TRIAL = globalThis.AmzePrimeTrial || {};
+  const SHIPPING_DIFF = globalThis.AmzeShippingDiff || {};
 
   // -------------------------------------------------------------------
   // 1. Defaults + storage
@@ -198,6 +199,7 @@
   let sparklineRenderState = null;
   let variantPriceMapState = null;
   let variantPriceMapRequest = 0;
+  let checkoutShippingState = null;
 
   function requestWhiteBackgroundSweep() {
     if (whiteBgIdleHandle !== null) return;
@@ -1198,6 +1200,8 @@
         sparklineRenderState = null;
         document.querySelector('#amze-sparkline')?.remove();
         removeVariantPriceMap();
+        checkoutShippingState = null;
+        document.querySelector('#amze-shipping-change-warn')?.remove();
         document.documentElement.toggleAttribute('data-amze-large-text',   !!settings.flags.largeText);
         document.documentElement.toggleAttribute('data-amze-high-contrast', !!settings.flags.highContrast);
         schedule();
@@ -1453,6 +1457,150 @@
       } catch (e) {}
     });
     if (disabled) toast(`Disabled ${disabled} Prime free-trial pre-check${disabled === 1 ? '' : 's'}`);
+  }
+
+  // -------------------------------------------------------------------
+  // 12.3d Warn when checkout shipping tier or delivery slot changes.
+  //      Require a stable baseline and a stable changed value to avoid
+  //      warning while Amazon is still rendering the checkout page.
+  // -------------------------------------------------------------------
+
+  const SHIPPING_CONTEXT_SELECTORS = [
+    '#shippingOptionForm',
+    '#shipping-options',
+    '#deliveryOptions',
+    '[id*="shipping" i]',
+    '[id*="delivery" i]',
+    '[data-testid*="shipping" i]',
+    '[data-testid*="delivery" i]',
+    '[data-test-id*="shipping" i]',
+    '[data-test-id*="delivery" i]',
+    '[class*="shipping" i]',
+    '[class*="delivery" i]',
+    'fieldset'
+  ].join(',');
+
+  const SHIPPING_SLOT_SELECTORS = [
+    '[data-testid*="delivery-date" i]',
+    '[data-test-id*="delivery-date" i]',
+    '[id*="delivery-date" i]',
+    '[class*="delivery-date" i]',
+    '[data-testid*="arrival" i]',
+    '[data-test-id*="arrival" i]',
+    '[class*="arrival" i]',
+    '[class*="promise" i]'
+  ].join(',');
+
+  function getShippingChoiceText(control) {
+    const parts = [control.getAttribute('aria-label'), control.getAttribute('title'), control.value, control.textContent];
+    if (control.id) {
+      document.querySelectorAll('label[for]').forEach(label => {
+        if (label.getAttribute('for') === control.id) parts.push(label.textContent);
+      });
+    }
+    const ownLabel = control.closest('label');
+    if (ownLabel) parts.push(ownLabel.textContent);
+    if (control.tagName === 'SELECT') {
+      const option = control.options[control.selectedIndex];
+      if (option) parts.push(option.textContent);
+    }
+    return parts.filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
+  }
+
+  function getShippingScope(control) {
+    return control.closest(SHIPPING_CONTEXT_SELECTORS) || control.parentElement;
+  }
+
+  function isShippingChoice(text) {
+    return /shipping|delivery|arriv|ship\s+to|standard|expedited|priority|overnight|slot|window/i.test(text) &&
+      !/payment|credit\s+card|billing\s+address/i.test(text);
+  }
+
+  function extractShippingSlot(text) {
+    const match = String(text || '').match(/(?:arrives?|delivery|deliver(?:y)?\s+by|get\s+it)[^.;|]{0,110}/i);
+    if (!match || !/(?:today|tomorrow|monday|tuesday|wednesday|thursday|friday|saturday|sunday|\b\d{1,2}(?::\d{2})?\s*(?:am|pm)\b|morning|afternoon|evening)/i.test(match[0])) return '';
+    return match[0].replace(/\s+/g, ' ').trim();
+  }
+
+  function readShippingSnapshot() {
+    const controls = document.querySelectorAll(
+      'input[type="radio"]:checked, [role="radio"][aria-checked="true"], select'
+    );
+    for (const control of controls) {
+      const scope = getShippingScope(control);
+      if (!scope) continue;
+      const choiceText = getShippingChoiceText(control);
+      const contextText = choiceText + ' ' + (scope.textContent || '');
+      if (!isShippingChoice(contextText)) continue;
+      const slotNode = scope.querySelector(SHIPPING_SLOT_SELECTORS);
+      const slotText = slotNode?.textContent?.replace(/\s+/g, ' ').trim() || extractShippingSlot(choiceText);
+      const tier = typeof SHIPPING_DIFF.normalizeShippingText === 'function'
+        ? SHIPPING_DIFF.normalizeShippingText(choiceText)
+        : choiceText.trim();
+      const slot = typeof SHIPPING_DIFF.normalizeShippingText === 'function'
+        ? SHIPPING_DIFF.normalizeShippingText(slotText)
+        : slotText.trim();
+      if (tier || slot) return { tier, slot };
+    }
+    return null;
+  }
+
+  function shippingSnapshotSignature(snapshot) {
+    return `${snapshot?.tier || ''}|${snapshot?.slot || ''}`;
+  }
+
+  function renderShippingChangeWarning(changes) {
+    const existing = document.getElementById('amze-shipping-change-warn');
+    const messageKey = changes.map(change => `${change.field}:${change.before}:${change.after}`).join('|');
+    if (existing?.dataset.messageKey === messageKey) return;
+    existing?.remove();
+    const warning = document.createElement('div');
+    warning.id = 'amze-shipping-change-warn';
+    warning.className = 'amze-pdp-badge amze-pdp-warn';
+    warning.setAttribute('role', 'alert');
+    warning.dataset.messageKey = messageKey;
+    appendStrong(warning, 'Checkout shipping changed:');
+    changes.forEach(change => {
+      const line = document.createElement('div');
+      appendText(line, `${change.field}: `);
+      appendStrong(line, change.before);
+      appendText(line, ' → ');
+      appendStrong(line, change.after);
+      warning.appendChild(line);
+    });
+    appendText(warning, ' Verify the shipping choice before placing the order.');
+    const target = document.querySelector('#shippingOptionForm, #shipping-options, #deliveryOptions, main, #centerCol');
+    if (target) target.insertBefore(warning, target.firstChild);
+  }
+
+  function inspectShippingChange() {
+    if (!settings.flags.warnShippingChange || !isCheckoutPage()) {
+      checkoutShippingState = null;
+      document.getElementById('amze-shipping-change-warn')?.remove();
+      return;
+    }
+    const snapshot = readShippingSnapshot();
+    if (!snapshot) return;
+    const signature = shippingSnapshotSignature(snapshot);
+    if (!checkoutShippingState) {
+      checkoutShippingState = { baseline: null, candidate: snapshot, candidateSignature: signature, stableCount: 1 };
+      return;
+    }
+    if (checkoutShippingState.candidateSignature !== signature) {
+      checkoutShippingState.candidate = snapshot;
+      checkoutShippingState.candidateSignature = signature;
+      checkoutShippingState.stableCount = 1;
+      return;
+    }
+    checkoutShippingState.stableCount++;
+    if (!checkoutShippingState.baseline) {
+      if (checkoutShippingState.stableCount >= 2) checkoutShippingState.baseline = snapshot;
+      return;
+    }
+    const changes = typeof SHIPPING_DIFF.compareShippingSnapshots === 'function'
+      ? SHIPPING_DIFF.compareShippingSnapshots(checkoutShippingState.baseline, snapshot)
+      : [];
+    if (changes.length && checkoutShippingState.stableCount >= 2) renderShippingChangeWarning(changes);
   }
 
   // -------------------------------------------------------------------
@@ -2680,6 +2828,7 @@
     try { autoUncheckDarkPatterns(); } catch (e) {}
     try { skipRecommendedUpgradePrompts(); } catch (e) {}
     try { disablePrimeTrialPrechecks(); } catch (e) {}
+    try { inspectShippingChange(); } catch (e) {}
     try { injectExtraSortOptions(); } catch (e) {}
     try { injectCpuTamer(); } catch (e) {}
     try { annotateCountry(); } catch (e) {}

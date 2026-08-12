@@ -48,6 +48,7 @@ INCLUDE_FILES = [
     "price-history-io.js",
     "upgrade-skip.js",
     "prime-trial.js",
+    "shipping-diff.js",
     "content.js",
     "background.js",
     "popup.html",
