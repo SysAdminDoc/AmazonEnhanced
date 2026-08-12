@@ -14,6 +14,7 @@
     { flag: 'disablePrimeTrial', files: ['prime-trial.js'] },
     { flag: 'warnShippingChange', files: ['shipping-diff.js'] },
     { flag: 'frequentlyReturnedWarn', files: ['return-reasons.js'] },
+    { flag: 'weightedSmartSort', files: ['smart-sort.js'] },
     { flag: 'wishlistImport', files: ['wishlist-import.js'] },
     { flag: 'orderExport', files: ['invoice-export.js', 'zip-store.js', 'receipt-markdown.js'] }
   ];

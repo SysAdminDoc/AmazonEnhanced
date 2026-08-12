@@ -55,6 +55,7 @@
 - Affiliate/tracking URL stripper + `/dp/ASIN` canonicalization
 - Price drop alerts from local price history
 - Extra "Sort by" options: *Most reviews*, *Newest*, *Best $/unit*
+- Weighted smart sort with live sliders for rating, review count, price, unit price, and trust score; rankings apply to currently loaded search results only
 
 ### Tools & data portability
 - **Copy clean product link** button on PDPs (Markdown-formatted)
@@ -119,6 +120,7 @@ early-inject.js      document_start: theme + a11y attributes
 theme.css            document_start: theme + declutter + image-mode + feature chrome
 content.js           document_end: feature runtime + MutationObserver
 feature-modules.js   active-flag-to-bundle map for conditional content injection
+smart-sort.js        bounded weighted ranking kernel for visible search results
 mutation-queue.js    WeakRef-backed debounced mutation roots and profiling counters
 shadow-ui.js         isolated Shadow DOM host lifecycle for injected PDP UI
 shadow-ui.css        isolated styles for Shadow DOM PDP panels and controls

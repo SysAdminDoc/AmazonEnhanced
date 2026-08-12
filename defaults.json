@@ -38,6 +38,7 @@
     "warnShippingChange": true,
     "frequentlyReturnedWarn": true,
     "extraSortOptions": true,
+    "weightedSmartSort": true,
     "cpuTamer": false,
     "countryBadge": true,
     "revealSeller": true,

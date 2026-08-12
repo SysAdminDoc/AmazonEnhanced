@@ -22,6 +22,7 @@ const JS_FILES = [
   'prime-trial.js',
   'shipping-diff.js',
   'return-reasons.js',
+  'smart-sort.js',
   'wishlist-import.js',
   'invoice-export.js',
   'zip-store.js',

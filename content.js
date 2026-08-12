@@ -12,6 +12,7 @@
  *   - Seller-country hide (China-origin heuristics)                      [hideCN]
  *   - Local review-quality scoring on PDP                                [reviewScore]
  *   - Local visible-review corpus with top/bottom excerpts              [reviewCorpus]
+ *   - Weighted client-side result sorting                                 [weightedSmartSort]
  *   - Inline price-per-unit computation on result tiles                  [pricePerUnit]
  *   - List-price (MSRP) inflation warning                                [listPriceWarn]
  *   - Affiliate/tracking link stripper                                   [stripAffiliate]
@@ -52,6 +53,7 @@
   const ZIP_STORE = createLazyModuleApi('AmzeZipStore');
   const RECEIPT_MARKDOWN = createLazyModuleApi('AmzeReceiptMarkdown');
   const REVIEW_CORPUS = createLazyModuleApi('AmzeReviewCorpus');
+  const SMART_SORT = createLazyModuleApi('AmzeSmartSort');
 
   // -------------------------------------------------------------------
   // 1. Defaults + storage
@@ -263,6 +265,15 @@
     visibleSignature: ''
   };
   let reviewCorpusRequest = null;
+  let smartSortPanel = null;
+  let smartSortWeights = {
+    rating: 30,
+    reviewCount: 20,
+    price: 15,
+    unitPrice: 20,
+    trustScore: 15
+  };
+  let smartSortActive = false;
   let mutationQueue = null;
   function getSessionPageKey() {
     const origin = String(location.origin || location.hostname || 'amazon');
@@ -1554,6 +1565,12 @@
           reviewPanelElement = null;
         }
         if (!settings.flags.reviewCorpus) resetReviewCorpusUi(true);
+        if (!settings.flags.weightedSmartSort) {
+          smartSortPanel?.remove();
+          smartSortPanel = null;
+          smartSortActive = false;
+          smartSortWeights = Object.assign({}, SMART_SORT.DEFAULT_WEIGHTS || smartSortWeights);
+        }
         sparklineRenderState = null;
         document.querySelector('#amze-sparkline')?.remove();
         removeVariantPriceMap();
@@ -2112,6 +2129,154 @@
     });
     sorted.forEach(t => container.appendChild(t));
     toast('Sorted by ' + mode.replace('amze-', ''));
+  }
+
+  function getSmartSortTiles() {
+    const container = document.querySelector('.s-main-slot');
+    if (!container) return { container: null, tiles: [] };
+    return {
+      container,
+      tiles: Array.from(container.querySelectorAll('[data-component-type="s-search-result"], .s-result-item'))
+    };
+  }
+
+  function extractTileRating(el) {
+    const ratingEl = el && el.querySelector('.a-icon-alt, [aria-label*="out of" i]');
+    const value = ratingEl ? (ratingEl.getAttribute('aria-label') || ratingEl.textContent || '') : '';
+    const match = value.match(/([\d.]+)\s*out\s*of/i);
+    const rating = match ? Number(match[1]) : NaN;
+    return rating >= 1 && rating <= 5 ? rating : NaN;
+  }
+
+  function extractTileReviewCount(el) {
+    const countEl = el && el.querySelector('[aria-label*="ratings" i], [aria-label*="reviews" i], a[href*="customerReviews"] span');
+    if (!countEl) return NaN;
+    const value = countEl.getAttribute('aria-label') || countEl.textContent || '';
+    const match = value.replace(/,/g, '').match(/[\d.]+/);
+    return match ? Number(match[0]) : NaN;
+  }
+
+  function extractTileUnitPrice(el) {
+    const title = extractTileTitle(el);
+    const quantity = isGroceryTile(el) ? extractGroceryQuantity(el, title) : extractQuantity(title);
+    const price = extractTilePrice(el);
+    return quantity && Number.isFinite(price) && quantity.qty > 0 ? price / quantity.qty : NaN;
+  }
+
+  function getSmartSortMetrics(tile) {
+    const rating = extractTileRating(tile);
+    const reviewCount = extractTileReviewCount(tile);
+    return {
+      rating,
+      reviewCount,
+      price: extractTilePrice(tile),
+      unitPrice: extractTileUnitPrice(tile),
+      trustScore: computeTrustScore(rating, reviewCount)
+    };
+  }
+
+  function applyWeightedSmartSort(showToast = false) {
+    if (typeof SMART_SORT.rankItems !== 'function') return;
+    const { container, tiles } = getSmartSortTiles();
+    if (!container || !tiles.length) return;
+    const ranked = SMART_SORT.rankItems(
+      tiles.map(tile => Object.assign({ tile }, getSmartSortMetrics(tile))),
+      smartSortWeights
+    );
+    if (ranked.every((item, index) => item.tile === tiles[index])) return;
+    ranked.forEach(item => container.appendChild(item.tile));
+    if (showToast) toast('Sorted visible results with AmazonEnhanced weights');
+  }
+
+  function smartSortFieldLabel(field) {
+    return {
+      rating: 'Rating',
+      reviewCount: 'Review count',
+      price: 'Price',
+      unitPrice: 'Unit price',
+      trustScore: 'Trust score'
+    }[field] || field;
+  }
+
+  function injectWeightedSmartSort() {
+    if (!settings.flags.weightedSmartSort) {
+      smartSortPanel?.remove();
+      smartSortPanel = null;
+      smartSortActive = false;
+      return;
+    }
+    if (smartSortPanel && smartSortPanel.isConnected) {
+      if (smartSortActive) applyWeightedSmartSort();
+      return;
+    }
+    if (typeof SMART_SORT.rankItems !== 'function') return;
+    const { container } = getSmartSortTiles();
+    if (!container) return;
+
+    const panel = document.createElement('details');
+    panel.id = 'amze-weighted-sort';
+    panel.className = 'amze-weighted-sort';
+    panel.open = false;
+    const summary = document.createElement('summary');
+    summary.textContent = 'Weighted smart sort';
+    panel.appendChild(summary);
+
+    const help = createTextElement('p', 'amze-weighted-sort-help',
+      'Tune the visible-result ranking. Price and unit price favor lower values; missing metrics are ignored.');
+    panel.appendChild(help);
+    const fields = Array.isArray(SMART_SORT.FIELDS) ? SMART_SORT.FIELDS : Object.keys(smartSortWeights);
+    fields.forEach(field => {
+      const row = document.createElement('label');
+      row.className = 'amze-weighted-sort-row';
+      const title = createTextElement('span', '', smartSortFieldLabel(field));
+      const value = createTextElement('output', '', String(smartSortWeights[field] ?? 0));
+      value.className = 'amze-weighted-sort-value';
+      const input = document.createElement('input');
+      input.type = 'range';
+      input.min = '0';
+      input.max = '100';
+      input.step = '5';
+      input.value = String(smartSortWeights[field] ?? 0);
+      input.dataset.field = field;
+      input.setAttribute('aria-label', `${smartSortFieldLabel(field)} weight`);
+      input.addEventListener('input', () => {
+        smartSortWeights[field] = Number(input.value);
+        value.value = String(smartSortWeights[field]);
+        value.textContent = String(smartSortWeights[field]);
+        smartSortActive = true;
+        applyWeightedSmartSort(true);
+      });
+      row.appendChild(title);
+      row.appendChild(input);
+      row.appendChild(value);
+      panel.appendChild(row);
+    });
+
+    const actions = createTextElement('div', 'amze-weighted-sort-actions');
+    const reset = createActionButton('amze-weighted-sort-reset', 'Reset', 'Reset weighted smart sort sliders');
+    reset.addEventListener('click', () => {
+      const defaults = SMART_SORT.DEFAULT_WEIGHTS || smartSortWeights;
+      smartSortWeights = Object.assign({}, defaults);
+      panel.querySelectorAll('input[data-field]').forEach(input => {
+        input.value = String(smartSortWeights[input.dataset.field] ?? 0);
+        const output = input.parentElement.querySelector('output');
+        if (output) {
+          output.value = input.value;
+          output.textContent = input.value;
+        }
+      });
+      smartSortActive = true;
+      applyWeightedSmartSort(true);
+    });
+    actions.appendChild(reset);
+    panel.appendChild(actions);
+
+    const select = document.querySelector('select#s-result-sort-select, select[name="s-result-sort-select"]');
+    const anchor = select?.closest('#sortBy, .a-dropdown-container, .a-section') || select?.parentElement;
+    if (anchor && anchor.parentElement) anchor.parentElement.insertBefore(panel, anchor.nextSibling);
+    else container.parentElement?.insertBefore(panel, container);
+    smartSortPanel = panel;
+    if (smartSortActive) applyWeightedSmartSort();
   }
 
   // -------------------------------------------------------------------
@@ -3703,6 +3868,7 @@
   function runFeaturePack() {
     if (!settings) return;
     try { refreshReviewCorpus(); } catch (e) {}
+    try { injectWeightedSmartSort(); } catch (e) {}
     try { autoDeclineWarranty(); } catch (e) {}
     try { forceOneTimePurchase(); } catch (e) {}
     try { autoUncheckDarkPatterns(); } catch (e) {}

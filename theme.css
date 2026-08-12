@@ -829,6 +829,42 @@ html[data-amze-hidePadding="1"] .s-widget-spacing-small:empty { display: none !i
 .amze-badge-trust-mid    { background: #3a341f; color: #f9e2af; border: 1px solid #5a4d2d; }
 .amze-badge-trust-low    { background: #3a1f2a; color: #f38ba8; border: 1px solid #603d4a; }
 
+.amze-weighted-sort {
+  max-width: 430px;
+  margin: 8px 0;
+  padding: 8px 10px;
+  border: 1px solid var(--amze-border, #45475a);
+  border-radius: 8px;
+  background: var(--amze-bg-alt, #181825);
+  color: var(--amze-text, #cdd6f4);
+  font: 12px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  box-shadow: var(--amze-shadow, 0 2px 10px rgba(0,0,0,.25));
+}
+.amze-weighted-sort summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--amze-text, #cdd6f4);
+}
+.amze-weighted-sort-help {
+  margin: 6px 0 8px;
+  color: var(--amze-text-muted, #9399b2);
+  font-size: 11px;
+}
+.amze-weighted-sort-row {
+  display: grid;
+  grid-template-columns: 90px minmax(100px, 1fr) 30px;
+  align-items: center;
+  gap: 8px;
+  margin: 5px 0;
+}
+.amze-weighted-sort-row input[type="range"] { width: 100%; accent-color: var(--amze-accent, #89b4fa); }
+.amze-weighted-sort-value {
+  color: var(--amze-accent, #89b4fa);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.amze-weighted-sort-actions { margin-top: 7px; }
+
 .amze-sponsor-marker {
   position: absolute;
   top: 6px;
