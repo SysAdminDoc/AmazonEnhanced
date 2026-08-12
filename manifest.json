@@ -110,7 +110,7 @@
         "*://*.amazon.ae/*",
         "*://*.amazon.eg/*"
       ],
-      "js": ["unit-price.js", "content.js"],
+      "js": ["unit-price.js", "price-history.js", "content.js"],
       "run_at": "document_end",
       "all_frames": false
     }

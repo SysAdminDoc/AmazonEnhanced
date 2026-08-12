@@ -23,6 +23,7 @@
   'use strict';
 
   const UNIT_PRICE = globalThis.AmzeUnitPrice || {};
+  const PRICE_HISTORY = globalThis.AmzePriceHistory || {};
 
   // -------------------------------------------------------------------
   // 1. Defaults + storage
@@ -190,6 +191,7 @@
   let whiteBgIdleHandle = null;
   let domObserver = null;
   let smartImageObserver = null;
+  let sparklineRenderState = null;
 
   function requestWhiteBackgroundSweep() {
     if (whiteBgIdleHandle !== null) return;
@@ -1187,6 +1189,8 @@
         document.querySelector('#amze-counterfeit-warn')?.remove();
         document.querySelector('.amze-seller-lookup')?.remove();
         document.querySelector('#amze-seller-reveal')?.removeAttribute('data-amze-seller-lookup');
+        sparklineRenderState = null;
+        document.querySelector('#amze-sparkline')?.remove();
         document.documentElement.toggleAttribute('data-amze-large-text',   !!settings.flags.largeText);
         document.documentElement.toggleAttribute('data-amze-high-contrast', !!settings.flags.highContrast);
         schedule();
@@ -1695,6 +1699,26 @@
     } catch (e) {}
   }
 
+  function getPriceHistoryRange(points, rangeDays) {
+    if (typeof PRICE_HISTORY.filterPointsByDays === 'function') {
+      return PRICE_HISTORY.filterPointsByDays(points, rangeDays);
+    }
+    const cutoff = Date.now() - (rangeDays * 24 * 60 * 60 * 1000);
+    return (Array.isArray(points) ? points : [])
+      .filter(point => point && Number.isFinite(Number(point.t)) && Number.isFinite(Number(point.p)) && Number(point.t) >= cutoff)
+      .map(point => ({ p: Number(point.p), t: Number(point.t) }))
+      .sort((a, b) => a.t - b.t);
+  }
+
+  function getPriceHistorySignature(points) {
+    if (typeof PRICE_HISTORY.historySignature === 'function') {
+      return PRICE_HISTORY.historySignature(points);
+    }
+    return (Array.isArray(points) ? points : [])
+      .map(point => `${Number(point && point.t) || 0}:${Number(point && point.p) || 0}`)
+      .join('|');
+  }
+
   async function logAndRenderPrice() {
     if (!settings.flags.priceHistory) return;
     if (!isPdp()) return;
@@ -1759,22 +1783,35 @@
     renderDealNormalizerNote(currentPrice, baseline, recent.length);
   }
 
-  function renderSparkline(asin, points) {
-    if (document.getElementById('amze-sparkline')) return;
+  function renderSparkline(asin, points, rangeDays = 365) {
     if (!points || points.length < 2) return;
-    const prices = points.map(p => p.p);
+    const sourceSignature = getPriceHistorySignature(points);
+    const existing = document.getElementById('amze-sparkline');
+    if (existing && sparklineRenderState &&
+        sparklineRenderState.asin === asin &&
+        sparklineRenderState.rangeDays === rangeDays &&
+        sparklineRenderState.sourceSignature === sourceSignature) {
+      return;
+    }
+    existing?.remove();
+    sparklineRenderState = { asin, rangeDays, sourceSignature };
+
+    const visiblePoints = getPriceHistoryRange(points, rangeDays);
+    if (!visiblePoints.length) return;
+    const prices = visiblePoints.map(p => p.p);
     const min = Math.min(...prices), max = Math.max(...prices);
     const range = max - min || 1;
     const w = 280, h = 48;
-    const stepX = w / (points.length - 1);
+    const stepX = w / Math.max(visiblePoints.length - 1, 1);
     let d = '';
-    points.forEach((pt, i) => {
+    visiblePoints.forEach((pt, i) => {
       const x = i * stepX;
       const y = h - ((pt.p - min) / range) * (h - 6) - 3;
       d += (i === 0 ? 'M' : 'L') + x.toFixed(1) + ',' + y.toFixed(1) + ' ';
     });
     const current = prices[prices.length - 1];
-    const sparklineLabel = `Price history for ${asin}: ${points.length} points, low $${min.toFixed(2)}, high $${max.toFixed(2)}, current $${current.toFixed(2)}`;
+    const rangeLabel = `${rangeDays}-day`;
+    const sparklineLabel = `Price history for ${asin}, last ${rangeLabel}: ${visiblePoints.length} points, low $${min.toFixed(2)}, high $${max.toFixed(2)}, current $${current.toFixed(2)}`;
     const panel = document.createElement('div');
     panel.id = 'amze-sparkline';
     panel.className = 'amze-pdp-badge';
@@ -1785,7 +1822,7 @@
     row.style.gap = '8px';
 
     const copy = document.createElement('div');
-    const label = createTextElement('div', '', `AmazonEnhanced — your price history (${points.length} pts)`);
+    const label = createTextElement('div', '', `AmazonEnhanced — your price history (${rangeLabel}, ${visiblePoints.length} pts)`);
     label.style.fontSize = '11px';
     label.style.color = 'var(--amze-text-muted,#9399b2)';
     copy.appendChild(label);
@@ -1800,6 +1837,23 @@
     appendText(summary, ' · Now ');
     appendStrong(summary, '$' + current.toFixed(2));
     copy.appendChild(summary);
+
+    const rangeControls = createTextElement('div', 'amze-sparkline-ranges');
+    rangeControls.setAttribute('role', 'group');
+    rangeControls.setAttribute('aria-label', 'Price history range');
+    appendText(rangeControls, 'Range: ');
+    const rangeDaysOptions = Array.isArray(PRICE_HISTORY.RANGE_DAYS) && PRICE_HISTORY.RANGE_DAYS.length
+      ? PRICE_HISTORY.RANGE_DAYS
+      : [90, 180, 365];
+    rangeDaysOptions.forEach(days => {
+      const rangeBtn = createActionButton('', `${days}d`, `Show the last ${days} days of price history`);
+      rangeBtn.classList.add('amze-sparkline-range');
+      rangeBtn.setAttribute('aria-pressed', String(days === rangeDays));
+      if (days === rangeDays) rangeBtn.classList.add('amze-sparkline-range-active');
+      rangeBtn.addEventListener('click', () => renderSparkline(asin, points, days));
+      rangeControls.appendChild(rangeBtn);
+    });
+    copy.appendChild(rangeControls);
     row.appendChild(copy);
 
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -1823,7 +1877,7 @@
     row.appendChild(svg);
     panel.appendChild(row);
 
-    // CSV export button for price history
+    // CSV export button for the selected price-history range.
     const exportRow = document.createElement('div');
     exportRow.style.marginTop = '6px';
     exportRow.style.display = 'flex';
@@ -1834,13 +1888,13 @@
     csvBtn.addEventListener('click', () => {
       const esc = (s) => `"${String(s || '').replace(/"/g, '""')}"`;
       const lines = ['asin,date,price'];
-      points.forEach(pt => {
+      visiblePoints.forEach(pt => {
         const d = new Date(pt.t);
         lines.push([esc(asin), esc(d.toISOString()), pt.p.toFixed(2)].join(','));
       });
       const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
       downloadBlob(blob, `amazon-price-history-${asin}-${Date.now()}.csv`);
-      toast('Exported ' + points.length + ' price points');
+      toast('Exported ' + visiblePoints.length + ' price points from the last ' + rangeDays + ' days');
     });
     exportRow.appendChild(csvBtn);
     panel.appendChild(exportRow);

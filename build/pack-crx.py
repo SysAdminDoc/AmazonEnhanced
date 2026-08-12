@@ -43,6 +43,7 @@ INCLUDE_FILES = [
     "early-inject.js",
     "theme.css",
     "unit-price.js",
+    "price-history.js",
     "content.js",
     "background.js",
     "popup.html",
