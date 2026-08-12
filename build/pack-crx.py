@@ -42,6 +42,7 @@ INCLUDE_FILES = [
     "selectors.json",
     "early-inject.js",
     "theme.css",
+    "feature-modules.js",
     "unit-price.js",
     "price-history.js",
     "variant-price.js",

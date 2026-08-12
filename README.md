@@ -110,6 +110,7 @@ _locales/en/         Chrome Web Store name/description strings
 early-inject.js      document_start: theme + a11y attributes
 theme.css            document_start: theme + declutter + image-mode + feature chrome
 content.js           document_end: feature runtime + MutationObserver
+feature-modules.js   active-flag-to-bundle map for conditional content injection
 mutation-queue.js    WeakRef-backed debounced mutation roots and profiling counters
 wishlist-import.js   JSON parser and bounded ASIN helpers for wishlist import
 invoice-export.js    visible order invoice-link discovery and PDF validation
@@ -121,7 +122,7 @@ icons/               16/32/48/128/512 PNGs
 build/pack-crx.py    CRX3 packer
 ```
 
-For performance profiling on an Amazon page, inspect `window.__amzeMutationMetrics` in the console. It records full-document versus targeted scan counts and elapsed work, plus queue coalescing statistics; counters reset when the content script reloads.
+Feature helper bundles are injected into the isolated content-script world only after the active settings flags are known; the static content entry point keeps the settings/observer core small. For performance profiling on an Amazon page, inspect `window.__amzeMutationMetrics` in the console. It records full-document versus targeted scan counts and elapsed work, plus queue coalescing statistics; counters reset when the content script reloads.
 
 ## License
 

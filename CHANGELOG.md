@@ -15,6 +15,7 @@
 - Added visible order invoice PDF ZIP export with same-origin checks, `%PDF` validation, 50-item bounds, a 2.5-second request delay, cancellation, and per-item failure reporting.
 - Added one-click Markdown receipt downloads to each visible order card.
 - Replaced mutation-triggered document scans with a WeakRef-backed, debounced affected-root queue; added runtime scan timing counters at `window.__amzeMutationMetrics` for CPU profiling.
+- Added conditional content-module injection: helper bundles such as price history, variant pricing, checkout guards, order exports, and wishlist import load only when their active flags require them.
 
 ## [2.0.15] - 2026-06-27
 

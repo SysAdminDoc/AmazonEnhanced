@@ -22,18 +22,27 @@
 (function () {
   'use strict';
 
-  const UNIT_PRICE = globalThis.AmzeUnitPrice || {};
-  const PRICE_HISTORY = globalThis.AmzePriceHistory || {};
-  const VARIANT_PRICE = globalThis.AmzeVariantPrice || {};
-  const PRICE_HISTORY_IO = globalThis.AmzePriceHistoryIO || {};
-  const UPGRADE_SKIP = globalThis.AmzeUpgradeSkip || {};
-  const PRIME_TRIAL = globalThis.AmzePrimeTrial || {};
-  const SHIPPING_DIFF = globalThis.AmzeShippingDiff || {};
-  const RETURN_REASONS = globalThis.AmzeReturnReasons || {};
-  const WISHLIST_IMPORT = globalThis.AmzeWishlistImport || {};
-  const INVOICE_EXPORT = globalThis.AmzeInvoiceExport || {};
-  const ZIP_STORE = globalThis.AmzeZipStore || {};
-  const RECEIPT_MARKDOWN = globalThis.AmzeReceiptMarkdown || {};
+  function createLazyModuleApi(globalName) {
+    return new Proxy({}, {
+      get(_target, property) {
+        const module = globalThis[globalName];
+        return module ? module[property] : undefined;
+      }
+    });
+  }
+
+  const UNIT_PRICE = createLazyModuleApi('AmzeUnitPrice');
+  const PRICE_HISTORY = createLazyModuleApi('AmzePriceHistory');
+  const VARIANT_PRICE = createLazyModuleApi('AmzeVariantPrice');
+  const PRICE_HISTORY_IO = createLazyModuleApi('AmzePriceHistoryIO');
+  const UPGRADE_SKIP = createLazyModuleApi('AmzeUpgradeSkip');
+  const PRIME_TRIAL = createLazyModuleApi('AmzePrimeTrial');
+  const SHIPPING_DIFF = createLazyModuleApi('AmzeShippingDiff');
+  const RETURN_REASONS = createLazyModuleApi('AmzeReturnReasons');
+  const WISHLIST_IMPORT = createLazyModuleApi('AmzeWishlistImport');
+  const INVOICE_EXPORT = createLazyModuleApi('AmzeInvoiceExport');
+  const ZIP_STORE = createLazyModuleApi('AmzeZipStore');
+  const RECEIPT_MARKDOWN = createLazyModuleApi('AmzeReceiptMarkdown');
 
   // -------------------------------------------------------------------
   // 1. Defaults + storage
@@ -47,6 +56,7 @@
     const m = h.match(/amazon\.(.+)$/);
     return m ? m[1] : 'com';
   })();
+  let loadedFeatureModules = new Set();
 
   async function loadDefaultSettings() {
     const res = await fetch(chrome.runtime.getURL('defaults.json'));
@@ -91,7 +101,7 @@
     try {
       chrome.storage.local.get(['amzeSettings'], (r) => {
         settings = mergeSettings(r && r.amzeSettings);
-        cb();
+        loadActiveFeatureModules(settings.flags).finally(cb);
       });
     } catch (e) {
       settings = cloneDefaultSettings();
@@ -125,6 +135,20 @@
         finish(null);
       }
     });
+  }
+
+  async function loadActiveFeatureModules(flags) {
+    if (!globalThis.AmzeFeatureModules || typeof globalThis.AmzeFeatureModules.getFiles !== 'function') {
+      return { ok: false, files: [], reason: 'feature_manifest_unavailable' };
+    }
+    const requested = globalThis.AmzeFeatureModules.getFiles(flags || {});
+    const pending = requested.filter(file => !loadedFeatureModules.has(file));
+    if (!pending.length) return { ok: true, files: [] };
+    const response = await sendMessageWithTimeout({ type: 'AMZE_LOAD_FEATURE_MODULES', files: pending, flags }, 10000);
+    if (response && response.ok) {
+      (response.files || pending).forEach(file => loadedFeatureModules.add(file));
+    }
+    return response || { ok: false, files: [], reason: 'feature_injection_timeout' };
   }
 
   // Keep html flag attrs in sync with settings (lets theme.css react).
@@ -1306,10 +1330,12 @@
         }
         document.documentElement.toggleAttribute('data-amze-large-text',   !!settings.flags.largeText);
         document.documentElement.toggleAttribute('data-amze-high-contrast', !!settings.flags.highContrast);
-        schedule();
-        try { runFeaturePack(); } catch (e) {}
-        toast('AmazonEnhanced settings updated');
-        sendResponse({ ok: true });
+        loadActiveFeatureModules(settings.flags).finally(() => {
+          schedule();
+          try { runFeaturePack(); } catch (e) {}
+          toast('AmazonEnhanced settings updated');
+          sendResponse({ ok: true });
+        });
       } else if (msg.type === 'AMZE_GET_STATE') {
         sendResponse({ ok: true, locale: LOCALE_TLD });
       } else if (msg.type === 'AMZE_WISHLIST_IMPORT_ITEM') {

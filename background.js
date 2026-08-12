@@ -1,5 +1,6 @@
 importScripts('price-history-io.js');
 importScripts('wishlist-import.js');
+importScripts('feature-modules.js');
 
 /**
  * AmazonEnhanced — background.js (MV3 service worker)
@@ -865,6 +866,29 @@ chrome.tabs.onRemoved.addListener((tabId) => {
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (!msg || !msg.type) return;
+
+  if (msg.type === 'AMZE_LOAD_FEATURE_MODULES') {
+    const tabId = sender && sender.tab && sender.tab.id;
+    const active = globalThis.AmzeFeatureModules.getFiles(msg.flags || {});
+    const requestedFiles = globalThis.AmzeFeatureModules.filterAllowedFiles(msg.files);
+    const requested = (requestedFiles.length ? requestedFiles : active).filter(file => active.includes(file));
+    if (tabId === undefined || !requested.length) {
+      sendResponse({ ok: true, files: [] });
+      return false;
+    }
+    try {
+      chrome.scripting.executeScript({ target: { tabId }, files: requested }, () => {
+        if (chrome.runtime.lastError) {
+          sendResponse({ ok: false, files: [], reason: chrome.runtime.lastError.message || 'feature_injection_failed' });
+        } else {
+          sendResponse({ ok: true, files: requested });
+        }
+      });
+    } catch (e) {
+      sendResponse({ ok: false, files: [], reason: 'feature_injection_failed' });
+    }
+    return true;
+  }
 
   if (msg.type === 'AMZE_START_WISHLIST_IMPORT') {
     startWishlistImport(msg, sender, sendResponse);
