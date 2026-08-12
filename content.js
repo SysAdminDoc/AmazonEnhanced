@@ -22,6 +22,8 @@
 (function () {
   'use strict';
 
+  const UNIT_PRICE = globalThis.AmzeUnitPrice || {};
+
   // -------------------------------------------------------------------
   // 1. Defaults + storage
   // -------------------------------------------------------------------
@@ -447,68 +449,126 @@
   // 5. Price-per-unit inference (result tile level + PDP)
   // -------------------------------------------------------------------
 
-  // Units we can normalize to a canonical form. Keys are regex sources.
-  const UNIT_MAP = [
-    // Weight
-    { re: /\b([\d.,]+)\s*(oz|ounce|ounces)\b/i, unit: 'oz' },
-    { re: /\b([\d.,]+)\s*(lb|lbs|pound|pounds)\b/i, unit: 'oz', factor: 16 },
-    { re: /\b([\d.,]+)\s*(g|gram|grams)\b/i, unit: 'g' },
-    { re: /\b([\d.,]+)\s*(kg|kilogram|kilograms)\b/i, unit: 'g', factor: 1000 },
-    { re: /\b([\d.,]+)\s*(mg|milligram|milligrams)\b/i, unit: 'g', factor: 0.001 },
-    // Volume
-    { re: /\b([\d.,]+)\s*(fl\.?\s*oz|fluid\s*ounce|fluid\s*ounces)\b/i, unit: 'floz' },
-    { re: /\b([\d.,]+)\s*(ml|milliliter|milliliters)\b/i, unit: 'ml' },
-    { re: /\b([\d.,]+)\s*(l|liter|liters|litre|litres)\b/i, unit: 'ml', factor: 1000 },
-    { re: /\b([\d.,]+)\s*(gal|gallon|gallons)\b/i, unit: 'floz', factor: 128 },
-    // Count
-    { re: /\bpack\s*of\s*([\d.,]+)\b/i, unit: 'ct' },
-    { re: /\b([\d.,]+)\s*(count|ct|pcs|pieces|capsules|tablets|rolls|sheets|pods|bags|bars|cans|bottles|tissues|pairs)\b/i, unit: 'ct' },
-    { re: /\b([\d.,]+)\s*[-x]\s*pack\b/i, unit: 'ct' },
-    // Length
-    { re: /\b([\d.,]+)\s*(ft|foot|feet)\b/i, unit: 'ft' },
-    { re: /\b([\d.,]+)\s*(m|meter|meters|metre|metres)\b/i, unit: 'ft', factor: 3.28084 }
-  ];
-
   function extractQuantity(title) {
-    if (!title) return null;
-    for (const spec of UNIT_MAP) {
-      const m = title.match(spec.re);
-      if (m) {
-        const raw = parseNumber(m[1]);
-        if (isNaN(raw)) continue;
-        const qty = raw * (spec.factor || 1);
-        return { qty, unit: spec.unit };
+    return typeof UNIT_PRICE.extractQuantity === 'function'
+      ? UNIT_PRICE.extractQuantity(title)
+      : null;
+  }
+
+  const GROCERY_TILE_SELECTORS = [
+    '[data-testid="product-card"]',
+    '[data-testid="product-card-container"]',
+    '[data-testid*="product-card"]',
+    '[data-test-id="product-card"]',
+    '[data-test-id*="product-card"]',
+    '[data-cy="product-card"]',
+    '[class*="ProductCard"]',
+    '[class*="product-card"]'
+  ].join(',');
+
+  const GROCERY_TITLE_SELECTORS = [
+    '[data-testid="product-title"]',
+    '[data-testid*="product-title"]',
+    '[data-test-id="product-title"]',
+    '[data-test-id*="product-title"]',
+    '[data-cy="product-title"]',
+    '[class*="ProductTitle"]',
+    '[class*="product-title"]',
+    'h3 a span',
+    'h3 span',
+    'h3',
+    'a[href*="/dp/"]'
+  ].join(',');
+
+  const GROCERY_PRICE_SELECTORS = [
+    '[data-testid="product-price"]',
+    '[data-testid="price"]',
+    '[data-testid*="product-price"]',
+    '[data-testid*="price"]',
+    '[data-test-id="product-price"]',
+    '[data-test-id="price"]',
+    '[data-test-id*="product-price"]',
+    '[data-test-id*="price"]',
+    '[data-cy="product-price"]',
+    '[class*="ProductPrice"]',
+    '[class*="product-price"]',
+    '[class*="price"]'
+  ].join(',');
+
+  const GROCERY_SIZE_SELECTORS = [
+    '[data-testid="product-size"]',
+    '[data-testid="unit-size"]',
+    '[data-testid="product-subtitle"]',
+    '[data-test-id="product-size"]',
+    '[data-test-id="unit-size"]',
+    '[data-test-id="product-subtitle"]',
+    '[class*="ProductSize"]',
+    '[class*="product-size"]',
+    '[class*="unit-size"]'
+  ].join(',');
+
+  const GROCERY_UNIT_PRICE_RE = /(?:\/|\bper\b)\s*(?:oz|ounce|lb|pound|g|kg|ml|l|floz|fl\.?\s*oz|ct|count|ea|each)\b/i;
+
+  function isGroceryPage() {
+    const host = String(location.hostname || '').toLowerCase();
+    const path = String(location.pathname || '').toLowerCase();
+    if (/amazonfresh\.|wholefoods\./i.test(host)) return true;
+    if (/\/(?:fresh|whole[-_]?foods|amazonfresh)(?:\/|$)/i.test(path)) return true;
+    if (document.title && /amazon\s*(fresh|whole\s*foods)/i.test(document.title)) return true;
+    return !!document.querySelector(
+      '[data-testid*="grocery"], [data-testid*="fresh"], [data-testid*="wholefood"], ' +
+      '[data-test-id*="grocery"], [data-test-id*="fresh"], [data-test-id*="wholefood"]'
+    );
+  }
+
+  function isGroceryTile(el) {
+    return !!(el && el.matches && el.matches(GROCERY_TILE_SELECTORS));
+  }
+
+  function findGroceryPriceElement(el) {
+    if (!el || !el.querySelectorAll) return null;
+    const candidates = el.querySelectorAll(GROCERY_PRICE_SELECTORS);
+    for (const candidate of candidates) {
+      const marker = `${candidate.className || ''} ${candidate.id || ''} ${candidate.getAttribute('data-testid') || ''} ${candidate.getAttribute('data-test-id') || ''}`;
+      if (/unit|per|was|list|strike|original/i.test(marker)) continue;
+      if (isFinite(parseNumber(candidate.getAttribute('aria-label') || candidate.textContent))) {
+        return candidate;
       }
     }
     return null;
   }
 
+  function extractGroceryQuantity(el, title) {
+    const parts = [title];
+    if (el && el.querySelectorAll) {
+      el.querySelectorAll(GROCERY_SIZE_SELECTORS).forEach(node => parts.push(node.textContent || ''));
+    }
+    let quantity = extractQuantity(parts.join(' '));
+    if (quantity) return quantity;
+
+    const priceEl = findGroceryPriceElement(el);
+    const priceText = priceEl ? (priceEl.textContent || '') : '';
+    const cardText = String(el && el.textContent || '').replace(priceText, ' ');
+    return extractQuantity(cardText);
+  }
+
   function extractTilePrice(el) {
     const priceEl = el.querySelector('.a-price .a-offscreen, .a-price-whole');
-    if (!priceEl) return NaN;
-    return parseNumber(priceEl.textContent);
+    if (priceEl) return parseNumber(priceEl.textContent);
+    const groceryPrice = findGroceryPriceElement(el);
+    return groceryPrice ? parseNumber(groceryPrice.getAttribute('aria-label') || groceryPrice.textContent) : NaN;
   }
 
   function extractTileTitle(el) {
-    const titleEl = el.querySelector('h2 span, h2 a span, .s-link-style span');
+    const titleEl = el.querySelector('h2 span, h2 a span, .s-link-style span') ||
+      (isGroceryTile(el) && el.querySelector(GROCERY_TITLE_SELECTORS));
     return titleEl ? (titleEl.textContent || '').trim() : '';
   }
 
   function formatUnitPrice(price, qty, unit) {
-    if (!isFinite(price) || !isFinite(qty) || qty <= 0) return '';
-    const per = price / qty;
-    // Pick a nicer display scale.
-    if (unit === 'g' && qty >= 1000) {
-      return `${(price / (qty / 1000)).toFixed(2)}/kg`;
-    }
-    if (unit === 'ml' && qty >= 1000) {
-      return `${(price / (qty / 1000)).toFixed(2)}/L`;
-    }
-    if (unit === 'oz' && qty >= 16) {
-      return `${(price / (qty / 16)).toFixed(2)}/lb`;
-    }
-    if (per < 0.01) return `${(per * 100).toFixed(2)}¢/${unit}`;
-    return `${per.toFixed(2)}/${unit}`;
+    return typeof UNIT_PRICE.formatUnitPrice === 'function'
+      ? UNIT_PRICE.formatUnitPrice(price, qty, unit)
+      : '';
   }
 
   function attachPricePerUnit(el) {
@@ -527,6 +587,29 @@
     badge.setAttribute('aria-label', 'Price per unit: ' + formatted);
     badge.title = 'AmazonEnhanced — price per unit';
     host.parentElement.appendChild(badge);
+  }
+
+  function attachGroceryPricePerUnit(el) {
+    if (!settings.flags.pricePerUnit || !isGroceryTile(el)) return;
+    if (el.querySelector('.amze-badge-price')) return;
+    if (GROCERY_UNIT_PRICE_RE.test(el.textContent || '') ||
+        el.querySelector('[data-testid*="unit-price"], [data-test-id*="unit-price"], [class*="unit-price"], [class*="UnitPrice"]')) {
+      return;
+    }
+    const priceEl = findGroceryPriceElement(el);
+    if (!priceEl) return;
+    const price = parseNumber(priceEl.getAttribute('aria-label') || priceEl.textContent);
+    const title = extractTileTitle(el);
+    const quantity = extractGroceryQuantity(el, title);
+    if (!quantity || !isFinite(price)) return;
+    const formatted = formatUnitPrice(price, quantity.qty, quantity.unit);
+    if (!formatted) return;
+    const badge = document.createElement('span');
+    badge.className = 'amze-badge amze-badge-price amze-grocery-unit-price';
+    badge.textContent = formatted;
+    badge.setAttribute('aria-label', 'Price per unit: ' + formatted);
+    badge.title = 'AmazonEnhanced — grocery price per unit';
+    (priceEl.parentElement || el).appendChild(badge);
   }
 
   // -------------------------------------------------------------------
@@ -1038,6 +1121,9 @@
     const scope = (root && root.querySelectorAll) ? root : document;
     const tiles = scope.querySelectorAll('.s-result-item, [data-component-type="s-search-result"], [data-component-type="sp-sponsored-result"]');
     tiles.forEach(processResultTile);
+    if (isGroceryPage()) {
+      scope.querySelectorAll(GROCERY_TILE_SELECTORS).forEach(attachGroceryPricePerUnit);
+    }
   }
 
   const schedule = debounce(() => {

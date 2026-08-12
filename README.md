@@ -42,7 +42,7 @@
 - **Review-quality scoring.** Polarization, 1-star share, verified-sample ratio, volume.
 
 ### Price tools
-- Inline price-per-unit badges (auto $/oz, $/kg, $/ct; locale-safe EU decimal parsing)
+- Inline price-per-unit badges (auto $/oz, $/kg, $/ct; locale-safe EU decimal parsing), including Fresh / Whole Foods product cards
 - Suspicious-MSRP flag (>70% above actual)
 - Local deal-badge normalizer when "Limited time deal" matches the 30-day local baseline
 - Affiliate/tracking URL stripper + `/dp/ASIN` canonicalization
