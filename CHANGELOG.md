@@ -13,6 +13,7 @@
 - Added a PDP frequently-returned warning with bounded reason extraction from Amazon's nearby list/table disclosure content.
 - Added wishlist JSON import with a bounded, user-started, rate-limited queue that uses Amazon's visible Add to List controls and reports per-item results.
 - Added visible order invoice PDF ZIP export with same-origin checks, `%PDF` validation, 50-item bounds, a 2.5-second request delay, cancellation, and per-item failure reporting.
+- Added one-click Markdown receipt downloads to each visible order card.
 
 ## [2.0.15] - 2026-06-27
 

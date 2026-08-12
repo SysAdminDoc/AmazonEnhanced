@@ -33,6 +33,7 @@
   const WISHLIST_IMPORT = globalThis.AmzeWishlistImport || {};
   const INVOICE_EXPORT = globalThis.AmzeInvoiceExport || {};
   const ZIP_STORE = globalThis.AmzeZipStore || {};
+  const RECEIPT_MARKDOWN = globalThis.AmzeReceiptMarkdown || {};
 
   // -------------------------------------------------------------------
   // 1. Defaults + storage
@@ -1213,6 +1214,9 @@
         if (!wishlistImportJobId) {
           document.querySelector('#amze-wl-tools')?.remove();
           wishlistImportItems = [];
+        }
+        if (!settings.flags.orderExport) {
+          document.querySelectorAll('[data-amze-receipt-md]').forEach(el => el.remove());
         }
         document.documentElement.toggleAttribute('data-amze-large-text',   !!settings.flags.largeText);
         document.documentElement.toggleAttribute('data-amze-high-contrast', !!settings.flags.highContrast);
@@ -2663,19 +2667,46 @@
     const out = [];
     const orders = document.querySelectorAll('.order-card, .order, .js-order-card');
     orders.forEach(card => {
-      const orderId = (card.querySelector('[class*="order-id"], .a-col-right .a-size-mini .a-color-secondary')?.textContent || '').trim();
-      const total = (card.querySelector('[class*="total"], .a-col-right .a-size-base')?.textContent || '').trim();
-      const date = (card.querySelector('[class*="order-date"], .a-col-left .a-size-base')?.textContent || '').trim();
-      const items = [];
-      card.querySelectorAll('.yohtmlc-item, .a-fixed-left-grid').forEach(it => {
-        const title = (it.querySelector('.a-link-normal, h3')?.textContent || '').trim();
-        if (title) items.push(title);
-      });
-      if (orderId || total || items.length) {
-        out.push({ orderId, date, total, items });
-      }
+      const record = extractOrderRecordFromCard(card);
+      if (record) out.push(record);
     });
     return out;
+  }
+
+  function extractOrderRecordFromCard(card) {
+    if (!card || card.getAttribute('aria-hidden') === 'true') return null;
+    const orderId = (card.querySelector('[class*="order-id"], .a-col-right .a-size-mini .a-color-secondary')?.textContent || '').trim();
+    const total = (card.querySelector('[class*="total"], .a-col-right .a-size-base')?.textContent || '').trim();
+    const date = (card.querySelector('[class*="order-date"], .a-col-left .a-size-base')?.textContent || '').trim();
+    const items = [];
+    card.querySelectorAll('.yohtmlc-item, .a-fixed-left-grid').forEach(it => {
+      const title = (it.querySelector('.a-link-normal, h3')?.textContent || '').trim();
+      if (title) items.push(title);
+    });
+    if (!orderId && !total && !date && !items.length) return null;
+    return { orderId, date, total, items };
+  }
+
+  function injectMarkdownReceiptButtons() {
+    if (!settings.flags.orderExport || !isOrdersPage()) return;
+    if (typeof RECEIPT_MARKDOWN.formatReceiptMarkdown !== 'function') return;
+    document.querySelectorAll('.order-card, .order, .js-order-card').forEach(card => {
+      if (!card || card.getAttribute('aria-hidden') === 'true' || card.querySelector('[data-amze-receipt-md]')) return;
+      const record = extractOrderRecordFromCard(card);
+      if (!record) return;
+      const host = card.querySelector('.yohtmlc-order-level-connections, [class*="order-level-connections"], [class*="order-actions"]') || card;
+      const button = createActionButton('', 'Markdown', 'Download this order as a Markdown receipt');
+      button.dataset.amzeReceiptMd = '1';
+      button.classList.add('amze-order-receipt-md');
+      button.addEventListener('click', () => {
+        const current = extractOrderRecordFromCard(card) || record;
+        const markdown = RECEIPT_MARKDOWN.formatReceiptMarkdown(current);
+        const filename = RECEIPT_MARKDOWN.buildReceiptFilename(current);
+        downloadBlob(new Blob([markdown], { type: 'text/markdown' }), filename);
+        toast('Downloaded Markdown receipt');
+      });
+      host.appendChild(button);
+    });
   }
 
   async function exportOrders(format) {
@@ -3325,6 +3356,7 @@
     try { injectPriceAlertUI(); } catch (e) {}
     try { injectCopyLinkButton(); } catch (e) {}
     try { injectOrderExportButton(); } catch (e) {}
+    try { injectMarkdownReceiptButtons(); } catch (e) {}
     try { injectWishlistExportButton(); } catch (e) {}
     try { pushOrdersToWatcher(); } catch (e) {}
     try { applyAriaFixes(); } catch (e) {}

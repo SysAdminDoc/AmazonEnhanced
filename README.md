@@ -59,6 +59,7 @@
 - **Copy clean product link** button on PDPs (Markdown-formatted)
 - **Order history export** (CSV / JSON) on `/your-orders` pages
 - **Invoice PDF ZIP export** for visible order cards; fetches same-origin invoice candidates one at a time with a 2.5-second delay, includes only `%PDF` responses, and reports unavailable/non-invoice orders
+- **Individual Markdown receipts** from a one-click action on each visible order card
 - **Wishlist export** (CSV / JSON / Markdown) on wishlist pages
 - **Wishlist import** from an AmazonEnhanced JSON export, using a user-started, rate-limited queue of Amazon's visible Add to List controls; keep the source wishlist tab open while it runs
 - **Late-delivery watcher** — background alarm notifies you when a promised delivery date passes without "Delivered"
@@ -112,6 +113,7 @@ content.js           document_end: feature runtime + MutationObserver
 wishlist-import.js   JSON parser and bounded ASIN helpers for wishlist import
 invoice-export.js    visible order invoice-link discovery and PDF validation
 zip-store.js         dependency-free store-only ZIP writer
+receipt-markdown.js  local Markdown receipt formatter and safe filenames
 background.js        Service worker: defaults, IDB caches, alarms, DNR, tab broadcast
 popup.html/css/js    10-tab settings UI
 icons/               16/32/48/128/512 PNGs

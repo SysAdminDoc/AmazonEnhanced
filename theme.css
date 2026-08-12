@@ -1440,6 +1440,7 @@ html[data-amze-theme="amoled"] .a-badge-text {
   margin-top: 6px;
   max-width: 620px;
 }
+.amze-order-receipt-md { margin: 4px 6px 0 0; }
 .amze-wl-import-box {
   border-top: 1px solid var(--amze-border-soft, #313244);
   margin-top: 8px;

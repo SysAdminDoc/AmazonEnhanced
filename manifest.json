@@ -110,7 +110,7 @@
         "*://*.amazon.ae/*",
         "*://*.amazon.eg/*"
       ],
-      "js": ["unit-price.js", "price-history.js", "variant-price.js", "price-history-io.js", "upgrade-skip.js", "prime-trial.js", "shipping-diff.js", "return-reasons.js", "wishlist-import.js", "invoice-export.js", "zip-store.js", "content.js"],
+      "js": ["unit-price.js", "price-history.js", "variant-price.js", "price-history-io.js", "upgrade-skip.js", "prime-trial.js", "shipping-diff.js", "return-reasons.js", "wishlist-import.js", "invoice-export.js", "zip-store.js", "receipt-markdown.js", "content.js"],
       "run_at": "document_end",
       "all_frames": false
     }

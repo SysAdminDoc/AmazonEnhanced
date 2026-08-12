@@ -53,6 +53,7 @@ INCLUDE_FILES = [
     "wishlist-import.js",
     "invoice-export.js",
     "zip-store.js",
+    "receipt-markdown.js",
     "content.js",
     "background.js",
     "popup.html",
