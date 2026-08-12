@@ -64,6 +64,7 @@
 - **Order history export** (CSV / JSON) on `/your-orders` pages
 - **Invoice PDF ZIP export** for visible order cards; fetches same-origin invoice candidates one at a time with a 2.5-second delay, includes only `%PDF` responses, and reports unavailable/non-invoice orders
 - **Individual Markdown receipts** from a one-click action on each visible order card
+- **Bought-too-much summary** that counts repeated ASINs across visited order pages and links to local Subscribe &amp; Save cleanup
 - **Wishlist export** (CSV / JSON / Markdown) on wishlist pages
 - **Wishlist import** from an AmazonEnhanced JSON export, using a user-started, rate-limited queue of Amazon's visible Add to List controls; keep the source wishlist tab open while it runs
 - **Late-delivery watcher** — background alarm notifies you when a promised delivery date passes without "Delivered"
@@ -132,6 +133,7 @@ review-corpus.js     bounded local visible-review normalization and excerpt sele
 review-score-kernel.js shared bounded scoring kernel for Amazon and supported retail sites
 cross-site-reviews.js Walmart / Target / Best Buy / Etsy review-panel adapter
 prime-video-declutter.js document-start Prime Video ad/self-promotion suppressor
+purchase-summary.js   local repeated-ASIN purchase aggregation and cleanup suggestions
 error-buffer.js      bounded local runtime-error buffer and report formatter
 session-state.js     bounded chrome.storage.session scan markers per document
 service-worker-warm.js periodic MV3 service-worker wake/alarm helper

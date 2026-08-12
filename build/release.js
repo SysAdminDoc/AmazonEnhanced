@@ -18,6 +18,7 @@ const JS_FILES = [
   'cross-site-reviews.js',
   'prime-video-declutter.js',
   'pdp-diff.js',
+  'purchase-summary.js',
   'unit-price.js',
   'price-history.js',
   'variant-price.js',

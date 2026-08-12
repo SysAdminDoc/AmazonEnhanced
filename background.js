@@ -6,6 +6,7 @@ if (typeof importScripts === 'function') {
   importScripts('error-buffer.js');
   importScripts('review-corpus.js');
   importScripts('pdp-diff.js');
+  importScripts('purchase-summary.js');
 }
 
 const AMZE_ERROR_REPORTER = globalThis.AmzeErrorBuffer && globalThis.AmzeErrorBuffer.createReporter
@@ -100,13 +101,14 @@ async function getAmazonUrlPatterns() {
 }
 
 const DB_NAME = 'AmazonEnhancedDB';
-const DB_VERSION = 4;
+const DB_VERSION = 5;
 const PRICE_HISTORY_RETENTION_MS = 365 * 24 * 60 * 60 * 1000;
 const WATCHED_ORDER_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
 const SELLER_LOOKUP_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
 const REVIEW_CORPUS_RETENTION_MS = 365 * 24 * 60 * 60 * 1000;
 const PDP_SNAPSHOT_RETENTION_MS = 365 * 24 * 60 * 60 * 1000;
 const PDP_SNAPSHOT_MAX = 200;
+const PURCHASE_SUMMARY_RETENTION_MS = 730 * 24 * 60 * 60 * 1000;
 const SELLER_LOOKUP_MIN_INTERVAL_MS = 15 * 1000;
 let dbPromise = null;
 let legacyStorageMigrationPromise = null;
@@ -147,6 +149,9 @@ function openDb() {
         }
         if (!db.objectStoreNames.contains('pdpSnapshots')) {
           db.createObjectStore('pdpSnapshots', { keyPath: 'asin' });
+        }
+        if (!db.objectStoreNames.contains('purchaseSummary')) {
+          db.createObjectStore('purchaseSummary', { keyPath: 'asin' });
         }
       };
       req.onsuccess = () => resolve(req.result);
@@ -314,6 +319,29 @@ async function writePdpSnapshot(snapshot) {
     .sort((a, b) => b.updatedAt - a.updatedAt);
   await Promise.all(valid.slice(PDP_SNAPSHOT_MAX).map(entry => idbDelete('pdpSnapshots', entry.asin)));
   return valid.slice(0, PDP_SNAPSHOT_MAX);
+}
+
+async function readPurchaseSummary() {
+  if (!globalThis.AmzePurchaseSummary) return [];
+  const cutoff = Date.now() - PURCHASE_SUMMARY_RETENTION_MS;
+  const entries = await idbGetAll('purchaseSummary');
+  return entries
+    .map(entry => globalThis.AmzePurchaseSummary.normalizeEntry(entry))
+    .filter(entry => entry && entry.updatedAt >= cutoff)
+    .sort((a, b) => b.purchaseCount - a.purchaseCount);
+}
+
+async function mergePurchaseSummary(orders) {
+  if (!globalThis.AmzePurchaseSummary) return [];
+  const existing = await idbGetAll('purchaseSummary');
+  const merged = globalThis.AmzePurchaseSummary.mergePurchaseSummary(existing, orders);
+  await Promise.all(merged.map(entry => idbPut('purchaseSummary', entry)));
+  const keep = new Set(merged.map(entry => entry.asin));
+  await Promise.all(existing
+    .map(entry => entry && entry.asin)
+    .filter(asin => asin && !keep.has(asin))
+    .map(asin => idbDelete('purchaseSummary', asin)));
+  return merged;
 }
 
 function normalizeSellerLookupKey(name) {
@@ -630,12 +658,21 @@ async function purgePdpSnapshotRetention(now = Date.now()) {
   await Promise.all([...new Set([...stale, ...overflow])].map(asin => idbDelete('pdpSnapshots', asin)));
 }
 
+async function purgePurchaseSummaryRetention(now = Date.now()) {
+  const cutoff = now - PURCHASE_SUMMARY_RETENTION_MS;
+  const entries = await idbGetAll('purchaseSummary');
+  await Promise.all(entries
+    .filter(entry => !entry || !entry.updatedAt || entry.updatedAt < cutoff)
+    .map(entry => entry && entry.asin ? idbDelete('purchaseSummary', entry.asin) : null));
+}
+
 async function purgeRetainedData(now = Date.now()) {
   await Promise.all([
     purgePriceHistoryRetention(now),
     purgeWatchedOrderRetention(now),
     purgeReviewCorpusRetention(now),
-    purgePdpSnapshotRetention(now)
+    purgePdpSnapshotRetention(now),
+    purgePurchaseSummaryRetention(now)
   ]);
 }
 
@@ -646,6 +683,7 @@ async function clearLocalDataCaches() {
     idbClear('sellerLookups'),
     idbClear('reviewCorpus'),
     idbClear('pdpSnapshots'),
+    idbClear('purchaseSummary'),
     chrome.storage.local.remove(['amzePriceHistory', 'amzeOrigins', 'amzeWatchedOrders', 'amzeErrorBuffer'])
   ]);
 }
@@ -1134,10 +1172,21 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return true;
   }
 
+  if (msg.type === 'AMZE_IDB_MERGE_PURCHASE_SUMMARY') {
+    (async () => {
+      const entries = await mergePurchaseSummary(msg.orders);
+      const summary = globalThis.AmzePurchaseSummary
+        ? globalThis.AmzePurchaseSummary.summarizeEntries(entries)
+        : [];
+      sendResponse({ ok: true, entries: summary });
+    })().catch(() => sendResponse({ ok: false, entries: [] }));
+    return true;
+  }
+
   if (msg.type === 'AMZE_CLEAR_LOCAL_DATA') {
     (async () => {
       await clearLocalDataCaches();
-      sendResponse({ ok: true, cleared: ['priceHistory', 'origins', 'sellerLookups', 'reviewCorpus', 'pdpSnapshots', 'watchedOrders', 'errorBuffer'] });
+      sendResponse({ ok: true, cleared: ['priceHistory', 'origins', 'sellerLookups', 'reviewCorpus', 'pdpSnapshots', 'purchaseSummary', 'watchedOrders', 'errorBuffer'] });
     })().catch(() => sendResponse({ ok: false, cleared: [] }));
     return true;
   }

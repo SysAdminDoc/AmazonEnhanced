@@ -28,6 +28,7 @@ FIREFOX_BACKGROUND_SCRIPTS = [
     "service-worker-warm.js",
     "error-buffer.js",
     "pdp-diff.js",
+    "purchase-summary.js",
     "background.js",
 ]
 

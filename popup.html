@@ -265,6 +265,10 @@
     <input type="checkbox" data-flag="orderExport" class="amze-switch">
   </label>
   <label class="amze-row">
+    <span><strong>Bought-too-much summary</strong><small>Counts repeated ASINs across visited order pages and suggests reviewing Subscribe &amp; Save subscriptions.</small></span>
+    <input type="checkbox" data-flag="purchaseSummary" class="amze-switch">
+  </label>
+  <label class="amze-row">
     <span>Wishlist export<small>On wishlist pages, shows CSV / JSON / Markdown export buttons.</small></span>
     <input type="checkbox" data-flag="wishlistExport" class="amze-switch">
   </label>
@@ -290,7 +294,7 @@
   </label>
   <div class="amze-privacy">
     <h3>Privacy</h3>
-    <p>AmazonEnhanced stores settings, price history, seller/origin caches, watched-order dates, custom brand rules, and allergen terms locally in this browser profile. It sends no analytics, telemetry, or shopping data to external services. If OpenCorporates seller lookup is enabled, seller names are sent to OpenCorporates using your local API token.</p>
+    <p>AmazonEnhanced stores settings, price history, PDP snapshots, purchase summaries, seller/origin caches, watched-order dates, custom brand rules, and allergen terms locally in this browser profile. It sends no analytics, telemetry, or shopping data to external services. If OpenCorporates seller lookup is enabled, seller names are sent to OpenCorporates using your local API token.</p>
   </div>
   <div class="amze-data-actions">
     <input id="amze-price-history-import-file" type="file" accept=".json,application/json" hidden>

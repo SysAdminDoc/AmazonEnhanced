@@ -18,7 +18,8 @@
     { flag: 'frequentlyReturnedWarn', files: ['return-reasons.js'] },
     { flag: 'weightedSmartSort', files: ['smart-sort.js'] },
     { flag: 'wishlistImport', files: ['wishlist-import.js'] },
-    { flag: 'orderExport', files: ['invoice-export.js', 'zip-store.js', 'receipt-markdown.js'] }
+    { flag: 'orderExport', files: ['invoice-export.js', 'zip-store.js', 'receipt-markdown.js'] },
+    { flag: 'purchaseSummary', files: ['purchase-summary.js'] }
   ];
 
   const ALLOWED_FILES = new Set(MODULES.flatMap(module => module.files));

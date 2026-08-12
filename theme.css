@@ -1469,6 +1469,24 @@ html[data-amze-theme="amoled"] .a-badge-text {
   letter-spacing: .4px;
   margin-bottom: 6px;
 }
+.amze-bought-too-much-note {
+  color: var(--amze-text-muted, #9399b2);
+  font-size: 11px;
+  line-height: 1.4;
+  margin-bottom: 5px;
+}
+.amze-bought-too-much-list {
+  margin: 5px 0 8px 18px;
+  padding: 0;
+  font-size: 12px;
+}
+.amze-bought-too-much-list li { margin: 4px 0; }
+.amze-bought-too-much-list small {
+  display: block;
+  color: var(--amze-text-muted, #9399b2);
+  font-size: 11px;
+}
+.amze-bought-too-much-summary a { color: var(--amze-link, #89dceb); font-size: 11px; }
 .amze-invoice-export-status {
   color: var(--amze-text-muted, #9399b2);
   font-size: 11px;

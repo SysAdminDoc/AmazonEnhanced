@@ -57,6 +57,7 @@
   const SMART_SORT = createLazyModuleApi('AmzeSmartSort');
   const REDIRECT_STRIPPER = createLazyModuleApi('AmzeRedirectStripper');
   const PDP_DIFF = createLazyModuleApi('AmzePdpDiff');
+  const PURCHASE_SUMMARY = createLazyModuleApi('AmzePurchaseSummary');
 
   // -------------------------------------------------------------------
   // 1. Defaults + storage
@@ -281,6 +282,9 @@
   let pdpDiffPanel = null;
   let pdpDiffRequest = null;
   let pdpDiffState = { asin: '', signature: '' };
+  let purchaseSummaryPanel = null;
+  let purchaseSummaryRequest = null;
+  let purchaseSummarySignature = '';
   let mutationQueue = null;
   function getSessionPageKey() {
     const origin = String(location.origin || location.hostname || 'amazon');
@@ -1626,6 +1630,11 @@
           smartSortWeights = Object.assign({}, SMART_SORT.DEFAULT_WEIGHTS || smartSortWeights);
         }
         if (!settings.flags.pdpDiff) removePdpDiff();
+        if (!settings.flags.purchaseSummary) {
+          purchaseSummaryPanel?.remove();
+          purchaseSummaryPanel = null;
+          purchaseSummarySignature = '';
+        }
         sparklineRenderState = null;
         document.querySelector('#amze-sparkline')?.remove();
         removeVariantPriceMap();
@@ -3362,6 +3371,112 @@
   // 12.11 Order history export
   // -------------------------------------------------------------------
 
+  function extractPurchaseItemsFromCard(card) {
+    if (!card || typeof PURCHASE_SUMMARY.normalizeAsin !== 'function') return [];
+    const containers = Array.from(card.querySelectorAll('.yohtmlc-item, .a-fixed-left-grid, [data-asin]'));
+    const sources = containers.length ? containers : Array.from(card.querySelectorAll('a[href*="/dp/"], a[href*="/gp/product/"]'));
+    const seen = new Set();
+    const items = [];
+    sources.forEach(source => {
+      const link = source.matches?.('a[href]') ? source : source.querySelector('a[href*="/dp/"], a[href*="/gp/product/"]');
+      const asin = PURCHASE_SUMMARY.normalizeAsin(
+        source.getAttribute?.('data-asin') || source.getAttribute?.('data-itemid') || link?.getAttribute('href') || ''
+      );
+      if (!asin || seen.has(asin)) return;
+      const text = normalizeReadableText(source.textContent || '', 500);
+      const title = normalizeReadableText(
+        source.querySelector?.('.a-link-normal, h3, [class*="item-title" i]')?.textContent || link?.textContent || '',
+        180
+      );
+      const quantityMatch = text.match(/(?:quantity|qty)\s*[:×x]?\s*(\d+)/i);
+      const subscription = /subscribe\s*&\s*save|subscription|subscribe\s+and\s+save/i.test(text);
+      seen.add(asin);
+      items.push({
+        asin,
+        title,
+        quantity: quantityMatch ? Number(quantityMatch[1]) : 1,
+        subscription
+      });
+    });
+    return items;
+  }
+
+  function extractPurchaseOrdersFromPage() {
+    const orders = [];
+    document.querySelectorAll('.order-card, .order, .js-order-card').forEach(card => {
+      if (card.getAttribute('aria-hidden') === 'true') return;
+      const orderId = (card.querySelector('[class*="order-id"], .a-col-right .a-size-mini .a-color-secondary')?.textContent || '').trim();
+      const date = (card.querySelector('[class*="order-date"], .a-col-left .a-size-base')?.textContent || '').trim();
+      const items = extractPurchaseItemsFromCard(card);
+      if (items.length) orders.push({ orderId, date, items });
+    });
+    return orders;
+  }
+
+  function renderPurchaseSummary(entries) {
+    purchaseSummaryPanel?.remove();
+    purchaseSummaryPanel = null;
+    if (!Array.isArray(entries) || !entries.length) return;
+    const host = document.querySelector('#navFiller, .your-orders-content-container, main');
+    if (!host || !host.parentElement) return;
+    const panel = document.createElement('section');
+    panel.id = 'amze-bought-too-much';
+    panel.className = 'amze-export-wrap amze-bought-too-much-summary';
+    panel.setAttribute('aria-labelledby', 'amze-bought-too-much-title');
+    const title = createTextElement('div', 'amze-export-title', 'Bought-too-much summary');
+    title.id = 'amze-bought-too-much-title';
+    panel.appendChild(title);
+    panel.appendChild(createTextElement('div', 'amze-bought-too-much-note',
+      'Repeated ASINs found in order pages visited in this browser. Counts stay local.'));
+    const list = document.createElement('ul');
+    list.className = 'amze-bought-too-much-list';
+    entries.slice(0, 8).forEach(entry => {
+      const item = document.createElement('li');
+      const label = entry.title || entry.asin;
+      const count = `${entry.purchaseCount} purchase${entry.purchaseCount === 1 ? '' : 's'}`;
+      item.appendChild(createTextElement('strong', '', `${label} — ${count}`));
+      const detail = entry.subscriptionCount
+        ? ` ${entry.subscriptionCount} via Subscribe & Save.`
+        : ' Review whether this repeat purchase is intentional.';
+      item.appendChild(createTextElement('small', '', detail));
+      list.appendChild(item);
+    });
+    panel.appendChild(list);
+    const link = document.createElement('a');
+    link.href = new URL('/hz5/yourmembershipsandsubscriptions', location.origin).href;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.textContent = 'Review Subscribe & Save subscriptions';
+    panel.appendChild(link);
+    host.parentElement.insertBefore(panel, host);
+    purchaseSummaryPanel = panel;
+  }
+
+  function refreshPurchaseSummary() {
+    if (!settings.flags.purchaseSummary || !isOrdersPage() || typeof PURCHASE_SUMMARY.summarizeEntries !== 'function') {
+      purchaseSummaryPanel?.remove();
+      purchaseSummaryPanel = null;
+      purchaseSummarySignature = '';
+      return;
+    }
+    if (purchaseSummaryRequest) return;
+    const orders = extractPurchaseOrdersFromPage();
+    if (!orders.length) return;
+    const signature = JSON.stringify(orders.map(order => ({
+      id: order.orderId,
+      items: order.items.map(item => [item.asin, item.quantity, item.subscription])
+    })));
+    if (signature === purchaseSummarySignature && purchaseSummaryPanel?.isConnected) return;
+    purchaseSummarySignature = signature;
+    purchaseSummaryRequest = (async () => {
+      const response = await sendMessageWithTimeout({ type: 'AMZE_IDB_MERGE_PURCHASE_SUMMARY', orders }, 10000);
+      if (!settings.flags.purchaseSummary || !isOrdersPage()) return;
+      renderPurchaseSummary(response && Array.isArray(response.entries) ? response.entries : []);
+    })().catch(() => {}).finally(() => {
+      purchaseSummaryRequest = null;
+    });
+  }
+
   function injectOrderExportButton() {
     if (!settings.flags.orderExport) return;
     if (!isOrdersPage()) return;
@@ -4093,6 +4208,7 @@
     try { injectPriceAlertUI(); } catch (e) {}
     try { injectCopyLinkButton(); } catch (e) {}
     try { injectOrderExportButton(); } catch (e) {}
+    try { refreshPurchaseSummary(); } catch (e) {}
     try { injectMarkdownReceiptButtons(); } catch (e) {}
     try { injectWishlistExportButton(); } catch (e) {}
     try { pushOrdersToWatcher(); } catch (e) {}
