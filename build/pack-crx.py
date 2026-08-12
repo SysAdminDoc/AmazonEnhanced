@@ -44,6 +44,7 @@ INCLUDE_FILES = [
     "theme.css",
     "unit-price.js",
     "price-history.js",
+    "variant-price.js",
     "content.js",
     "background.js",
     "popup.html",

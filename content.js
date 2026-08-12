@@ -24,6 +24,7 @@
 
   const UNIT_PRICE = globalThis.AmzeUnitPrice || {};
   const PRICE_HISTORY = globalThis.AmzePriceHistory || {};
+  const VARIANT_PRICE = globalThis.AmzeVariantPrice || {};
 
   // -------------------------------------------------------------------
   // 1. Defaults + storage
@@ -192,6 +193,8 @@
   let domObserver = null;
   let smartImageObserver = null;
   let sparklineRenderState = null;
+  let variantPriceMapState = null;
+  let variantPriceMapRequest = 0;
 
   function requestWhiteBackgroundSweep() {
     if (whiteBgIdleHandle !== null) return;
@@ -1191,6 +1194,7 @@
         document.querySelector('#amze-seller-reveal')?.removeAttribute('data-amze-seller-lookup');
         sparklineRenderState = null;
         document.querySelector('#amze-sparkline')?.remove();
+        removeVariantPriceMap();
         document.documentElement.toggleAttribute('data-amze-large-text',   !!settings.flags.largeText);
         document.documentElement.toggleAttribute('data-amze-high-contrast', !!settings.flags.highContrast);
         schedule();
@@ -1681,6 +1685,193 @@
       const target = document.querySelector('#titleSection') || document.querySelector('#centerCol');
       if (target) target.insertBefore(warn, target.firstChild);
     }
+  }
+
+  // -------------------------------------------------------------------
+  // 12.8b Cross-variant local price map
+  // -------------------------------------------------------------------
+
+  const VARIATION_GROUP_SELECTORS = [
+    '#variation_color_name',
+    '#variation_size_name',
+    '#variation_style_name',
+    '#variation_pattern_name',
+    '#variation_material_name',
+    '#variation_flavor_name',
+    '[id^="variation_"][id$="_name"]'
+  ].join(',');
+
+  const VARIATION_OPTION_SELECTORS = [
+    'li',
+    'button',
+    '[role="radio"]',
+    '[role="option"]',
+    '.twisterSwatchWrapper',
+    '[data-defaultasin]',
+    '[data-asin]',
+    '[data-dp-url]',
+    '[data-csa-c-item-id*="amzn1.asin"]',
+    'a[href*="/dp/"]'
+  ].join(',');
+
+  function variationGroupLabel(group) {
+    const labelNode = group.querySelector('label, .a-form-label, .a-form-label span, .a-form-label a');
+    if (labelNode && labelNode.textContent) {
+      return String(labelNode.textContent).replace(/\s*:\s*$/, '').replace(/\s+/g, ' ').trim();
+    }
+    const id = group.id || '';
+    const key = id.replace(/^variation_/, '').replace(/_name$/, '').replace(/_/g, ' ').trim();
+    return key ? key.charAt(0).toUpperCase() + key.slice(1) : 'Variant';
+  }
+
+  function getVariantAsinFromNode(node) {
+    if (!node) return '';
+    const attrs = [
+      node.getAttribute('data-defaultasin'),
+      node.getAttribute('data-asin'),
+      node.getAttribute('data-dp-url'),
+      node.getAttribute('data-csa-c-item-id'),
+      node.getAttribute('href')
+    ];
+    for (const value of attrs) {
+      const asin = typeof VARIANT_PRICE.extractAsin === 'function'
+        ? VARIANT_PRICE.extractAsin(value)
+        : String(value || '').match(/\/dp\/([A-Z0-9]{10})/i)?.[1] || '';
+      if (asin) return asin;
+    }
+    return '';
+  }
+
+  function variantOptionLabel(node, groupLabel) {
+    const labelNode = node.querySelector('[aria-label], .a-button-text, .twisterTextDiv, img[alt], .a-size-base') || node;
+    const raw = labelNode.getAttribute?.('aria-label') || labelNode.getAttribute?.('alt') ||
+      node.getAttribute?.('title') || labelNode.textContent || '';
+    const clean = String(raw)
+      .replace(/\s+/g, ' ')
+      .replace(/(?:[$€£]\s*)\d[\d,.]*(?:\s*[-–]\s*[$€£]?\d[\d,.]*)?/g, '')
+      .replace(/\b(?:currently\s+)?unavailable\b/ig, '')
+      .trim();
+    const label = typeof VARIANT_PRICE.normalizeLabel === 'function'
+      ? VARIANT_PRICE.normalizeLabel(clean, 'Option')
+      : (clean || 'Option');
+    return groupLabel ? groupLabel + ': ' + label : label;
+  }
+
+  function collectPdpVariantRecords() {
+    if (!isPdp()) return [];
+    const records = [];
+    document.querySelectorAll(VARIATION_GROUP_SELECTORS).forEach(group => {
+      const groupLabel = variationGroupLabel(group);
+      const seenNodes = new Set();
+      const options = group.querySelectorAll(VARIATION_OPTION_SELECTORS);
+      options.forEach(option => {
+        if (seenNodes.has(option)) return;
+        seenNodes.add(option);
+        const asin = getVariantAsinFromNode(option);
+        if (!asin) return;
+        records.push({ asin, label: variantOptionLabel(option, groupLabel) });
+      });
+    });
+
+    if (records.length < 2) return [];
+    const merged = typeof VARIANT_PRICE.mergeVariantRecords === 'function'
+      ? VARIANT_PRICE.mergeVariantRecords(records)
+      : records;
+    const currentAsin = getAsin();
+    if (currentAsin && !merged.some(entry => entry.asin === currentAsin)) {
+      merged.unshift({ asin: currentAsin, label: 'Current selection' });
+    }
+    return merged;
+  }
+
+  function removeVariantPriceMap() {
+    variantPriceMapRequest++;
+    variantPriceMapState = null;
+    document.getElementById('amze-variant-price-map')?.remove();
+  }
+
+  function variantPriceMapTarget() {
+    const group = document.querySelector(VARIATION_GROUP_SELECTORS);
+    if (group) return group.closest('.celwidget, .a-section') || group;
+    return document.querySelector('#centerCol');
+  }
+
+  function renderVariantPriceMapPanel(variants, currentAsin) {
+    const panel = document.createElement('section');
+    panel.id = 'amze-variant-price-map';
+    panel.className = 'amze-pdp-badge amze-variant-price-map';
+    panel.setAttribute('aria-labelledby', 'amze-variant-price-map-title');
+
+    const title = createTextElement('div', '', 'Variant local price map');
+    title.id = 'amze-variant-price-map-title';
+    title.style.fontWeight = '600';
+    panel.appendChild(title);
+    const note = createTextElement('div', 'amze-variant-price-map-note', 'Lowest price seen locally for each option.');
+    panel.appendChild(note);
+
+    const table = document.createElement('table');
+    table.className = 'amze-variant-price-table';
+    table.setAttribute('aria-label', 'Lowest local prices by product variant');
+    const head = document.createElement('thead');
+    const headRow = document.createElement('tr');
+    ['Variant', 'Lowest local price'].forEach(text => {
+      const th = document.createElement('th');
+      th.scope = 'col';
+      th.textContent = text;
+      headRow.appendChild(th);
+    });
+    head.appendChild(headRow);
+    table.appendChild(head);
+    const body = document.createElement('tbody');
+    variants.forEach(variant => {
+      const row = document.createElement('tr');
+      if (variant.asin === currentAsin) row.className = 'amze-variant-current';
+      const name = document.createElement('th');
+      name.scope = 'row';
+      name.textContent = variant.label;
+      const price = document.createElement('td');
+      if (Number.isFinite(variant.lowestPrice)) {
+        price.textContent = '$' + variant.lowestPrice.toFixed(2);
+        if (variant.source === 'current') price.title = 'Current price; local history will replace this after it is recorded.';
+      } else {
+        price.textContent = 'No local history';
+        price.className = 'amze-variant-no-history';
+      }
+      row.appendChild(name);
+      row.appendChild(price);
+      body.appendChild(row);
+    });
+    table.appendChild(body);
+    panel.appendChild(table);
+
+    const target = variantPriceMapTarget();
+    if (target && target.parentElement) target.parentElement.insertBefore(panel, target.nextSibling);
+    return panel;
+  }
+
+  async function renderVariantPriceMap() {
+    if (!settings.flags.variantPriceMap || !settings.flags.priceHistory || !isPdp()) {
+      removeVariantPriceMap();
+      return;
+    }
+    const variants = collectPdpVariantRecords();
+    if (variants.length < 2) {
+      removeVariantPriceMap();
+      return;
+    }
+    const currentAsin = getAsin();
+    const signature = variants.map(variant => variant.asin + ':' + variant.label).join('|');
+    if (variantPriceMapState && variantPriceMapState.signature === signature && document.getElementById('amze-variant-price-map')) return;
+    const request = ++variantPriceMapRequest;
+    const response = await sendMessageWithTimeout({ type: 'AMZE_IDB_GET_ALL_PRICE_HISTORY' });
+    if (request !== variantPriceMapRequest || !settings.flags.variantPriceMap || !settings.flags.priceHistory) return;
+    const entries = response && Array.isArray(response.entries) ? response.entries : [];
+    const decorated = typeof VARIANT_PRICE.decorateVariants === 'function'
+      ? VARIANT_PRICE.decorateVariants(variants, entries, currentAsin, getPdpPrice())
+      : variants;
+    document.getElementById('amze-variant-price-map')?.remove();
+    renderVariantPriceMapPanel(decorated, currentAsin);
+    variantPriceMapState = { signature };
   }
 
   // -------------------------------------------------------------------
@@ -2342,6 +2533,7 @@
     try { revealSellerPdp(); } catch (e) {}
     try { detectCounterfeitRisk(); } catch (e) {}
     try { detectVariationBait(); } catch (e) {}
+    try { renderVariantPriceMap(); } catch (e) {}
     try { logAndRenderPrice(); } catch (e) {}
     try { normalizeDealBadges(); } catch (e) {}
     try { injectPriceAlertUI(); } catch (e) {}

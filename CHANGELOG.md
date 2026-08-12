@@ -5,6 +5,7 @@
 ### Added
 - Added price-per-unit badges to Amazon Fresh and Whole Foods product cards, including grocery-specific weight, volume, pack, and count formats.
 - Added 90 / 180 / 365-day range controls to local PDP price-history sparklines; CSV export follows the selected range.
+- Added a PDP variant local-price map for color / size options, backed by the lowest price recorded per ASIN in IndexedDB.
 
 ## [2.0.15] - 2026-06-27
 

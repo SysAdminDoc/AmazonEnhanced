@@ -1381,6 +1381,34 @@ html[data-amze-theme="amoled"] .a-badge-text {
   border-color: var(--amze-accent, #89b4fa);
   background: var(--amze-bg-elev, #45475a);
 }
+.amze-variant-price-map-note {
+  color: var(--amze-text-muted, #9399b2);
+  font-size: 11px;
+  margin-top: 2px;
+}
+.amze-variant-price-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 7px;
+  font-size: 12px;
+}
+.amze-variant-price-table th,
+.amze-variant-price-table td {
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--amze-border-soft, #313244);
+  text-align: left;
+}
+.amze-variant-price-table thead th {
+  color: var(--amze-text-muted, #9399b2);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .25px;
+}
+.amze-variant-price-table tbody th { font-weight: 500; }
+.amze-variant-price-table tbody td { color: var(--amze-success, #a6e3a1); font-weight: 600; }
+.amze-variant-price-table .amze-variant-current { background: rgba(137, 180, 250, .08); }
+.amze-variant-price-table .amze-variant-no-history { color: var(--amze-text-muted, #9399b2); font-weight: 400; }
 
 .amze-export-wrap {
   background: var(--amze-bg-alt, #181825);

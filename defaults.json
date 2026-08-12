@@ -37,6 +37,7 @@
     "countryBadge": true,
     "revealSeller": true,
     "variationBait": true,
+    "variantPriceMap": true,
     "priceHistory": true,
     "copyCleanLink": true,
     "orderExport": true,

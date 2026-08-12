@@ -638,6 +638,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
   if (msg.type === 'AMZE_IDB_GET_ALL_PRICE_HISTORY') {
     (async () => {
+      await migrateLegacyStorageToIndexedDb();
       const entries = await idbGetAll('priceHistory');
       sendResponse({ ok: true, entries: entries || [] });
     })().catch(() => sendResponse({ ok: false, entries: [] }));

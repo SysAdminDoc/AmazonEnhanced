@@ -38,6 +38,7 @@
 - **OpenCorporates seller lookup.** Optional, token-backed, rate-limited seller entity lookup.
 - **Counterfeit-risk warning.** Flags brand / marketplace-seller name mismatches.
 - **Variation bait warning.** Flags listings with >3× price spread across variants.
+- **Variant local price map.** Shows every color / size option with its lowest price seen in this browser.
 - **Local price history.** IndexedDB-backed sparkline of every price you've seen on that ASIN, with 90 / 180 / 365-day range controls. No external API, no Keepa account.
 - **Review-quality scoring.** Polarization, 1-star share, verified-sample ratio, volume.
 
