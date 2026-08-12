@@ -51,6 +51,8 @@ INCLUDE_FILES = [
     "shipping-diff.js",
     "return-reasons.js",
     "wishlist-import.js",
+    "invoice-export.js",
+    "zip-store.js",
     "content.js",
     "background.js",
     "popup.html",

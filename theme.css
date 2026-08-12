@@ -1433,6 +1433,13 @@ html[data-amze-theme="amoled"] .a-badge-text {
   letter-spacing: .4px;
   margin-bottom: 6px;
 }
+.amze-invoice-export-status {
+  color: var(--amze-text-muted, #9399b2);
+  font-size: 11px;
+  line-height: 1.4;
+  margin-top: 6px;
+  max-width: 620px;
+}
 .amze-wl-import-box {
   border-top: 1px solid var(--amze-border-soft, #313244);
   margin-top: 8px;

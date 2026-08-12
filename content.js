@@ -31,6 +31,8 @@
   const SHIPPING_DIFF = globalThis.AmzeShippingDiff || {};
   const RETURN_REASONS = globalThis.AmzeReturnReasons || {};
   const WISHLIST_IMPORT = globalThis.AmzeWishlistImport || {};
+  const INVOICE_EXPORT = globalThis.AmzeInvoiceExport || {};
+  const ZIP_STORE = globalThis.AmzeZipStore || {};
 
   // -------------------------------------------------------------------
   // 1. Defaults + storage
@@ -204,6 +206,7 @@
   let checkoutShippingState = null;
   let wishlistImportItems = [];
   let wishlistImportJobId = '';
+  let invoiceExportState = null;
 
   function requestWhiteBackgroundSweep() {
     if (whiteBgIdleHandle !== null) return;
@@ -2637,13 +2640,23 @@
     const csvButton = createActionButton('amze-order-export-btn', 'CSV', 'Export visible orders as CSV');
     const jsonButton = createActionButton('amze-order-export-json', 'JSON', 'Export visible orders as JSON');
     const icsButton = createActionButton('amze-order-export-ics', '.ics Calendar', 'Export delivery dates as calendar events');
+    const invoiceButton = createActionButton('amze-order-export-invoices', 'Invoice ZIP', 'Export visible order invoices as a ZIP of PDFs');
+    const invoiceCancelButton = createActionButton('amze-order-export-invoices-cancel', 'Cancel', 'Cancel invoice PDF export');
+    invoiceCancelButton.disabled = true;
+    const invoiceStatus = createTextElement('div', 'amze-invoice-export-status', 'Only direct PDF responses are included; unavailable or non-PDF invoices are reported.');
+    invoiceStatus.id = 'amze-invoice-export-status';
     wrap.appendChild(csvButton);
     wrap.appendChild(jsonButton);
     wrap.appendChild(icsButton);
+    wrap.appendChild(invoiceButton);
+    wrap.appendChild(invoiceCancelButton);
+    wrap.appendChild(invoiceStatus);
     host.parentElement.insertBefore(wrap, host);
     csvButton.addEventListener('click', () => exportOrders('csv'));
     jsonButton.addEventListener('click', () => exportOrders('json'));
     icsButton.addEventListener('click', () => exportOrdersAsIcs());
+    invoiceButton.addEventListener('click', () => exportInvoiceZip());
+    invoiceCancelButton.addEventListener('click', () => cancelInvoiceZip());
   }
 
   function extractOrdersFromCurrentPage() {
@@ -2680,6 +2693,103 @@
     }
     downloadBlob(blob, `amazon-orders-${Date.now()}.${format}`);
     toast(`Exported ${rows.length} orders`);
+  }
+
+  function waitForInvoiceExport(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  function setInvoiceExportControls(running) {
+    const start = document.querySelector('#amze-order-export-invoices');
+    const cancel = document.querySelector('#amze-order-export-invoices-cancel');
+    if (start) start.disabled = running;
+    if (cancel) cancel.disabled = !running;
+  }
+
+  function setInvoiceExportStatus(text) {
+    const status = document.querySelector('#amze-invoice-export-status');
+    if (status) status.textContent = text;
+  }
+
+  function cancelInvoiceZip() {
+    if (!invoiceExportState) return;
+    invoiceExportState.cancelled = true;
+    try { invoiceExportState.controller?.abort(); } catch (e) {}
+    setInvoiceExportStatus('Canceling after the current invoice request...');
+  }
+
+  async function exportInvoiceZip() {
+    if (invoiceExportState) return;
+    if (typeof INVOICE_EXPORT.extractInvoiceCandidatesFromPage !== 'function' || typeof ZIP_STORE.createZip !== 'function') {
+      toast('Invoice export is unavailable in this build');
+      return;
+    }
+    const candidates = INVOICE_EXPORT.extractInvoiceCandidatesFromPage(document, location.href);
+    if (!candidates.length) {
+      setInvoiceExportStatus('No visible invoice links or eligible order IDs found on this page.');
+      toast('No invoice links found on this orders page');
+      return;
+    }
+
+    const state = { cancelled: false, controller: null };
+    invoiceExportState = state;
+    setInvoiceExportControls(true);
+    setInvoiceExportStatus(`Found ${candidates.length} invoice candidate${candidates.length === 1 ? '' : 's'}. Starting a ${INVOICE_EXPORT.INVOICE_FETCH_DELAY_MS / 1000}-second rate-limited export...`);
+    const files = [];
+    const failures = [];
+    const nameCounts = new Map();
+
+    try {
+      for (let i = 0; i < candidates.length; i++) {
+        if (state.cancelled) break;
+        if (i > 0) await waitForInvoiceExport(INVOICE_EXPORT.INVOICE_FETCH_DELAY_MS);
+        if (state.cancelled) break;
+        const candidate = candidates[i];
+        setInvoiceExportStatus(`Fetching invoice ${i + 1}/${candidates.length}${candidate.orderId ? ` (${candidate.orderId})` : ''}...`);
+        state.controller = new AbortController();
+        try {
+          const response = await fetch(candidate.href, {
+            credentials: 'include',
+            cache: 'no-store',
+            signal: state.controller.signal
+          });
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          const bytes = new Uint8Array(await response.arrayBuffer());
+          if (!INVOICE_EXPORT.looksLikePdf(bytes)) {
+            throw new Error('response was not a PDF');
+          }
+          const baseName = INVOICE_EXPORT.buildInvoiceFilename(candidate);
+          const count = (nameCounts.get(baseName) || 0) + 1;
+          nameCounts.set(baseName, count);
+          const name = count > 1
+            ? INVOICE_EXPORT.buildInvoiceFilename(candidate, count)
+            : baseName;
+          files.push({ name, data: bytes });
+        } catch (e) {
+          if (state.cancelled || (e && e.name === 'AbortError')) break;
+          failures.push({ candidate, reason: e && e.message ? e.message : 'request failed' });
+        } finally {
+          state.controller = null;
+        }
+      }
+
+      if (state.cancelled) {
+        setInvoiceExportStatus(`Invoice export canceled. ${files.length} PDF${files.length === 1 ? '' : 's'} collected; no ZIP was downloaded.`);
+        return;
+      }
+      if (!files.length) {
+        setInvoiceExportStatus(`No PDF invoices were returned. ${failures.length} candidate${failures.length === 1 ? '' : 's'} failed or were unavailable.`);
+        toast('No invoice PDFs were available');
+        return;
+      }
+      const zipBytes = ZIP_STORE.createZip(files);
+      downloadBlob(new Blob([zipBytes], { type: 'application/zip' }), `amazon-invoices-${Date.now()}.zip`);
+      setInvoiceExportStatus(`Downloaded ${files.length} invoice PDF${files.length === 1 ? '' : 's'} in one ZIP; ${failures.length} unavailable.`);
+      toast(`Exported ${files.length} invoice PDFs`);
+    } finally {
+      invoiceExportState = null;
+      setInvoiceExportControls(false);
+    }
   }
 
   function downloadBlob(blob, filename) {

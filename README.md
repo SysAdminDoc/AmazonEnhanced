@@ -58,6 +58,7 @@
 ### Tools & data portability
 - **Copy clean product link** button on PDPs (Markdown-formatted)
 - **Order history export** (CSV / JSON) on `/your-orders` pages
+- **Invoice PDF ZIP export** for visible order cards; fetches same-origin invoice candidates one at a time with a 2.5-second delay, includes only `%PDF` responses, and reports unavailable/non-invoice orders
 - **Wishlist export** (CSV / JSON / Markdown) on wishlist pages
 - **Wishlist import** from an AmazonEnhanced JSON export, using a user-started, rate-limited queue of Amazon's visible Add to List controls; keep the source wishlist tab open while it runs
 - **Late-delivery watcher** — background alarm notifies you when a promised delivery date passes without "Delivered"
@@ -97,7 +98,7 @@ Toolbar popup with 10 tabs: Ads, Declutter, Reviews, Price, Cart, Trust, Tools, 
 
 ## Privacy
 
-AmazonEnhanced stores settings, local price history, seller/origin cache entries, watched-order dates, custom brand rules, OpenCorporates API token, and allergen terms only in the browser profile. It does not send analytics, telemetry, browsing history, shopping data, or affiliate data to external services. If OpenCorporates seller lookup is enabled, seller names are sent to OpenCorporates with your local API token. The Tools tab includes local price-history JSON import and a local data clear action for price, seller/origin, and watched-order caches.
+AmazonEnhanced stores settings, local price history, seller/origin cache entries, watched-order dates, custom brand rules, OpenCorporates API token, and allergen terms only in the browser profile. It does not send analytics, telemetry, browsing history, shopping data, or affiliate data to external services. Invoice PDF ZIP export fetches same-origin invoice candidates through the signed-in Amazon page session and assembles the ZIP locally; it does not upload invoices. If OpenCorporates seller lookup is enabled, seller names are sent to OpenCorporates with your local API token. The Tools tab includes local price-history JSON import and a local data clear action for price, seller/origin, and watched-order caches.
 
 ## Architecture
 
@@ -109,6 +110,8 @@ early-inject.js      document_start: theme + a11y attributes
 theme.css            document_start: theme + declutter + image-mode + feature chrome
 content.js           document_end: feature runtime + MutationObserver
 wishlist-import.js   JSON parser and bounded ASIN helpers for wishlist import
+invoice-export.js    visible order invoice-link discovery and PDF validation
+zip-store.js         dependency-free store-only ZIP writer
 background.js        Service worker: defaults, IDB caches, alarms, DNR, tab broadcast
 popup.html/css/js    10-tab settings UI
 icons/               16/32/48/128/512 PNGs
