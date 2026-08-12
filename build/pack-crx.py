@@ -54,6 +54,7 @@ INCLUDE_FILES = [
     "invoice-export.js",
     "zip-store.js",
     "receipt-markdown.js",
+    "mutation-queue.js",
     "content.js",
     "background.js",
     "popup.html",

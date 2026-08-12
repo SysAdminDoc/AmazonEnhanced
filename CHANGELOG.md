@@ -14,6 +14,7 @@
 - Added wishlist JSON import with a bounded, user-started, rate-limited queue that uses Amazon's visible Add to List controls and reports per-item results.
 - Added visible order invoice PDF ZIP export with same-origin checks, `%PDF` validation, 50-item bounds, a 2.5-second request delay, cancellation, and per-item failure reporting.
 - Added one-click Markdown receipt downloads to each visible order card.
+- Replaced mutation-triggered document scans with a WeakRef-backed, debounced affected-root queue; added runtime scan timing counters at `window.__amzeMutationMetrics` for CPU profiling.
 
 ## [2.0.15] - 2026-06-27
 

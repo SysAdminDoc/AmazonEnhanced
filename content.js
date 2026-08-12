@@ -208,6 +208,25 @@
   let wishlistImportItems = [];
   let wishlistImportJobId = '';
   let invoiceExportState = null;
+  let mutationQueue = null;
+  const mutationScanMetrics = {
+    observerCallbacks: 0,
+    mutationRecords: 0,
+    fullScanBatches: 0,
+    targetedScanBatches: 0,
+    targetedRootScans: 0,
+    fullScanWorkMs: 0,
+    targetedScanWorkMs: 0
+  };
+
+  function exposeMutationScanMetrics() {
+    try {
+      globalThis.__amzeMutationMetrics = Object.assign({}, mutationScanMetrics, {
+        queue: mutationQueue ? mutationQueue.getStats() : null,
+        note: 'Compare targetedScanWorkMs with fullScanWorkMs while profiling equivalent page activity.'
+      });
+    } catch (e) {}
+  }
 
   function requestWhiteBackgroundSweep() {
     if (whiteBgIdleHandle !== null) return;
@@ -981,10 +1000,12 @@
     observer.observe(img);
   }
 
-  function scanImagesForSmart() {
+  function scanImagesForSmart(root = document) {
     if (settings.imageMode !== 'smart') return;
     // Add crossorigin hint BEFORE the image loads to maximize canvas readability.
-    const imgs = document.querySelectorAll(IMAGE_SELECTORS);
+    const imgs = [];
+    if (root !== document && root.matches && root.matches(IMAGE_SELECTORS)) imgs.push(root);
+    if (root && root.querySelectorAll) root.querySelectorAll(IMAGE_SELECTORS).forEach(img => imgs.push(img));
     imgs.forEach(queueImageForSmartInvert);
   }
 
@@ -1122,7 +1143,7 @@
     if (!settings.flags.stripAffiliate) return;
     const scope = root === document ? document.body : root;
     if (!scope || !scope.querySelectorAll) return;
-    const anchors = scope.querySelectorAll('a[href*="amazon."]:not([data-amze-cleaned])');
+    const anchors = collectMatchingElements(scope, 'a[href*="amazon."]:not([data-amze-cleaned])');
     anchors.forEach(a => {
       if (!a.href) return;
       const clean = cleanAmazonHref(a.href);
@@ -1135,33 +1156,98 @@
   // 9. DOM scan driver
   // -------------------------------------------------------------------
 
+  const RESULT_TILE_SELECTORS = '.s-result-item, [data-component-type="s-search-result"], [data-component-type="sp-sponsored-result"]';
+
+  function collectMatchingElements(root, selector) {
+    const elements = [];
+    if (root && root !== document && root.matches && root.matches(selector)) elements.push(root);
+    if (root && root.querySelectorAll) root.querySelectorAll(selector).forEach(el => elements.push(el));
+    return elements;
+  }
+
   function scanTiles(root) {
     const scope = (root && root.querySelectorAll) ? root : document;
-    const tiles = scope.querySelectorAll('.s-result-item, [data-component-type="s-search-result"], [data-component-type="sp-sponsored-result"]');
-    tiles.forEach(processResultTile);
+    collectMatchingElements(scope, RESULT_TILE_SELECTORS).forEach(processResultTile);
     if (isGroceryPage()) {
-      scope.querySelectorAll(GROCERY_TILE_SELECTORS).forEach(attachGroceryPricePerUnit);
+      collectMatchingElements(scope, GROCERY_TILE_SELECTORS).forEach(attachGroceryPricePerUnit);
     }
   }
 
-  const schedule = debounce(() => {
+  function runFullPageScan() {
+    const started = typeof performance !== 'undefined' ? performance.now() : Date.now();
     scanTiles(document);
     stripAffiliate(document);
     scoreReviews();
     scanImagesForSmart();
     requestWhiteBackgroundSweep();
     runFeaturePack();
-  }, 180);
+    mutationScanMetrics.fullScanBatches++;
+    mutationScanMetrics.fullScanWorkMs += (typeof performance !== 'undefined' ? performance.now() : Date.now()) - started;
+    exposeMutationScanMetrics();
+  }
+
+  const schedule = debounce(runFullPageScan, 180);
+
+  function compactMutationRoots(roots) {
+    const usable = Array.from(new Set((roots || []).filter(root => root && root.nodeType === 1)));
+    return usable.filter(root => !usable.some(ancestor => ancestor !== root && ancestor.contains && ancestor.contains(root)));
+  }
+
+  function rootForMutationNode(node) {
+    if (!node) return null;
+    const element = node.nodeType === 1 ? node : node.parentElement;
+    if (!element) return null;
+    if (element.closest) {
+      return element.closest(`${RESULT_TILE_SELECTORS},${GROCERY_TILE_SELECTORS}`) || element;
+    }
+    return element;
+  }
+
+  function runTargetedMutationScan(roots) {
+    const compacted = compactMutationRoots(roots);
+    if (!compacted.length) return;
+    const started = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    compacted.forEach(root => {
+      if (root.isConnected === false) return;
+      scanTiles(root);
+      stripAffiliate(root);
+      scanImagesForSmart(root);
+    });
+    // These features inspect page-level structures, but their own id/marker
+    // guards make one batch-level pass cheaper than a document scan per root.
+    scoreReviews();
+    requestWhiteBackgroundSweep();
+    runFeaturePack();
+    mutationScanMetrics.targetedScanBatches++;
+    mutationScanMetrics.targetedRootScans += compacted.length;
+    mutationScanMetrics.targetedScanWorkMs += (typeof performance !== 'undefined' ? performance.now() : Date.now()) - started;
+    exposeMutationScanMetrics();
+  }
+
+  function queueMutationRecords(muts) {
+    mutationScanMetrics.observerCallbacks++;
+    mutationScanMetrics.mutationRecords += muts.length;
+    const roots = [];
+    for (const mut of muts) {
+      if (!mut.addedNodes || !mut.addedNodes.length) continue;
+      mut.addedNodes.forEach(node => {
+        const root = rootForMutationNode(node);
+        if (root) roots.push(root);
+      });
+    }
+    if (!roots.length) return;
+    if (!mutationQueue) {
+      schedule();
+      return;
+    }
+    mutationQueue.addMany(compactMutationRoots(roots));
+    exposeMutationScanMetrics();
+  }
 
   function startObserver() {
     if (domObserver) return;
     domObserver = new MutationObserver((muts) => {
-      // Fast path: only re-scan when added nodes include candidate tiles.
-      let hit = false;
-      for (const mut of muts) {
-        if (mut.addedNodes && mut.addedNodes.length) { hit = true; break; }
-      }
-      if (hit) schedule();
+      queueMutationRecords(muts);
     });
     domObserver.observe(document.documentElement, { childList: true, subtree: true });
   }
@@ -3368,6 +3454,10 @@
   // -------------------------------------------------------------------
 
   function init() {
+    if (typeof AmzeMutationQueue !== 'undefined' && typeof AmzeMutationQueue.createWeakMutationQueue === 'function') {
+      mutationQueue = AmzeMutationQueue.createWeakMutationQueue(runTargetedMutationScan, 180);
+    }
+    exposeMutationScanMetrics();
     applyFlagAttributes();
     schedule();
     startObserver();
