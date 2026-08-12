@@ -10,6 +10,7 @@
 - Added an opt-in-by-setting recommended-upgrade skipper for cart and post-add-to-cart prompts, limited to explicit decline actions.
 - Added checkout-only Prime free-trial pre-check handling for 30-day/free-month copy and explicit no-trial alternatives.
 - Added a stable-baseline checkout warning when the selected shipping tier or delivery slot changes after initial rendering.
+- Added a PDP frequently-returned warning with bounded reason extraction from Amazon's nearby list/table disclosure content.
 
 ## [2.0.15] - 2026-06-27
 

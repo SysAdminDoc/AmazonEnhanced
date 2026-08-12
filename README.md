@@ -32,6 +32,7 @@
 - **Skip recommended upgrades.** Cart and post-add-to-cart prompts with explicit "No thanks" / "Continue without upgrade" actions are declined automatically.
 - **Disable Prime free-trial pre-checks.** A checked 30-day/free-trial Prime control is cleared at checkout, or an explicit no-trial radio option is selected.
 - **Shipping-change warning.** Compares the settled checkout shipping tier and delivery slot and warns if either changes later.
+- **Frequently returned warning.** Surfaces Amazon's explicit frequent-return disclosure and nearby reason breakdown when available.
 - **Force one-time purchase.** Detects pre-selected Subscribe & Save radios and switches back.
 - **Auto-uncheck** gift-receipt, share-info, and add-on dark patterns at checkout.
 

@@ -1410,6 +1410,11 @@ html[data-amze-theme="amoled"] .a-badge-text {
 .amze-variant-price-table .amze-variant-current { background: rgba(137, 180, 250, .08); }
 .amze-variant-price-table .amze-variant-no-history { color: var(--amze-text-muted, #9399b2); font-weight: 400; }
 .amze-pdp-badge#amze-shipping-change-warn { border-left-color: var(--amze-danger, #f38ba8); }
+.amze-return-reasons {
+  margin: 5px 0 0 18px;
+  padding: 0;
+}
+.amze-return-reasons li { margin: 2px 0; }
 
 .amze-export-wrap {
   background: var(--amze-bg-alt, #181825);

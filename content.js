@@ -29,6 +29,7 @@
   const UPGRADE_SKIP = globalThis.AmzeUpgradeSkip || {};
   const PRIME_TRIAL = globalThis.AmzePrimeTrial || {};
   const SHIPPING_DIFF = globalThis.AmzeShippingDiff || {};
+  const RETURN_REASONS = globalThis.AmzeReturnReasons || {};
 
   // -------------------------------------------------------------------
   // 1. Defaults + storage
@@ -1202,6 +1203,7 @@
         removeVariantPriceMap();
         checkoutShippingState = null;
         document.querySelector('#amze-shipping-change-warn')?.remove();
+        document.querySelector('#amze-frequently-returned-warn')?.remove();
         document.documentElement.toggleAttribute('data-amze-large-text',   !!settings.flags.largeText);
         document.documentElement.toggleAttribute('data-amze-high-contrast', !!settings.flags.highContrast);
         schedule();
@@ -1601,6 +1603,75 @@
       ? SHIPPING_DIFF.compareShippingSnapshots(checkoutShippingState.baseline, snapshot)
       : [];
     if (changes.length && checkoutShippingState.stableCount >= 2) renderShippingChangeWarning(changes);
+  }
+
+  // -------------------------------------------------------------------
+  // 12.3e Frequently returned item disclosure and reason breakdown.
+  // -------------------------------------------------------------------
+
+  const FREQUENT_RETURN_SELECTORS = [
+    '#frequently-returned-item',
+    '#frequentlyReturned',
+    '#productFactsDesktopExpander',
+    '[id*="frequently-return" i]',
+    '[class*="frequently-return" i]',
+    '[data-feature-name*="return" i]',
+    '[data-testid*="return" i]',
+    '[data-test-id*="return" i]',
+    '[id*="return" i]',
+    '[class*="return" i]',
+    '.a-box',
+    '.a-section'
+  ].join(',');
+
+  function findFrequentlyReturnedDisclosure() {
+    const candidates = document.querySelectorAll(FREQUENT_RETURN_SELECTORS);
+    for (const candidate of candidates) {
+      const text = (candidate.textContent || '').replace(/\s+/g, ' ').trim();
+      if (!text || text.length > 1400) continue;
+      const isDisclosure = typeof RETURN_REASONS.isFrequentlyReturnedText === 'function'
+        ? RETURN_REASONS.isFrequentlyReturnedText(text)
+        : /frequently\s+returned|returned\s+more\s+often/i.test(text);
+      if (isDisclosure) return candidate;
+    }
+    return null;
+  }
+
+  function renderFrequentlyReturnedWarning(container) {
+    if (document.getElementById('amze-frequently-returned-warn')) return;
+    const warning = document.createElement('div');
+    warning.id = 'amze-frequently-returned-warn';
+    warning.className = 'amze-pdp-badge amze-pdp-warn';
+    warning.setAttribute('role', 'alert');
+    appendStrong(warning, 'Frequently returned item:');
+    appendText(warning, ' Amazon reports that this item is returned more often than similar items.');
+
+    const reasonNodes = container.querySelectorAll('li, [role="listitem"], dt, dd, tr, p');
+    const values = Array.from(reasonNodes).map(node => node.textContent || '');
+    const reasons = typeof RETURN_REASONS.extractReturnReasons === 'function'
+      ? RETURN_REASONS.extractReturnReasons(values)
+      : [];
+    if (reasons.length) {
+      appendText(warning, ' Reasons shown by Amazon:');
+      const list = document.createElement('ul');
+      list.className = 'amze-return-reasons';
+      reasons.forEach(reason => {
+        const item = document.createElement('li');
+        item.textContent = reason;
+        list.appendChild(item);
+      });
+      warning.appendChild(list);
+    } else {
+      appendText(warning, ' Amazon did not expose a reason breakdown on this page.');
+    }
+    const target = document.querySelector('#titleSection, #centerCol, #productFactsDesktopExpander') || container;
+    if (target.parentElement) target.parentElement.insertBefore(warning, target.nextSibling);
+  }
+
+  function detectFrequentlyReturnedItem() {
+    if (!settings.flags.frequentlyReturnedWarn || !isPdp()) return;
+    const disclosure = findFrequentlyReturnedDisclosure();
+    if (disclosure) renderFrequentlyReturnedWarning(disclosure);
   }
 
   // -------------------------------------------------------------------
@@ -2829,6 +2900,7 @@
     try { skipRecommendedUpgradePrompts(); } catch (e) {}
     try { disablePrimeTrialPrechecks(); } catch (e) {}
     try { inspectShippingChange(); } catch (e) {}
+    try { detectFrequentlyReturnedItem(); } catch (e) {}
     try { injectExtraSortOptions(); } catch (e) {}
     try { injectCpuTamer(); } catch (e) {}
     try { annotateCountry(); } catch (e) {}

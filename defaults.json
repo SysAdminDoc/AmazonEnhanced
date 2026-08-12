@@ -35,6 +35,7 @@
     "skipRecommendedUpgrade": true,
     "disablePrimeTrial": true,
     "warnShippingChange": true,
+    "frequentlyReturnedWarn": true,
     "extraSortOptions": true,
     "cpuTamer": false,
     "countryBadge": true,

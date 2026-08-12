@@ -49,6 +49,7 @@ INCLUDE_FILES = [
     "upgrade-skip.js",
     "prime-trial.js",
     "shipping-diff.js",
+    "return-reasons.js",
     "content.js",
     "background.js",
     "popup.html",
