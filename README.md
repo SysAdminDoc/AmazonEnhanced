@@ -5,7 +5,7 @@
 <h1 align="center">AmazonEnhanced</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-2.0.15-89b4fa?style=flat-square" alt="version" />
+  <img src="https://img.shields.io/badge/version-2.0.16-89b4fa?style=flat-square" alt="version" />
   <img src="https://img.shields.io/badge/license-MIT-a6e3a1?style=flat-square" alt="license" />
   <img src="https://img.shields.io/badge/platform-Chrome%20%2B%20Firefox%20MV3-f9e2af?style=flat-square" alt="platform" />
 </p>
@@ -95,11 +95,11 @@
 
 From the [Releases page](https://github.com/SysAdminDoc/AmazonEnhanced/releases):
 
-- `AmazonEnhanced-v2.0.15.zip` — extract, then **Load unpacked** in `chrome://extensions/` (Developer mode).
-- `AmazonEnhanced-v2.0.15.crx` — secondary package for enterprise/self-host tooling that accepts CRX files.
-- `AmazonEnhanced-v2.0.15.xpi` — Firefox package; install from `about:addons` when using a signed build or a Firefox development profile.
+- `AmazonEnhanced-v2.0.16-release.zip` — extract, then **Load unpacked** in `chrome://extensions/` (Developer mode).
+- `AmazonEnhanced-v2.0.16.crx` — secondary package for enterprise/self-host tooling that accepts CRX files.
+- `AmazonEnhanced-v2.0.16.xpi` — Firefox package; install from `about:addons` when using a signed build or a Firefox development profile.
 
-- `AmazonEnhanced-v2.0.15-edge.zip` — Microsoft Edge Add-ons package; upload this ZIP through Partner Center.
+- `AmazonEnhanced-v2.0.16-edge.zip` — Microsoft Edge Add-ons package; upload this ZIP through Partner Center.
 
 The Firefox package uses a fixed Gecko add-on ID, a background event page fallback, Firefox's `sidebar_action` equivalent for the price-history panel, and Mozilla's `webextension-polyfill` 0.12.0 runtime. Build it with `python build/pack-firefox.py`.
 The Edge package keeps the Chromium MV3 service worker and side panel unchanged. Build it with `python build/pack-edge.py`; for local testing, open `edge://extensions`, enable Developer mode, and choose **Load unpacked** on the repository directory.

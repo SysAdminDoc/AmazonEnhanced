@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [2.0.16] - 2026-08-12
 
 ### Added
 - Added price-per-unit badges to Amazon Fresh and Whole Foods product cards, including grocery-specific weight, volume, pack, and count formats.
