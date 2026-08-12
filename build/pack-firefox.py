@@ -26,6 +26,7 @@ FIREFOX_BACKGROUND_SCRIPTS = [
     "wishlist-import.js",
     "feature-modules.js",
     "service-worker-warm.js",
+    "error-buffer.js",
     "background.js",
 ]
 

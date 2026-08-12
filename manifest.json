@@ -111,7 +111,7 @@
         "*://*.amazon.ae/*",
         "*://*.amazon.eg/*"
       ],
-      "js": ["feature-modules.js", "mutation-queue.js", "shadow-ui.js", "content.js"],
+      "js": ["feature-modules.js", "mutation-queue.js", "shadow-ui.js", "error-buffer.js", "content.js"],
       "run_at": "document_end",
       "all_frames": false
     }

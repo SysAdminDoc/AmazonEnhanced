@@ -289,6 +289,11 @@
     <button id="amze-clear-data" type="button" class="amze-btn amze-btn-danger">Clear local data</button>
     <span id="amze-clear-status" role="status" aria-live="polite"></span>
   </div>
+  <div class="amze-data-actions">
+    <button id="amze-export-errors" type="button" class="amze-btn">Export error report</button>
+    <button id="amze-clear-errors" type="button" class="amze-btn amze-btn-danger">Clear error buffer</button>
+    <span id="amze-error-status" role="status" aria-live="polite"></span>
+  </div>
 </section>
 
 <section id="amze-pane-a11y" class="amze-pane" data-pane="a11y" role="tabpanel" aria-labelledby="amze-tab-a11y" tabindex="-1">
@@ -371,6 +376,7 @@
 
 <script src="browser-polyfill.min.js"></script>
 <script src="price-history-io.js"></script>
+<script src="error-buffer.js"></script>
 <script src="popup.js"></script>
 </body>
 </html>

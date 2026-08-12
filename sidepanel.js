@@ -6,6 +6,13 @@
 (function () {
   'use strict';
 
+  const errorReporter = globalThis.AmzeErrorBuffer && globalThis.AmzeErrorBuffer.createReporter
+    ? globalThis.AmzeErrorBuffer.createReporter(chrome.storage.local, { source: 'sidepanel' })
+    : null;
+  if (errorReporter && globalThis.AmzeErrorBuffer.attachGlobalListeners) {
+    globalThis.AmzeErrorBuffer.attachGlobalListeners(globalThis, errorReporter, 'sidepanel');
+  }
+
   let currentView = 'history';
 
   function $(sel, root) { return (root || document).querySelector(sel); }

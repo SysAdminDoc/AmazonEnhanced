@@ -10,6 +10,12 @@
   let current = null;
   let clearConfirmTimer = null;
   const PRICE_HISTORY_IO = globalThis.AmzePriceHistoryIO || {};
+  const ERROR_REPORTER = globalThis.AmzeErrorBuffer && globalThis.AmzeErrorBuffer.createReporter
+    ? globalThis.AmzeErrorBuffer.createReporter(chrome.storage.local, { source: 'popup' })
+    : null;
+  if (ERROR_REPORTER && globalThis.AmzeErrorBuffer.attachGlobalListeners) {
+    globalThis.AmzeErrorBuffer.attachGlobalListeners(globalThis, ERROR_REPORTER, 'popup');
+  }
 
   function $(sel, root) { return (root || document).querySelector(sel); }
   function $$(sel, root) { return Array.from((root || document).querySelectorAll(sel)); }
@@ -131,6 +137,42 @@
     });
   }
 
+  function requestErrorReport() {
+    return new Promise(resolve => {
+      try {
+        chrome.runtime.sendMessage({ type: 'AMZE_GET_ERROR_REPORT' }, response => {
+          if (chrome.runtime.lastError) resolve({ ok: false, report: null });
+          else resolve(response || { ok: false, report: null });
+        });
+      } catch (e) {
+        resolve({ ok: false, report: null });
+      }
+    });
+  }
+
+  function clearErrorBuffer() {
+    return new Promise(resolve => {
+      try {
+        chrome.runtime.sendMessage({ type: 'AMZE_CLEAR_ERROR_BUFFER' }, response => {
+          if (chrome.runtime.lastError) resolve({ ok: false });
+          else resolve(response || { ok: false });
+        });
+      } catch (e) {
+        resolve({ ok: false });
+      }
+    });
+  }
+
+  function downloadJson(value, filename) {
+    const blob = new Blob([JSON.stringify(value, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename;
+    anchor.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
   function resetClearDataButton(btn, status) {
     delete btn.dataset.confirming;
     btn.disabled = false;
@@ -249,7 +291,7 @@
         if (clearData.dataset.confirming !== '1') {
           clearData.dataset.confirming = '1';
           clearData.textContent = 'Click again to clear';
-          if (clearStatus) clearStatus.textContent = 'Clears local price, seller/origin, and watched-order caches. Settings stay unchanged.';
+          if (clearStatus) clearStatus.textContent = 'Clears local price, seller/origin, watched-order, and error caches. Settings stay unchanged.';
           clearTimeout(clearConfirmTimer);
           clearConfirmTimer = setTimeout(() => resetClearDataButton(clearData, clearStatus), 5000);
           return;
@@ -294,6 +336,34 @@
           importButton.disabled = false;
           importFile.value = '';
         }
+      });
+    }
+
+    const exportErrors = $('#amze-export-errors');
+    const clearErrors = $('#amze-clear-errors');
+    const errorStatus = $('#amze-error-status');
+    if (exportErrors) {
+      exportErrors.addEventListener('click', async () => {
+        exportErrors.disabled = true;
+        if (errorStatus) errorStatus.textContent = 'Collecting the local error buffer...';
+        const result = await requestErrorReport();
+        exportErrors.disabled = false;
+        if (!result.ok || !result.report) {
+          if (errorStatus) errorStatus.textContent = 'Could not collect the error report. Reload the popup and try again.';
+          return;
+        }
+        downloadJson(result.report, `amazonenhanced-error-report-${Date.now()}.json`);
+        if (errorStatus) errorStatus.textContent = `Downloaded ${result.report.entries.length} recorded error${result.report.entries.length === 1 ? '' : 's'}.`;
+      });
+    }
+    if (clearErrors) {
+      clearErrors.addEventListener('click', async () => {
+        clearErrors.disabled = true;
+        const result = await clearErrorBuffer();
+        clearErrors.disabled = false;
+        if (errorStatus) errorStatus.textContent = result.ok
+          ? 'Local error buffer cleared.'
+          : 'Could not clear the local error buffer.';
       });
     }
 

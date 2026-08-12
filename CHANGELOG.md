@@ -21,6 +21,7 @@
 - Added a Firefox XPI build with a Gecko ID, event-page background fallback, sidebar mapping, 20-locale validation, and Mozilla's browser API polyfill.
 - Added a Microsoft Edge Add-ons ZIP build with Chromium MV3 validation and documented sideload / Partner Center installation paths.
 - Added an esbuild release target that minifies each extension file independently, preserves dynamic-module boundaries, and emits a deterministic release ZIP.
+- Added a bounded local runtime-error buffer with manual JSON report export and clear controls in the Tools tab.
 
 ## [2.0.15] - 2026-06-27
 

@@ -10,6 +10,7 @@ const JS_FILES = [
   'early-inject.js',
   'feature-modules.js',
   'service-worker-warm.js',
+  'error-buffer.js',
   'shadow-ui.js',
   'unit-price.js',
   'price-history.js',

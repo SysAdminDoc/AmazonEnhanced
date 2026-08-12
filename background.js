@@ -3,6 +3,14 @@ if (typeof importScripts === 'function') {
   importScripts('wishlist-import.js');
   importScripts('feature-modules.js');
   importScripts('service-worker-warm.js');
+  importScripts('error-buffer.js');
+}
+
+const AMZE_ERROR_REPORTER = globalThis.AmzeErrorBuffer && globalThis.AmzeErrorBuffer.createReporter
+  ? globalThis.AmzeErrorBuffer.createReporter(chrome.storage.local, { source: 'background' })
+  : null;
+if (AMZE_ERROR_REPORTER && globalThis.AmzeErrorBuffer.attachGlobalListeners) {
+  globalThis.AmzeErrorBuffer.attachGlobalListeners(globalThis, AMZE_ERROR_REPORTER, 'background');
 }
 
 /**
@@ -537,7 +545,7 @@ async function clearLocalDataCaches() {
     idbClear('priceHistory'),
     idbClear('origins'),
     idbClear('sellerLookups'),
-    chrome.storage.local.remove(['amzePriceHistory', 'amzeOrigins', 'amzeWatchedOrders'])
+    chrome.storage.local.remove(['amzePriceHistory', 'amzeOrigins', 'amzeWatchedOrders', 'amzeErrorBuffer'])
   ]);
 }
 
@@ -996,8 +1004,36 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.type === 'AMZE_CLEAR_LOCAL_DATA') {
     (async () => {
       await clearLocalDataCaches();
-      sendResponse({ ok: true, cleared: ['priceHistory', 'origins', 'sellerLookups', 'watchedOrders'] });
+      sendResponse({ ok: true, cleared: ['priceHistory', 'origins', 'sellerLookups', 'watchedOrders', 'errorBuffer'] });
     })().catch(() => sendResponse({ ok: false, cleared: [] }));
+    return true;
+  }
+
+  if (msg.type === 'AMZE_GET_ERROR_REPORT') {
+    (async () => {
+      if (!globalThis.AmzeErrorBuffer) {
+        sendResponse({ ok: false, report: null });
+        return;
+      }
+      const version = (() => {
+        try { return chrome.runtime.getManifest().version; } catch (e) { return ''; }
+      })();
+      const entries = await globalThis.AmzeErrorBuffer.read(chrome.storage.local);
+      const report = globalThis.AmzeErrorBuffer.createReport(entries, { extensionVersion: version });
+      sendResponse({ ok: true, report });
+    })().catch(() => sendResponse({ ok: false, report: null }));
+    return true;
+  }
+
+  if (msg.type === 'AMZE_CLEAR_ERROR_BUFFER') {
+    (async () => {
+      if (!globalThis.AmzeErrorBuffer) {
+        sendResponse({ ok: false });
+        return;
+      }
+      await globalThis.AmzeErrorBuffer.clear(chrome.storage.local);
+      sendResponse({ ok: true });
+    })().catch(() => sendResponse({ ok: false }));
     return true;
   }
 

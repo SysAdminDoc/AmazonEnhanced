@@ -22,6 +22,13 @@
 (function () {
   'use strict';
 
+  const AMZE_ERROR_REPORTER = globalThis.AmzeErrorBuffer && globalThis.AmzeErrorBuffer.createReporter
+    ? globalThis.AmzeErrorBuffer.createReporter(chrome.storage.local, { source: 'content' })
+    : null;
+  if (AMZE_ERROR_REPORTER && globalThis.AmzeErrorBuffer.attachGlobalListeners) {
+    globalThis.AmzeErrorBuffer.attachGlobalListeners(globalThis, AMZE_ERROR_REPORTER, 'content');
+  }
+
   function createLazyModuleApi(globalName) {
     return new Proxy({}, {
       get(_target, property) {
