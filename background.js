@@ -1,5 +1,6 @@
 if (typeof importScripts === 'function') {
   importScripts('network-rules.js');
+  importScripts('health-report.js');
   importScripts('price-history-io.js');
   importScripts('wishlist-import.js');
   importScripts('feature-modules.js');
@@ -567,11 +568,19 @@ async function syncNetworkRules(settings) {
   const api = globalThis.AmzeNetworkRules;
   if (!api || typeof api.buildDynamicRules !== 'function') {
     const error = new Error('Network rule builder unavailable');
+    await recordNetworkRuleSync({
+      attemptedAt: Date.now(), status: 'failed', failureCode: 'builder_unavailable',
+      expectedCount: 0, installedCount: 0
+    });
     reportBackgroundError(error, 'dnr:builder');
     throw error;
   }
   if (!chrome.declarativeNetRequest || typeof chrome.declarativeNetRequest.updateDynamicRules !== 'function') {
     const error = new Error('Declarative Net Request API unavailable');
+    await recordNetworkRuleSync({
+      attemptedAt: Date.now(), status: 'failed', failureCode: 'api_unavailable',
+      expectedCount: 0, installedCount: 0
+    });
     reportBackgroundError(error, 'dnr:unavailable');
     throw error;
   }
@@ -586,10 +595,28 @@ async function syncNetworkRules(settings) {
       removeRuleIds: [...api.MANAGED_RULE_IDS],
       addRules
     });
+    await recordNetworkRuleSync({
+      attemptedAt: Date.now(), status: 'ok', expectedCount: addRules.length,
+      installedCount: addRules.length
+    });
     return { ok: true, count: addRules.length };
   } catch (error) {
+    await recordNetworkRuleSync({
+      attemptedAt: Date.now(), status: 'failed', failureCode: 'update_failed',
+      expectedCount: addRules.length, installedCount: 0
+    });
     reportBackgroundError(error, 'dnr:sync');
     throw error;
+  }
+}
+
+async function recordNetworkRuleSync(sync) {
+  const health = globalThis.AmzeHealthReport;
+  if (!health || typeof health.writeRuleSync !== 'function') return;
+  try {
+    await health.writeRuleSync(chrome.storage.local, sync);
+  } catch (error) {
+    reportBackgroundError(error, 'health:rule-sync');
   }
 }
 
@@ -733,7 +760,10 @@ async function clearLocalDataCaches() {
     idbClear('reviewCorpus'),
     idbClear('pdpSnapshots'),
     idbClear('purchaseSummary'),
-    chrome.storage.local.remove(['amzePriceHistory', 'amzeOrigins', 'amzeWatchedOrders', 'amzeErrorBuffer'])
+    chrome.storage.local.remove([
+      'amzePriceHistory', 'amzeOrigins', 'amzeWatchedOrders',
+      'amzeErrorBuffer', 'amzeHealthState'
+    ])
   ]);
 }
 
@@ -1090,8 +1120,34 @@ function isTrustedExtensionPage(sender) {
   return !sender?.tab && !!senderUrl && senderUrl.startsWith(extensionRoot);
 }
 
+function isTrustedAmazonContentScript(sender) {
+  const senderUrl = String(sender && (sender.url || sender.tab && sender.tab.url) || '');
+  try {
+    const url = new URL(senderUrl);
+    return (url.protocol === 'https:' || url.protocol === 'http:')
+      && globalThis.AmzeNetworkRules
+      && globalThis.AmzeNetworkRules.isAmazonHost(url.hostname);
+  } catch (error) {
+    return false;
+  }
+}
+
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (!msg || !msg.type) return;
+
+  if (msg.type === 'AMZE_REPORT_SELECTOR_HEALTH') {
+    if (!isTrustedAmazonContentScript(sender) || !globalThis.AmzeHealthReport) {
+      sendResponse({ ok: false, error: 'unauthorized' });
+      return false;
+    }
+    globalThis.AmzeHealthReport.writeSelectorSnapshot(chrome.storage.local, msg.snapshot)
+      .then(() => sendResponse({ ok: true }))
+      .catch(error => {
+        reportBackgroundError(error, 'health:selector-write');
+        sendResponse({ ok: false });
+      });
+    return true;
+  }
 
   if (msg.type === 'AMZE_LOAD_FEATURE_MODULES') {
     const tabId = sender && sender.tab && sender.tab.id;
@@ -1276,15 +1332,59 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
   if (msg.type === 'AMZE_GET_ERROR_REPORT') {
     (async () => {
-      if (!globalThis.AmzeErrorBuffer) {
+      if (!isTrustedExtensionPage(sender)) {
+        sendResponse({ ok: false, report: null, error: 'unauthorized' });
+        return;
+      }
+      if (!globalThis.AmzeErrorBuffer || !globalThis.AmzeHealthReport) {
         sendResponse({ ok: false, report: null });
         return;
       }
       const version = (() => {
         try { return chrome.runtime.getManifest().version; } catch (e) { return ''; }
       })();
-      const entries = await globalThis.AmzeErrorBuffer.read(chrome.storage.local);
-      const report = globalThis.AmzeErrorBuffer.createReport(entries, { extensionVersion: version });
+      const [entries, healthState, defaults, stored] = await Promise.all([
+        globalThis.AmzeErrorBuffer.read(chrome.storage.local),
+        globalThis.AmzeHealthReport.read(chrome.storage.local),
+        getDefaultSettings(),
+        chrome.storage.local.get(['amzeSettings'])
+      ]);
+      const settings = mergeSettings(defaults, stored.amzeSettings);
+      const flags = settings && settings.flags ? settings.flags : {};
+      const expectedRules = globalThis.AmzeNetworkRules.buildDynamicRules({
+        stripAffiliate: !!flags.stripAffiliate,
+        hideSponsored: !!flags.hideSponsored
+      });
+      let requestRules;
+      if (!chrome.declarativeNetRequest || typeof chrome.declarativeNetRequest.getDynamicRules !== 'function') {
+        requestRules = globalThis.AmzeHealthReport.unavailableRequestRuleAudit(
+          healthState.lastRuleSync,
+          'api_unavailable'
+        );
+      } else {
+        try {
+          const installedRules = await chrome.declarativeNetRequest.getDynamicRules();
+          requestRules = globalThis.AmzeHealthReport.auditRequestRules(
+            installedRules,
+            expectedRules,
+            globalThis.AmzeNetworkRules.MANAGED_RULE_IDS,
+            { lastSync: healthState.lastRuleSync }
+          );
+        } catch (error) {
+          reportBackgroundError(error, 'health:rule-read');
+          requestRules = globalThis.AmzeHealthReport.unavailableRequestRuleAudit(
+            healthState.lastRuleSync,
+            'read_failed'
+          );
+        }
+      }
+      const errorReport = globalThis.AmzeErrorBuffer.createReport(entries, { extensionVersion: version });
+      const report = globalThis.AmzeHealthReport.createDiagnosticReport(
+        errorReport,
+        healthState,
+        requestRules,
+        { extensionVersion: version }
+      );
       sendResponse({ ok: true, report });
     })().catch(() => sendResponse({ ok: false, report: null }));
     return true;
@@ -1292,11 +1392,18 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
   if (msg.type === 'AMZE_CLEAR_ERROR_BUFFER') {
     (async () => {
-      if (!globalThis.AmzeErrorBuffer) {
+      if (!isTrustedExtensionPage(sender)) {
+        sendResponse({ ok: false, error: 'unauthorized' });
+        return;
+      }
+      if (!globalThis.AmzeErrorBuffer || !globalThis.AmzeHealthReport) {
         sendResponse({ ok: false });
         return;
       }
-      await globalThis.AmzeErrorBuffer.clear(chrome.storage.local);
+      await Promise.all([
+        globalThis.AmzeErrorBuffer.clear(chrome.storage.local),
+        globalThis.AmzeHealthReport.clear(chrome.storage.local)
+      ]);
       sendResponse({ ok: true });
     })().catch(() => sendResponse({ ok: false }));
     return true;

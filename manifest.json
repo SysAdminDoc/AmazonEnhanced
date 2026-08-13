@@ -118,7 +118,7 @@
         "*://*.amazon.ae/*",
         "*://*.amazon.eg/*"
       ],
-      "js": ["feature-modules.js", "network-rules.js", "sponsored-detection.js", "mutation-queue.js", "shadow-ui.js", "error-buffer.js", "session-state.js", "review-corpus.js", "content.js"],
+      "js": ["feature-modules.js", "network-rules.js", "sponsored-detection.js", "health-report.js", "mutation-queue.js", "shadow-ui.js", "error-buffer.js", "session-state.js", "review-corpus.js", "content.js"],
       "run_at": "document_end",
       "all_frames": false
     },

@@ -22,11 +22,14 @@ _read_version = PACK_CRX._read_version
 
 FIREFOX_BACKGROUND_SCRIPTS = [
     "browser-polyfill.min.js",
+    "network-rules.js",
+    "health-report.js",
     "price-history-io.js",
     "wishlist-import.js",
     "feature-modules.js",
     "service-worker-warm.js",
     "error-buffer.js",
+    "review-corpus.js",
     "pdp-diff.js",
     "purchase-summary.js",
     "background.js",

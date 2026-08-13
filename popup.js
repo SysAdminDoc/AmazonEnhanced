@@ -567,14 +567,14 @@
     if (exportErrors) {
       exportErrors.addEventListener('click', async () => {
         exportErrors.disabled = true;
-        if (errorStatus) errorStatus.textContent = 'Collecting the local error buffer…';
+        if (errorStatus) errorStatus.textContent = 'Checking selectors, request rules, and local errors…';
         const result = await requestErrorReport();
         exportErrors.disabled = false;
         if (!result.ok || !result.report) {
-          if (errorStatus) errorStatus.textContent = 'Could not collect the error report.';
+          if (errorStatus) errorStatus.textContent = 'Could not collect the diagnostic report.';
           return;
         }
-        downloadJson(result.report, 'amazonenhanced-error-report-' + Date.now() + '.json');
+        downloadJson(result.report, 'amazonenhanced-diagnostic-report-' + Date.now() + '.json');
         if (errorStatus) {
           errorStatus.textContent = 'Downloaded ' + result.report.entries.length + ' recorded error'
             + (result.report.entries.length === 1 ? '' : 's') + '.';

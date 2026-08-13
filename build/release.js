@@ -10,6 +10,7 @@ const JS_FILES = [
   'early-inject.js',
   'network-rules.js',
   'sponsored-detection.js',
+  'health-report.js',
   'feature-modules.js',
   'service-worker-warm.js',
   'error-buffer.js',

@@ -7,6 +7,7 @@
 - Added a reusable exact-label sponsored classifier with localized labels and regression coverage for ordinary secondary metadata.
 - Added a fixed-shell 560×640 desktop settings redesign across all 10 tabs, with persistent vertical navigation, saved/error feedback, light/AMOLED parity, density support, dependent disabled states, keyboard arrow/Home/End navigation, and two-step destructive actions.
 - Added a local popup preview server for repeatable full-interface visual and interaction checks without exposing extension data.
+- Added a privacy-safe local diagnostic report with latest-per-route selector health, delayed-label observation counts, managed request-rule verification, and bounded runtime errors; structural health fields contain no page text, URLs, or account data.
 
 ### Changed
 - Reworked the default Amazon and settings-popup appearance into the premium Midnight Gallery theme, with layered navy/slate surfaces, cool product-image mats, clearer focus states, and preserved yellow commerce actions.
@@ -21,6 +22,7 @@
 - Fixed sponsor detection that treated generic secondary text as advertising and missed featured-brand/cart promo containers or labels inserted after initial scan.
 - Fixed broad shopping-assistant selectors that could hide product imagery or cart content after Amazon's Rufus-to-Alexa rename.
 - Replaced silent runtime catches in the core feature pack with the bounded local error-reporting path.
+- Included shared network-rule, sponsored-detection, health-report, and review-corpus dependencies in the hand-packed Chromium/Firefox release file lists.
 
 ## [2.0.16] - 2026-08-12
 

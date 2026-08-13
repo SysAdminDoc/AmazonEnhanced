@@ -64,6 +64,7 @@
   const REDIRECT_STRIPPER = createLazyModuleApi('AmzeRedirectStripper');
   const NETWORK_RULES = createLazyModuleApi('AmzeNetworkRules');
   const SPONSORED_DETECTION = createLazyModuleApi('AmzeSponsoredDetection');
+  const HEALTH_REPORT = createLazyModuleApi('AmzeHealthReport');
   const PDP_DIFF = createLazyModuleApi('AmzePdpDiff');
   const PURCHASE_SUMMARY = createLazyModuleApi('AmzePurchaseSummary');
 
@@ -412,10 +413,14 @@
   // -------------------------------------------------------------------
 
   let selectorPackPromise = null;
+  let selectorPackData = null;
+  let selectorPackSource = 'catalog';
   let SPONSORED_SELECTORS = '';
   let SPONSORED_LABEL_SELECTORS = '';
+  let selectorHealthTimer = null;
+  let selectorHealthFingerprint = '';
 
-  const SPONSORED_SELECTORS_FALLBACK = [
+  const SPONSORED_SELECTOR_FALLBACKS = [
     '[data-component-type="sp-sponsored-result"]',
     '.AdHolder',
     '[data-cel-widget*="MAIN-SPONSORED"]',
@@ -432,13 +437,16 @@
     '[id^="featured-brand-"]',
     '#sc-new-upsell',
     '.ape-placement'
-  ].join(',');
+  ];
+  const SPONSORED_SELECTORS_FALLBACK = SPONSORED_SELECTOR_FALLBACKS.join(',');
 
-  const SPONSORED_LABELS_FALLBACK = [
+  const SPONSORED_LABEL_FALLBACKS = [
     '.s-sponsored-label-info-icon',
     '.puis-label-popover-default',
-    '[aria-label*="Sponsored" i]'
-  ].join(',');
+    '[aria-label*="Sponsored" i]',
+    '.puis-sponsored-label-text'
+  ];
+  const SPONSORED_LABELS_FALLBACK = SPONSORED_LABEL_FALLBACKS.join(',');
 
   async function loadSelectorPack() {
     if (!selectorPackPromise) {
@@ -448,6 +456,8 @@
           return res.json();
         })
         .then(data => {
+          selectorPackData = data;
+          selectorPackSource = 'catalog';
           // Base selectors
           SPONSORED_SELECTORS = (data.sponsored || []).join(',') || SPONSORED_SELECTORS_FALLBACK;
           let labels = data.sponsoredLabels || [];
@@ -461,11 +471,56 @@
           SPONSORED_LABEL_SELECTORS = labels.join(',') || SPONSORED_LABELS_FALLBACK;
         })
         .catch(() => {
+          selectorPackData = {
+            version: 0,
+            sponsored: [...SPONSORED_SELECTOR_FALLBACKS],
+            sponsoredLabels: [...SPONSORED_LABEL_FALLBACKS]
+          };
+          selectorPackSource = 'fallback';
           SPONSORED_SELECTORS = SPONSORED_SELECTORS_FALLBACK;
           SPONSORED_LABEL_SELECTORS = SPONSORED_LABELS_FALLBACK;
         });
     }
     return selectorPackPromise;
+  }
+
+  function publishSelectorHealth() {
+    if (!selectorPackData || typeof HEALTH_REPORT.auditDocument !== 'function') return;
+    const snapshot = HEALTH_REPORT.auditDocument({
+      document,
+      pathname: location.pathname,
+      locale: LOCALE_TLD,
+      selectorPack: selectorPackData,
+      selectorPackSource,
+      isSponsoredLabelText: SPONSORED_DETECTION.isSponsoredLabelText
+    });
+    if (!snapshot || snapshot.route === 'other') return;
+    const fingerprint = typeof HEALTH_REPORT.selectorSnapshotFingerprint === 'function'
+      ? HEALTH_REPORT.selectorSnapshotFingerprint(snapshot)
+      : JSON.stringify(snapshot);
+    if (fingerprint === selectorHealthFingerprint) return;
+    selectorHealthFingerprint = fingerprint;
+    try {
+      chrome.runtime.sendMessage({ type: 'AMZE_REPORT_SELECTOR_HEALTH', snapshot }, () => {
+        void chrome.runtime.lastError;
+      });
+    } catch (error) {
+      reportContentError(error, 'health:publish');
+    }
+  }
+
+  function scheduleSelectorHealthAudit(delay = 320) {
+    if (selectorHealthTimer) clearTimeout(selectorHealthTimer);
+    selectorHealthTimer = setTimeout(() => {
+      selectorHealthTimer = null;
+      publishSelectorHealth();
+    }, delay);
+  }
+
+  function startSelectorHealthReporting() {
+    publishSelectorHealth();
+    setTimeout(publishSelectorHealth, 1500);
+    setTimeout(publishSelectorHealth, 5000);
   }
 
   function isSponsoredTile(el) {
@@ -1597,6 +1652,7 @@
   function queueMutationRecords(muts) {
     mutationScanMetrics.observerCallbacks++;
     mutationScanMetrics.mutationRecords += muts.length;
+    scheduleSelectorHealthAudit();
     const roots = [];
     for (const mut of muts) {
       if (mut.type === 'attributes') {
@@ -4302,6 +4358,7 @@
     installAttributionNavigationGuard();
     schedule();
     startObserver();
+    startSelectorHealthReporting();
     runFeaturePack();
     applyAccessibilityAttrs();
     // Mark ready so anti-FOUC releases (body opacity 1)
