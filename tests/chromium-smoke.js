@@ -33,6 +33,9 @@ const ROUTES = Object.freeze([
           </article>
           <article id="eager-sponsored" data-component-type="sp-sponsored-result">Sponsored fixture</article>
           <aside id="eager-ad-shell" class="AdHolder">Ad shell</aside>
+          <article id="localized-label-only" class="s-result-item" data-component-type="s-search-result" data-asin="B000000003">
+            <span class="a-color-secondary">Patrocinado</span>
+          </article>
         </main>
         <script>
           window.__amzeFixture = { lateInserted: false, adProbeSettled: false };
@@ -60,6 +63,7 @@ const ROUTES = Object.freeze([
         && visible('#core-search-result')
         && !document.querySelector('#eager-sponsored')
         && !document.querySelector('#eager-ad-shell')
+        && !document.querySelector('#localized-label-only')
         && window.__amzeFixture?.lateInserted === true
         && !document.querySelector('#late-sponsored')
         && window.__amzeFixture?.adProbeSettled === true;

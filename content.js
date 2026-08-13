@@ -417,6 +417,7 @@
   let selectorPackSource = 'catalog';
   let SPONSORED_SELECTORS = '';
   let SPONSORED_LABEL_SELECTORS = '';
+  let SPONSORED_LABEL_TEXTS = [];
   let selectorHealthTimer = null;
   let selectorHealthFingerprint = '';
 
@@ -436,14 +437,18 @@
     '.featured-brand-container',
     '[id^="featured-brand-"]',
     '#sc-new-upsell',
-    '.ape-placement'
+    '.ape-placement',
+    '#sponsoredProducts2_feature_div',
+    '#sp_detail',
+    '#sp_detail_thematic',
+    '#sp_detail2',
+    '#sp_hqp_shared_inline'
   ];
   const SPONSORED_SELECTORS_FALLBACK = SPONSORED_SELECTOR_FALLBACKS.join(',');
 
   const SPONSORED_LABEL_FALLBACKS = [
     '.s-sponsored-label-info-icon',
     '.puis-label-popover-default',
-    '[aria-label*="Sponsored" i]',
     '.puis-sponsored-label-text'
   ];
   const SPONSORED_LABELS_FALLBACK = SPONSORED_LABEL_FALLBACKS.join(',');
@@ -469,6 +474,9 @@
             if (overrides.sponsoredLabels) labels = overrides.sponsoredLabels;
           }
           SPONSORED_LABEL_SELECTORS = labels.join(',') || SPONSORED_LABELS_FALLBACK;
+          SPONSORED_LABEL_TEXTS = data.localeLabels && Array.isArray(data.localeLabels[LOCALE_TLD])
+            ? data.localeLabels[LOCALE_TLD]
+            : [];
         })
         .catch(() => {
           selectorPackData = {
@@ -479,6 +487,7 @@
           selectorPackSource = 'fallback';
           SPONSORED_SELECTORS = SPONSORED_SELECTORS_FALLBACK;
           SPONSORED_LABEL_SELECTORS = SPONSORED_LABELS_FALLBACK;
+          SPONSORED_LABEL_TEXTS = [];
         });
     }
     return selectorPackPromise;
@@ -526,15 +535,17 @@
   function isSponsoredTile(el) {
     if (!el) return false;
     if (SPONSORED_SELECTORS && el.matches && el.matches(SPONSORED_SELECTORS)) return true;
-    // Fallback: look for "Sponsored" label inside the tile.
+    // Exact localized label checks supplement precise structural label hooks.
     const labelSel = SPONSORED_LABEL_SELECTORS || SPONSORED_LABELS_FALLBACK;
-    const label = el.querySelector && el.querySelector(labelSel);
-    if (label) return true;
     const candidates = el.querySelectorAll
-      ? Array.from(el.querySelectorAll('.puis-sponsored-label-text, span.a-color-secondary'))
+      ? Array.from(el.querySelectorAll(`${labelSel}, span.a-color-secondary, [aria-label]`))
       : [];
-    if (candidates.some(node => typeof SPONSORED_DETECTION.isSponsoredLabelText === 'function'
-      && SPONSORED_DETECTION.isSponsoredLabelText(node.textContent || ''))) {
+    if (candidates.some(node => {
+      if (node.matches && node.matches(labelSel)) return true;
+      if (typeof SPONSORED_DETECTION.isSponsoredLabelText !== 'function') return false;
+      return [node.textContent, node.getAttribute && node.getAttribute('aria-label')]
+        .some(value => SPONSORED_DETECTION.isSponsoredLabelText(value || '', SPONSORED_LABEL_TEXTS));
+    })) {
       return true;
     }
     return false;

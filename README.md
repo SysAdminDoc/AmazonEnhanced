@@ -21,6 +21,7 @@
 ### Ads & sponsored
 - Request-level blocking for observed Amazon ad scripts, frames, media, pixels, and sponsored-event beacons through Manifest V3 dynamic `declarativeNetRequest` rules
 - Render-time sponsored-result removal for first-party records embedded in Amazon's own page response (search pages, PDP carousels, featured-brand units, and infinite scroll)
+- Exact localized sponsored-label fallback coverage for all 20 declared marketplaces, backed by privacy-safe search/PDP structural fixtures
 - Optional shade mode (keeps tiles visible but dimmed + outlined)
 - Video-ad and Prime-upsell nag removal on Amazon, plus Prime Video self-promotion/ad-break decluttering using the same existing toggles
 - Hero banner / promo strip removal

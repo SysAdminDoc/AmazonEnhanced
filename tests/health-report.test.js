@@ -7,7 +7,11 @@ const { isSponsoredLabelText } = require('../sponsored-detection.js');
 const SELECTOR_PACK = {
   version: 1,
   sponsored: ['[data-component-type="sp-sponsored-result"]', '.AdHolder'],
-  sponsoredLabels: ['.puis-sponsored-label-text', '[aria-label*="Sponsored" i]']
+  sponsoredLabels: ['.puis-sponsored-label-text', '[aria-label*="Sponsored" i]'],
+  localeLabels: {
+    com: ['Sponsored'],
+    'co.uk': ['Sponsored']
+  }
 };
 
 function createFixture(initial = {}) {
@@ -167,7 +171,7 @@ test('stores only the latest bounded structural snapshot per route', async () =>
     missingCriticalHooks: [],
     selectorPack: {
       source: 'catalog', version: 1, sponsoredCount: 16, sponsoredLabelCount: 4,
-      invalidSelectorIds: []
+      localizedLabelCount: 2, invalidSelectorIds: []
     },
     observed: { sponsoredContainers: 2, sponsoredLabelNodes: 2, recognizedTextLabels: 1 },
     url: 'https://www.amazon.com/s?k=secret',
@@ -180,7 +184,7 @@ test('stores only the latest bounded structural snapshot per route', async () =>
     missingCriticalHooks: ['search_results'],
     selectorPack: {
       source: 'catalog', version: 1, sponsoredCount: 16, sponsoredLabelCount: 4,
-      invalidSelectorIds: []
+      localizedLabelCount: 2, invalidSelectorIds: []
     },
     observed: {}
   });

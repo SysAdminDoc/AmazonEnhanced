@@ -9,6 +9,7 @@
 - Added a local popup preview server for repeatable full-interface visual and interaction checks without exposing extension data.
 - Added a privacy-safe local diagnostic report with latest-per-route selector health, delayed-label observation counts, managed request-rule verification, and bounded runtime errors; structural health fields contain no page text, URLs, or account data.
 - Added a dependency-free isolated Chromium release smoke that loads `dist/`, verifies the MV3 service worker/content runtime and all 27 managed rules, checks synthetic search/PDP/cart/Prime outcomes, and proves eight known-ad probes cannot reach interception or response.
+- Added exact localized sponsorship-label and stable search/PDP fixture coverage for all 20 declared Amazon marketplaces, including Dutch, Polish, Swedish, Turkish, Hindi, Japanese, and Arabic labels.
 
 ### Changed
 - Reworked the default Amazon and settings-popup appearance into the premium Midnight Gallery theme, with layered navy/slate surfaces, cool product-image mats, clearer focus states, and preserved yellow commerce actions.
@@ -16,6 +17,7 @@
 - Made Hide Sponsored and Shade Sponsored mutually exclusive, reclassified delayed sponsored labels before marking tiles complete, and removed stale shade state when modes change.
 - Limited Alexa for Shopping removal to precise panel/launcher roots and updated current Best Buy product-route recognition.
 - Preserved functional Amazon search/product parameters during navigation cleanup while continuing to remove attribution and affiliate parameters.
+- Replaced localized `aria-label` substring selectors with precise structural label hooks plus locale-scoped exact text classification, and added stable PDP sponsorship IDs to the shared selector catalog.
 - Scoped Prime Video decluttering so the non-subscriber page keeps its core offer action while the redundant top Join Prime control is hidden.
 
 ### Fixed

@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "sponsored": [
     "[data-component-type=\"sp-sponsored-result\"]",
     ".AdHolder",
@@ -16,77 +16,39 @@
     ".featured-brand-container",
     "[id^=\"featured-brand-\"]",
     "#sc-new-upsell",
-    ".ape-placement"
+    ".ape-placement",
+    "#sponsoredProducts2_feature_div",
+    "#sp_detail",
+    "#sp_detail_thematic",
+    "#sp_detail2",
+    "#sp_hqp_shared_inline"
   ],
   "sponsoredLabels": [
     ".s-sponsored-label-info-icon",
     ".puis-label-popover-default",
-    "[aria-label*=\"Sponsored\" i]",
     ".puis-sponsored-label-text"
   ],
-  "localeOverrides": {
-    "co.jp": {
-      "sponsoredLabels": [
-        ".s-sponsored-label-info-icon",
-        ".puis-label-popover-default",
-        "[aria-label*=\"スポンサー\"]",
-        "[aria-label*=\"Sponsored\" i]",
-        ".puis-sponsored-label-text"
-      ]
-    },
-    "de": {
-      "sponsoredLabels": [
-        ".s-sponsored-label-info-icon",
-        ".puis-label-popover-default",
-        "[aria-label*=\"Gesponsert\"]",
-        "[aria-label*=\"Sponsored\" i]",
-        ".puis-sponsored-label-text"
-      ]
-    },
-    "fr": {
-      "sponsoredLabels": [
-        ".s-sponsored-label-info-icon",
-        ".puis-label-popover-default",
-        "[aria-label*=\"Sponsorisé\"]",
-        "[aria-label*=\"Sponsored\" i]",
-        ".puis-sponsored-label-text"
-      ]
-    },
-    "it": {
-      "sponsoredLabels": [
-        ".s-sponsored-label-info-icon",
-        ".puis-label-popover-default",
-        "[aria-label*=\"Sponsorizzato\"]",
-        "[aria-label*=\"Sponsored\" i]",
-        ".puis-sponsored-label-text"
-      ]
-    },
-    "es": {
-      "sponsoredLabels": [
-        ".s-sponsored-label-info-icon",
-        ".puis-label-popover-default",
-        "[aria-label*=\"Patrocinado\"]",
-        "[aria-label*=\"Sponsored\" i]",
-        ".puis-sponsored-label-text"
-      ]
-    },
-    "com.br": {
-      "sponsoredLabels": [
-        ".s-sponsored-label-info-icon",
-        ".puis-label-popover-default",
-        "[aria-label*=\"Patrocinado\"]",
-        "[aria-label*=\"Sponsored\" i]",
-        ".puis-sponsored-label-text"
-      ]
-    },
-    "in": {
-      "sponsoredLabels": [
-        ".s-sponsored-label-info-icon",
-        ".puis-label-popover-default",
-        "[aria-label*=\"Sponsored\" i]",
-        "[aria-label*=\"प्रायोजित\"]",
-        ".puis-sponsored-label-text"
-      ]
-    }
+  "localeOverrides": {},
+  "localeLabels": {
+    "com": ["Sponsored", "Ad", "Patrocinado"],
+    "co.uk": ["Sponsored", "Ad"],
+    "ca": ["Sponsored", "Ad", "Sponsorisé", "Commandité"],
+    "de": ["Gesponsert", "Sponsored", "Ad"],
+    "fr": ["Sponsorisé", "Sponsored", "Ad"],
+    "it": ["Sponsorizzato", "Sponsored", "Ad"],
+    "es": ["Patrocinado", "Sponsored", "Ad"],
+    "nl": ["Gesponsord", "Sponsored", "Ad"],
+    "pl": ["Sponsorowane", "Sponsored", "Ad"],
+    "se": ["Sponsrad", "Sponsored", "Ad"],
+    "com.tr": ["Sponsorlu", "Sponsored", "Ad"],
+    "in": ["Sponsored", "Ad", "प्रायोजित"],
+    "co.jp": ["スポンサー", "Sponsored", "Ad"],
+    "com.au": ["Sponsored", "Ad"],
+    "com.mx": ["Patrocinado", "Sponsored", "Ad"],
+    "com.br": ["Patrocinado", "Patrocinados", "Sponsored", "Ad"],
+    "sg": ["Sponsored", "Ad"],
+    "sa": ["إعلان", "برعاية", "Sponsored", "Ad"],
+    "ae": ["إعلان", "برعاية", "Sponsored", "Ad"],
+    "eg": ["إعلان", "برعاية", "Sponsored", "Ad"]
   }
 }

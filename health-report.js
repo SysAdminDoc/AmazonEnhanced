@@ -73,6 +73,14 @@
       .slice(0, 100);
   }
 
+  function normalizeLabelArray(value) {
+    if (!Array.isArray(value)) return [];
+    return Array.from(new Set(value
+      .map(label => String(label || '').normalize('NFKC').trim())
+      .filter(Boolean)))
+      .slice(0, 50);
+  }
+
   function resolveSelectorPack(pack, locale) {
     const source = pack && typeof pack === 'object' ? pack : {};
     const override = source.localeOverrides
@@ -87,6 +95,7 @@
       version: clampCount(source.version),
       sponsored: normalizeSelectorArray(sponsoredOverride ? override.sponsored : source.sponsored),
       sponsoredLabels: normalizeSelectorArray(labelOverride ? override.sponsoredLabels : source.sponsoredLabels),
+      localizedLabels: normalizeLabelArray(source.localeLabels && source.localeLabels[locale]),
       sponsoredSource: sponsoredOverride ? 'locale' : 'base',
       labelSource: labelOverride ? 'locale' : 'base'
     };
@@ -152,6 +161,7 @@
       version: clampCount(packInput.version),
       sponsoredCount: clampCount(packInput.sponsoredCount),
       sponsoredLabelCount: clampCount(packInput.sponsoredLabelCount),
+      localizedLabelCount: clampCount(packInput.localizedLabelCount),
       invalidSelectorIds
     };
     const observedInput = input.observed && typeof input.observed === 'object'
@@ -170,6 +180,7 @@
       || selectorPack.version === 0
       || selectorPack.sponsoredCount === 0
       || selectorPack.sponsoredLabelCount === 0
+      || selectorPack.localizedLabelCount === 0
     );
     return {
       route,
@@ -231,6 +242,7 @@
         version: resolved.version,
         sponsoredCount: resolved.sponsored.length,
         sponsoredLabelCount: resolved.sponsoredLabels.length,
+        localizedLabelCount: resolved.localizedLabels.length,
         invalidSelectorIds
       },
       observed: {

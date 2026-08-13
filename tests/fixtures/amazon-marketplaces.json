@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "templates": {
+    "search": {
+      "pathname": "/s",
+      "root": "#search",
+      "core": "[data-component-type=\"s-search-result\"]",
+      "sponsored": "[data-component-type=\"sp-sponsored-result\"]",
+      "label": ".puis-sponsored-label-text"
+    },
+    "pdp": {
+      "pathname": "/dp/B000000000",
+      "root": "#dp",
+      "title": "#productTitle",
+      "purchase": "#buybox",
+      "sponsored": "#sp_detail",
+      "label": ".puis-sponsored-label-text"
+    }
+  },
+  "marketplaces": [
+    { "domain": "amazon.com", "tld": "com", "labels": ["Sponsored", "Ad", "Patrocinado"] },
+    { "domain": "amazon.co.uk", "tld": "co.uk", "labels": ["Sponsored", "Ad"] },
+    { "domain": "amazon.ca", "tld": "ca", "labels": ["Sponsored", "Ad", "Sponsorisé", "Commandité"] },
+    { "domain": "amazon.de", "tld": "de", "labels": ["Gesponsert", "Sponsored", "Ad"] },
+    { "domain": "amazon.fr", "tld": "fr", "labels": ["Sponsorisé", "Sponsored", "Ad"] },
+    { "domain": "amazon.it", "tld": "it", "labels": ["Sponsorizzato", "Sponsored", "Ad"] },
+    { "domain": "amazon.es", "tld": "es", "labels": ["Patrocinado", "Sponsored", "Ad"] },
+    { "domain": "amazon.nl", "tld": "nl", "labels": ["Gesponsord", "Sponsored", "Ad"] },
+    { "domain": "amazon.pl", "tld": "pl", "labels": ["Sponsorowane", "Sponsored", "Ad"] },
+    { "domain": "amazon.se", "tld": "se", "labels": ["Sponsrad", "Sponsored", "Ad"] },
+    { "domain": "amazon.com.tr", "tld": "com.tr", "labels": ["Sponsorlu", "Sponsored", "Ad"] },
+    { "domain": "amazon.in", "tld": "in", "labels": ["Sponsored", "Ad", "प्रायोजित"] },
+    { "domain": "amazon.co.jp", "tld": "co.jp", "labels": ["スポンサー", "Sponsored", "Ad"] },
+    { "domain": "amazon.com.au", "tld": "com.au", "labels": ["Sponsored", "Ad"] },
+    { "domain": "amazon.com.mx", "tld": "com.mx", "labels": ["Patrocinado", "Sponsored", "Ad"] },
+    { "domain": "amazon.com.br", "tld": "com.br", "labels": ["Patrocinado", "Patrocinados", "Sponsored", "Ad"] },
+    { "domain": "amazon.sg", "tld": "sg", "labels": ["Sponsored", "Ad"] },
+    { "domain": "amazon.sa", "tld": "sa", "labels": ["إعلان", "برعاية", "Sponsored", "Ad"] },
+    { "domain": "amazon.ae", "tld": "ae", "labels": ["إعلان", "برعاية", "Sponsored", "Ad"] },
+    { "domain": "amazon.eg", "tld": "eg", "labels": ["إعلان", "برعاية", "Sponsored", "Ad"] }
+  ]
+}
