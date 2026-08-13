@@ -8,6 +8,8 @@
   },
   "scripts": {
     "test": "node --test tests/*.test.js",
+    "test:browser": "node tests/chromium-smoke.js",
+    "verify:release": "npm run build:release && npm run test:browser",
     "build:release": "node build/release.js",
     "build:crx": "python build/pack-crx.py",
     "build:firefox": "python build/pack-firefox.py",

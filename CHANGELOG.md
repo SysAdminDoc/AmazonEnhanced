@@ -8,6 +8,7 @@
 - Added a fixed-shell 560×640 desktop settings redesign across all 10 tabs, with persistent vertical navigation, saved/error feedback, light/AMOLED parity, density support, dependent disabled states, keyboard arrow/Home/End navigation, and two-step destructive actions.
 - Added a local popup preview server for repeatable full-interface visual and interaction checks without exposing extension data.
 - Added a privacy-safe local diagnostic report with latest-per-route selector health, delayed-label observation counts, managed request-rule verification, and bounded runtime errors; structural health fields contain no page text, URLs, or account data.
+- Added a dependency-free isolated Chromium release smoke that loads `dist/`, verifies the MV3 service worker/content runtime and all 27 managed rules, checks synthetic search/PDP/cart/Prime outcomes, and proves eight known-ad probes cannot reach interception or response.
 
 ### Changed
 - Reworked the default Amazon and settings-popup appearance into the premium Midnight Gallery theme, with layered navy/slate surfaces, cool product-image mats, clearer focus states, and preserved yellow commerce actions.

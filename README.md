@@ -137,6 +137,7 @@ theme.css            document_start: theme + declutter + image-mode + feature ch
 content.js           document_end: feature runtime + MutationObserver
 network-rules.js     bounded DNR ad filters and 20-marketplace affiliate cleanup rules
 sponsored-detection.js exact localized sponsored-label classifier
+health-report.js      bounded structural selector/DNR diagnostic state and export
 selectors.json       versioned, conservative Amazon selector groups
 feature-modules.js   active-flag-to-bundle map for conditional content injection
 smart-sort.js        bounded weighted ranking kernel for visible search results
@@ -164,11 +165,14 @@ build/pack-crx.py    CRX3 packer
 build/pack-firefox.py XPI packer with Firefox manifest adaptation and 20-locale validation
 build/pack-edge.py   Edge Add-ons ZIP packer with MV3 and 20-locale validation
 build/release.js     esbuild per-file minifier and deterministic release ZIP builder
+tests/chromium-smoke.js isolated unpacked-extension Chromium/CDP release smoke
 ```
 
 Feature helper bundles are injected into the isolated content-script world only after the active settings flags are known; the static content entry point keeps the settings/observer core small. For performance profiling on an Amazon page, inspect `window.__amzeMutationMetrics` in the console. It records full-document versus targeted scan counts and elapsed work, plus queue coalescing statistics; counters reset when the content script reloads.
 
 For a minified release tree, run `npm ci` and then `npm run build:release`. The command writes ignored output to `dist/` and creates a deterministic `AmazonEnhanced-v<version>-release.zip`; source files remain readable and the runtime's per-file module boundaries are preserved.
+
+Run `npm run verify:release` for the repository-owned unpacked browser smoke. It builds `dist/`, launches an installed Chromium-family browser in a disposable OS-temporary profile, loads only the unpacked extension, and uses synthetic Amazon/Prime documents without live account or shopping data. The smoke verifies the service worker and content script, all 27 managed dynamic rules, search/PDP/cart/Prime core and ad-removal outcomes, eight known-ad request probes, and visible-shell cleanup. Set `AMZE_CHROMIUM_PATH` to an explicit Chrome, Chromium, or Edge executable when auto-discovery is not suitable; set `AMZE_SMOKE_HEADFUL=1` only when debugging the harness.
 
 ## License
 
