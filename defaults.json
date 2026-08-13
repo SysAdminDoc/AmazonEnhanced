@@ -1,5 +1,5 @@
 {
-  "settingsVersion": 2,
+  "settingsVersion": 3,
   "theme": "dark",
   "density": "comfortable",
   "imageMode": "tile",
@@ -65,6 +65,5 @@
   },
   "customBrands": "",
   "allergens": "",
-  "openCorporatesToken": "",
   "toastsEnabled": true
 }

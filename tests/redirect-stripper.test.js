@@ -24,4 +24,6 @@ test('handles nested destination parameters and Amazon locale hosts', () => {
   assert.equal(unwrapAmazonRedirect(nested), 'https://www.amazon.co.uk/gp/product/B000000002');
   assert.equal(isAmazonHost('www.amazon.co.jp'), true);
   assert.equal(isAmazonHost('amazon-example.com'), false);
+  assert.equal(isAmazonHost('amazon.com.evil.example'), false);
+  assert.equal(isAmazonHost('foo.amazon.invalid'), false);
 });

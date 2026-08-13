@@ -32,6 +32,12 @@
     globalThis.AmzeErrorBuffer.attachGlobalListeners(globalThis, AMZE_ERROR_REPORTER, 'content');
   }
 
+  function reportContentError(error, context) {
+    if (AMZE_ERROR_REPORTER && typeof AMZE_ERROR_REPORTER.record === 'function') {
+      AMZE_ERROR_REPORTER.record(error, context || 'content').catch(() => {});
+    }
+  }
+
   function createLazyModuleApi(globalName) {
     return new Proxy({}, {
       get(_target, property) {
@@ -56,6 +62,8 @@
   const REVIEW_CORPUS = createLazyModuleApi('AmzeReviewCorpus');
   const SMART_SORT = createLazyModuleApi('AmzeSmartSort');
   const REDIRECT_STRIPPER = createLazyModuleApi('AmzeRedirectStripper');
+  const NETWORK_RULES = createLazyModuleApi('AmzeNetworkRules');
+  const SPONSORED_DETECTION = createLazyModuleApi('AmzeSponsoredDetection');
   const PDP_DIFF = createLazyModuleApi('AmzePdpDiff');
   const PURCHASE_SUMMARY = createLazyModuleApi('AmzePurchaseSummary');
 
@@ -86,6 +94,7 @@
   function mergeSettings(saved) {
     const merged = Object.assign(cloneDefaultSettings(), saved || {});
     merged.flags = Object.assign({}, DEFAULT_SETTINGS.flags, (saved && saved.flags) || {});
+    delete merged.openCorporatesToken;
     return merged;
   }
 
@@ -119,13 +128,14 @@
         loadActiveFeatureModules(settings.flags).finally(cb);
       });
     } catch (e) {
+      reportContentError(e, 'settings:load');
       settings = cloneDefaultSettings();
       cb();
     }
   }
 
   function saveSettings() {
-    try { chrome.storage.local.set({ amzeSettings: settings }); } catch (e) {}
+    try { chrome.storage.local.set({ amzeSettings: settings }); } catch (e) { reportContentError(e, 'settings:save'); }
   }
 
   function sendMessageWithTimeout(message, timeoutMs = 3000) {
@@ -418,6 +428,9 @@
     '[class*="gateway-atf_ad"]',
     '[id*="desktop-homepage-btf-card"]',
     '[id*="desktop-homepage-atf-card"]',
+    '.featured-brand-container',
+    '[id^="featured-brand-"]',
+    '#sc-new-upsell',
     '.ape-placement'
   ].join(',');
 
@@ -462,8 +475,13 @@
     const labelSel = SPONSORED_LABEL_SELECTORS || SPONSORED_LABELS_FALLBACK;
     const label = el.querySelector && el.querySelector(labelSel);
     if (label) return true;
-    const txt = el.querySelector && el.querySelector('.puis-sponsored-label-text, span.a-color-secondary');
-    if (txt && /sponsored|ad\s*$/i.test(txt.textContent || '')) return true;
+    const candidates = el.querySelectorAll
+      ? Array.from(el.querySelectorAll('.puis-sponsored-label-text, span.a-color-secondary'))
+      : [];
+    if (candidates.some(node => typeof SPONSORED_DETECTION.isSponsoredLabelText === 'function'
+      && SPONSORED_DETECTION.isSponsoredLabelText(node.textContent || ''))) {
+      return true;
+    }
     return false;
   }
 
@@ -518,9 +536,47 @@
     return `tile:${identity}:${widget || el.id}`;
   }
 
+  function clearSponsoredShade(el) {
+    if (!el || !el.classList) return;
+    el.classList.remove('amze-sponsored-shaded');
+    el.querySelectorAll(':scope > .amze-sponsor-marker').forEach(marker => marker.remove());
+    // Clean up inline styling left by pre-2.0.17 versions.
+    if (el.style && el.style.outline === '1px dashed var(--amze-danger)') el.style.removeProperty('outline');
+    if (el.style && el.style.opacity === '0.55') el.style.removeProperty('opacity');
+  }
+
+  function applySponsoredMode(el, sponsored = true) {
+    if (!el || isNodeRemoved(el)) return false;
+    const flags = settings.flags;
+    if (!sponsored || (!flags.hideSponsored && !flags.shadeSponsored)) {
+      clearSponsoredShade(el);
+      return false;
+    }
+    if (flags.hideSponsored) {
+      el.remove();
+      return true;
+    }
+    if (el.style && el.style.outline === '1px dashed var(--amze-danger)') el.style.removeProperty('outline');
+    if (el.style && el.style.opacity === '0.55') el.style.removeProperty('opacity');
+    if (!el.classList.contains('amze-sponsored-shaded')) el.classList.add('amze-sponsored-shaded');
+    if (!el.querySelector(':scope > .amze-sponsor-marker')) {
+      const marker = document.createElement('div');
+      marker.className = 'amze-sponsor-marker';
+      marker.textContent = 'Sponsored';
+      marker.setAttribute('aria-label', 'Sponsored placement');
+      el.appendChild(marker);
+    }
+    return false;
+  }
+
   function processResultTile(el) {
-    if (!el || el.dataset.amzeProcessed) return;
+    if (!el) return;
     if (isNodeRemoved(el)) return;
+
+    // Sponsorship can be labeled after Amazon first inserts the tile. Run this
+    // classification on every targeted scan, before DOM/session deduplication.
+    if (applySponsoredMode(el, isSponsoredTile(el))) return;
+    if (el.dataset.amzeProcessed) return;
     const sessionKey = getResultTileSessionKey(el);
     if (sessionKey && AMZE_SESSION_STATE && AMZE_SESSION_STATE.hasProcessed(sessionKey)) {
       el.dataset.amzeProcessed = '1';
@@ -530,23 +586,6 @@
     if (sessionKey && AMZE_SESSION_STATE) AMZE_SESSION_STATE.markProcessed(sessionKey);
 
     const flags = settings.flags;
-
-    // Sponsored handling (guard with optional chaining for nodes
-    // that another ad blocker may have already removed)
-    if (isSponsoredTile(el)) {
-      if (flags.hideSponsored) {
-        el?.remove();
-        return;
-      } else if (flags.shadeSponsored) {
-        el.style.outline = '1px dashed var(--amze-danger)';
-        el.style.opacity = '0.55';
-        const marker = document.createElement('div');
-        marker.className = 'amze-sponsor-marker';
-        marker.textContent = 'AD';
-        el.style.position = el.style.position || 'relative';
-        el.appendChild(marker);
-      }
-    }
 
     // Amazon-brand filter
     if (flags.hideAmazonBrands || flags.hideCustomBrands) {
@@ -1394,16 +1433,14 @@
   // 8. Affiliate / tracking link stripper
   // -------------------------------------------------------------------
 
-  const STRIP_PARAMS = [
-    'tag', 'ref', 'ref_', 'pd_rd_w', 'pd_rd_r', 'pd_rd_i', 'pf_rd_p', 'pf_rd_r',
-    'pf_rd_s', 'pf_rd_t', 'pf_rd_i', 'content-id', 'psc', 'qid', 'sr', '_encoding',
-    'dib', 'dib_tag', 'keywords', 'sprefix', 'linkCode', 'th'
-  ];
+  const STRIP_PARAMS = Array.isArray(NETWORK_RULES.STRIP_PARAMS)
+    ? NETWORK_RULES.STRIP_PARAMS
+    : ['tag', 'ref', 'ref_', 'pd_rd_w', 'pd_rd_wg', 'pd_rd_r', 'pd_rd_i', 'pd_rd_plhdr', 'pf_rd_p', 'pf_rd_r'];
 
   function cleanAmazonHref(href) {
     try {
       const url = new URL(href, location.origin);
-      if (!/amazon\./i.test(url.hostname)) return href;
+      if (typeof NETWORK_RULES.isAmazonHost !== 'function' || !NETWORK_RULES.isAmazonHost(url.hostname)) return href;
       // Reduce /dp/ASIN/... trailing junk
       const dpMatch = url.pathname.match(/\/dp\/([A-Z0-9]{10})/i) ||
                       url.pathname.match(/\/gp\/product\/([A-Z0-9]{10})/i);
@@ -1493,6 +1530,12 @@
   function scanTiles(root) {
     const scope = (root && root.querySelectorAll) ? root : document;
     collectMatchingElements(scope, RESULT_TILE_SELECTORS).forEach(processResultTile);
+    if (SPONSORED_SELECTORS) {
+      collectMatchingElements(scope, SPONSORED_SELECTORS).forEach(el => {
+        if (el.isConnected === false || (el.matches && el.matches(RESULT_TILE_SELECTORS))) return;
+        applySponsoredMode(el, true);
+      });
+    }
     if (isGroceryPage()) {
       collectMatchingElements(scope, GROCERY_TILE_SELECTORS).forEach(attachGroceryPricePerUnit);
     }
@@ -1556,11 +1599,17 @@
     mutationScanMetrics.mutationRecords += muts.length;
     const roots = [];
     for (const mut of muts) {
-      if (!mut.addedNodes || !mut.addedNodes.length) continue;
-      mut.addedNodes.forEach(node => {
-        const root = rootForMutationNode(node);
+      if (mut.type === 'attributes') {
+        const root = rootForMutationNode(mut.target);
         if (root) roots.push(root);
-      });
+        continue;
+      }
+      if (mut.addedNodes && mut.addedNodes.length) {
+        mut.addedNodes.forEach(node => {
+          const root = rootForMutationNode(node);
+          if (root) roots.push(root);
+        });
+      }
     }
     if (!roots.length) return;
     if (!mutationQueue) {
@@ -1576,7 +1625,15 @@
     domObserver = new MutationObserver((muts) => {
       queueMutationRecords(muts);
     });
-    domObserver.observe(document.documentElement, { childList: true, subtree: true });
+    domObserver.observe(document.documentElement, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: [
+        'aria-label', 'class', 'data-component-type', 'data-cel-widget',
+        'cel_widget_id', 'data-csa-c-content-id'
+      ]
+    });
   }
 
   // -------------------------------------------------------------------
@@ -1593,6 +1650,10 @@
         // Re-scan fresh tiles under new rules.
         document.querySelectorAll('[data-amze-processed]').forEach(el => delete el.dataset.amzeProcessed);
         document.querySelectorAll('.amze-hidden-by-brand').forEach(el => el.classList.remove('amze-hidden-by-brand'));
+        document.querySelectorAll('.amze-sponsored-shaded, .amze-sponsor-marker').forEach(el => {
+          const target = el.classList.contains('amze-sponsor-marker') ? el.parentElement : el;
+          if (target) clearSponsoredShade(target);
+        });
         // Reset image-smart markers so the new mode re-evaluates.
         document.querySelectorAll('[data-amze-img], [data-amze-img-observed]').forEach(el => {
           delete el.dataset.amzeImg;
@@ -4186,34 +4247,46 @@
 
   function runFeaturePack() {
     if (!settings) return;
-    try { refreshReviewCorpus(); } catch (e) {}
-    try { injectWeightedSmartSort(); } catch (e) {}
-    try { refreshPdpDiff(); } catch (e) {}
-    try { autoDeclineWarranty(); } catch (e) {}
-    try { forceOneTimePurchase(); } catch (e) {}
-    try { autoUncheckDarkPatterns(); } catch (e) {}
-    try { skipRecommendedUpgradePrompts(); } catch (e) {}
-    try { disablePrimeTrialPrechecks(); } catch (e) {}
-    try { inspectShippingChange(); } catch (e) {}
-    try { detectFrequentlyReturnedItem(); } catch (e) {}
-    try { injectExtraSortOptions(); } catch (e) {}
-    try { injectCpuTamer(); } catch (e) {}
-    try { annotateCountry(); } catch (e) {}
-    try { revealSellerPdp(); } catch (e) {}
-    try { detectCounterfeitRisk(); } catch (e) {}
-    try { detectVariationBait(); } catch (e) {}
-    try { renderVariantPriceMap(); } catch (e) {}
-    try { logAndRenderPrice(); } catch (e) {}
-    try { normalizeDealBadges(); } catch (e) {}
-    try { injectPriceAlertUI(); } catch (e) {}
-    try { injectCopyLinkButton(); } catch (e) {}
-    try { injectOrderExportButton(); } catch (e) {}
-    try { refreshPurchaseSummary(); } catch (e) {}
-    try { injectMarkdownReceiptButtons(); } catch (e) {}
-    try { injectWishlistExportButton(); } catch (e) {}
-    try { pushOrdersToWatcher(); } catch (e) {}
-    try { applyAriaFixes(); } catch (e) {}
-    try { scanAllergens(); } catch (e) {}
+    const features = [
+      ['review-corpus', refreshReviewCorpus],
+      ['weighted-smart-sort', injectWeightedSmartSort],
+      ['pdp-diff', refreshPdpDiff],
+      ['auto-decline-warranty', autoDeclineWarranty],
+      ['force-one-time-purchase', forceOneTimePurchase],
+      ['uncheck-dark-patterns', autoUncheckDarkPatterns],
+      ['skip-recommended-upgrade', skipRecommendedUpgradePrompts],
+      ['disable-prime-trial', disablePrimeTrialPrechecks],
+      ['shipping-change', inspectShippingChange],
+      ['frequently-returned', detectFrequentlyReturnedItem],
+      ['extra-sort-options', injectExtraSortOptions],
+      ['cpu-tamer', injectCpuTamer],
+      ['country-badge', annotateCountry],
+      ['seller-reveal', revealSellerPdp],
+      ['counterfeit-risk', detectCounterfeitRisk],
+      ['variation-bait', detectVariationBait],
+      ['variant-price-map', renderVariantPriceMap],
+      ['price-history', logAndRenderPrice],
+      ['deal-badge-normalizer', normalizeDealBadges],
+      ['price-alert', injectPriceAlertUI],
+      ['copy-link', injectCopyLinkButton],
+      ['order-export', injectOrderExportButton],
+      ['purchase-summary', refreshPurchaseSummary],
+      ['receipt-markdown', injectMarkdownReceiptButtons],
+      ['wishlist-export', injectWishlistExportButton],
+      ['late-delivery-watch', pushOrdersToWatcher],
+      ['aria-fixes', applyAriaFixes],
+      ['allergen-scan', scanAllergens]
+    ];
+    features.forEach(([name, feature]) => {
+      try {
+        const result = feature();
+        if (result && typeof result.catch === 'function') {
+          result.catch(error => reportContentError(error, `feature:${name}`));
+        }
+      } catch (error) {
+        reportContentError(error, `feature:${name}`);
+      }
+    });
   }
 
   // -------------------------------------------------------------------
@@ -4250,6 +4323,7 @@
       settings = cloneDefaultSettings();
       getSettings(init);
     } catch (e) {
+      reportContentError(e, 'boot');
       document.documentElement.setAttribute('data-amze-ready', '1');
     }
   }

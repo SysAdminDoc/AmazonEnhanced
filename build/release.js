@@ -8,6 +8,8 @@ const DIST = path.join(ROOT, 'dist');
 
 const JS_FILES = [
   'early-inject.js',
+  'network-rules.js',
+  'sponsored-detection.js',
   'feature-modules.js',
   'service-worker-warm.js',
   'error-buffer.js',

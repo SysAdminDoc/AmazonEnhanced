@@ -1,4 +1,5 @@
 if (typeof importScripts === 'function') {
+  importScripts('network-rules.js');
   importScripts('price-history-io.js');
   importScripts('wishlist-import.js');
   importScripts('feature-modules.js');
@@ -14,6 +15,12 @@ const AMZE_ERROR_REPORTER = globalThis.AmzeErrorBuffer && globalThis.AmzeErrorBu
   : null;
 if (AMZE_ERROR_REPORTER && globalThis.AmzeErrorBuffer.attachGlobalListeners) {
   globalThis.AmzeErrorBuffer.attachGlobalListeners(globalThis, AMZE_ERROR_REPORTER, 'background');
+}
+
+function reportBackgroundError(error, context) {
+  if (AMZE_ERROR_REPORTER && typeof AMZE_ERROR_REPORTER.record === 'function') {
+    AMZE_ERROR_REPORTER.record(error, context || 'background').catch(() => {});
+  }
 }
 
 function configureSessionStorageAccess() {
@@ -67,6 +74,20 @@ function mergeSettings(defaults, saved) {
 const SETTINGS_MIGRATIONS = {
   // Version 0 → 1: initial schema version stamp. No structural changes
   // needed; the mergeSettings forward-merge covers new flags.
+  2: (settings) => {
+    const next = Object.assign({}, settings || {});
+    next.flags = Object.assign({}, next.flags || {});
+    // Hiding and shading are mutually exclusive modes. Existing installs
+    // keep the stronger zero-ad behavior when both were accidentally set.
+    if (next.flags.hideSponsored && next.flags.shadeSponsored) {
+      next.flags.shadeSponsored = false;
+    }
+    // Seller lookup now uses a separately stored credential and an optional
+    // host permission that must be granted from the settings UI.
+    next.flags.sellerLookup = false;
+    delete next.openCorporatesToken;
+    return next;
+  }
 };
 
 function migrateSettings(settings, targetVersion) {
@@ -101,7 +122,7 @@ async function getAmazonUrlPatterns() {
 }
 
 const DB_NAME = 'AmazonEnhancedDB';
-const DB_VERSION = 5;
+const DB_VERSION = 6;
 const PRICE_HISTORY_RETENTION_MS = 365 * 24 * 60 * 60 * 1000;
 const WATCHED_ORDER_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
 const SELLER_LOOKUP_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
@@ -152,6 +173,9 @@ function openDb() {
         }
         if (!db.objectStoreNames.contains('purchaseSummary')) {
           db.createObjectStore('purchaseSummary', { keyPath: 'asin' });
+        }
+        if (!db.objectStoreNames.contains('secrets')) {
+          db.createObjectStore('secrets', { keyPath: 'key' });
         }
       };
       req.onsuccess = () => resolve(req.result);
@@ -205,6 +229,41 @@ async function idbDelete(storeName, key) {
   const tx = db.transaction(storeName, 'readwrite');
   tx.objectStore(storeName).delete(key);
   return idbTransactionDone(tx);
+}
+
+const SELLER_LOOKUP_TOKEN_KEY = 'openCorporatesToken';
+
+async function readSellerLookupToken() {
+  const record = await idbGet('secrets', SELLER_LOOKUP_TOKEN_KEY);
+  return record && typeof record.value === 'string' ? record.value : '';
+}
+
+async function writeSellerLookupToken(value) {
+  const token = String(value || '').trim().slice(0, 1000);
+  if (!token) {
+    await idbDelete('secrets', SELLER_LOOKUP_TOKEN_KEY);
+    return '';
+  }
+  await idbPut('secrets', { key: SELLER_LOOKUP_TOKEN_KEY, value: token });
+  return token;
+}
+
+function hasOpenCorporatesPermission() {
+  return new Promise(resolve => {
+    if (!chrome.permissions || typeof chrome.permissions.contains !== 'function') {
+      resolve(false);
+      return;
+    }
+    try {
+      chrome.permissions.contains(
+        { origins: ['https://api.opencorporates.com/*'] },
+        granted => resolve(!chrome.runtime.lastError && !!granted)
+      );
+    } catch (error) {
+      reportBackgroundError(error, 'permissions:opencorporates');
+      resolve(false);
+    }
+  });
 }
 
 async function migrateLegacyStorageToIndexedDb() {
@@ -429,7 +488,11 @@ async function lookupSellerEntity(sellerName) {
   const settings = mergeSettings(defaults, migrateSettings(amzeSettings || defaults, defaults.settingsVersion));
   if (!settings.flags || !settings.flags.sellerLookup) return { ok: false, reason: 'disabled' };
 
-  const token = String(settings.openCorporatesToken || '').trim();
+  if (!await hasOpenCorporatesPermission()) {
+    return { ok: false, reason: 'permission_denied' };
+  }
+
+  const token = await readSellerLookupToken();
   if (!token) return { ok: false, reason: 'missing_token' };
 
   const now = Date.now();
@@ -495,55 +558,39 @@ async function purgePriceHistoryRetention(now = Date.now()) {
 }
 
 // -------------------------------------------------------------------
-// declarativeNetRequest — affiliate/tracking param stripping at the
-// network layer. Uses a single dynamic rule (ID 1) that strips
-// tag, ref, ref_, pd_rd_*, pf_rd_*, and other tracking params from
-// Amazon URLs before navigation completes. This prevents Amazon's
-// own JS from re-adding params that content-script stripping misses.
+// declarativeNetRequest — safe link cleanup plus request-level ad blocking.
+// Rule construction lives in network-rules.js so it can be unit tested and
+// shared with the content-side URL cleaner.
 // -------------------------------------------------------------------
 
-const DNR_AFFILIATE_RULE_ID = 1;
-const DNR_STRIP_PARAMS = [
-  'tag', 'ref', 'ref_', 'pd_rd_w', 'pd_rd_r', 'pd_rd_i',
-  'pf_rd_p', 'pf_rd_r', 'pf_rd_s', 'pf_rd_t', 'pf_rd_i',
-  'content-id', 'psc', 'qid', 'sr', '_encoding',
-  'dib', 'dib_tag', 'keywords', 'sprefix', 'linkCode', 'th'
-];
+async function syncNetworkRules(settings) {
+  const api = globalThis.AmzeNetworkRules;
+  if (!api || typeof api.buildDynamicRules !== 'function') {
+    const error = new Error('Network rule builder unavailable');
+    reportBackgroundError(error, 'dnr:builder');
+    throw error;
+  }
+  if (!chrome.declarativeNetRequest || typeof chrome.declarativeNetRequest.updateDynamicRules !== 'function') {
+    const error = new Error('Declarative Net Request API unavailable');
+    reportBackgroundError(error, 'dnr:unavailable');
+    throw error;
+  }
 
-async function syncAffiliateStripRule(enabled) {
-  if (typeof chrome.declarativeNetRequest === 'undefined') return;
+  const flags = settings && settings.flags ? settings.flags : {};
+  const addRules = api.buildDynamicRules({
+    stripAffiliate: !!flags.stripAffiliate,
+    hideSponsored: !!flags.hideSponsored
+  });
   try {
-    if (enabled) {
-      const patterns = await getAmazonUrlPatterns();
-      const rule = {
-        id: DNR_AFFILIATE_RULE_ID,
-        priority: 1,
-        action: {
-          type: 'redirect',
-          redirect: {
-            transform: {
-              queryTransform: {
-                removeParams: DNR_STRIP_PARAMS
-              }
-            }
-          }
-        },
-        condition: {
-          urlFilter: '*://*.amazon.*/*',
-          resourceTypes: ['main_frame', 'sub_frame']
-        }
-      };
-      await chrome.declarativeNetRequest.updateDynamicRules({
-        removeRuleIds: [DNR_AFFILIATE_RULE_ID],
-        addRules: [rule]
-      });
-    } else {
-      await chrome.declarativeNetRequest.updateDynamicRules({
-        removeRuleIds: [DNR_AFFILIATE_RULE_ID],
-        addRules: []
-      });
-    }
-  } catch (e) {}
+    await chrome.declarativeNetRequest.updateDynamicRules({
+      removeRuleIds: [...api.MANAGED_RULE_IDS],
+      addRules
+    });
+    return { ok: true, count: addRules.length };
+  } catch (error) {
+    reportBackgroundError(error, 'dnr:sync');
+    throw error;
+  }
 }
 
 async function warmStartServiceWorker() {
@@ -556,7 +603,7 @@ async function warmStartServiceWorker() {
     : stored.amzeSettings;
   await Promise.all([
     scheduleRetentionPurge(),
-    syncAffiliateStripRule(!!(settings && settings.flags && settings.flags.stripAffiliate))
+    syncNetworkRules(settings).catch(() => null)
   ]);
 }
 
@@ -564,6 +611,8 @@ chrome.runtime.onInstalled.addListener(async (details) => {
   globalThis.AmzeWarmStart.scheduleWarmStartAlarm(chrome.alarms);
   const defaults = await getDefaultSettings();
   const { amzeSettings } = await chrome.storage.local.get(['amzeSettings']);
+  const legacySellerToken = String(amzeSettings && amzeSettings.openCorporatesToken || '').trim();
+  if (legacySellerToken) await writeSellerLookupToken(legacySellerToken);
   if (!amzeSettings) {
     await chrome.storage.local.set({ amzeSettings: defaults });
   } else {
@@ -572,9 +621,9 @@ chrome.runtime.onInstalled.addListener(async (details) => {
     const merged = mergeSettings(defaults, migrated);
     await chrome.storage.local.set({ amzeSettings: merged });
   }
-  // Sync DNR affiliate-strip rule with current setting
+  // Sync all dynamic network rules with current settings.
   const settings = (await chrome.storage.local.get(['amzeSettings'])).amzeSettings;
-  await syncAffiliateStripRule(!!(settings && settings.flags && settings.flags.stripAffiliate));
+  await syncNetworkRules(settings).catch(() => null);
   await scheduleRetentionPurge();
 });
 
@@ -781,9 +830,9 @@ chrome.alarms.onAlarm.addListener((a) => {
 chrome.runtime.onStartup.addListener(async () => {
   globalThis.AmzeWarmStart.scheduleWarmStartAlarm(chrome.alarms);
   scheduleRetentionPurge();
-  // Sync DNR affiliate-strip rule on browser start
+  // Restore dynamic URL-cleanup and ad-blocking rules on browser start.
   const { amzeSettings } = await chrome.storage.local.get(['amzeSettings']);
-  await syncAffiliateStripRule(!!(amzeSettings && amzeSettings.flags && amzeSettings.flags.stripAffiliate));
+  await syncNetworkRules(amzeSettings).catch(() => null);
 });
 
 globalThis.AmzeWarmStart.scheduleWarmStartAlarm(chrome.alarms);
@@ -1035,6 +1084,12 @@ chrome.tabs.onRemoved.addListener((tabId) => {
   }
 });
 
+function isTrustedExtensionPage(sender) {
+  const senderUrl = String(sender && sender.url || '');
+  const extensionRoot = chrome.runtime.getURL('');
+  return !sender?.tab && !!senderUrl && senderUrl.startsWith(extensionRoot);
+}
+
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (!msg || !msg.type) return;
 
@@ -1191,6 +1246,34 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return true;
   }
 
+  if (msg.type === 'AMZE_GET_SELLER_LOOKUP_TOKEN') {
+    if (!isTrustedExtensionPage(sender)) {
+      sendResponse({ ok: false, token: '', error: 'unauthorized' });
+      return;
+    }
+    readSellerLookupToken()
+      .then(token => sendResponse({ ok: true, token }))
+      .catch(error => {
+        reportBackgroundError(error, 'seller-token:read');
+        sendResponse({ ok: false, token: '' });
+      });
+    return true;
+  }
+
+  if (msg.type === 'AMZE_SET_SELLER_LOOKUP_TOKEN') {
+    if (!isTrustedExtensionPage(sender)) {
+      sendResponse({ ok: false, hasToken: false, error: 'unauthorized' });
+      return;
+    }
+    writeSellerLookupToken(msg.token)
+      .then(token => sendResponse({ ok: true, hasToken: !!token }))
+      .catch(error => {
+        reportBackgroundError(error, 'seller-token:write');
+        sendResponse({ ok: false, hasToken: false });
+      });
+    return true;
+  }
+
   if (msg.type === 'AMZE_GET_ERROR_REPORT') {
     (async () => {
       if (!globalThis.AmzeErrorBuffer) {
@@ -1279,17 +1362,29 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.type === 'AMZE_BROADCAST_SETTINGS') {
     // Popup requested broadcast to all Amazon tabs.
     (async () => {
-      // Sync DNR affiliate-strip rule with updated settings
-      const stripEnabled = !!(msg.settings && msg.settings.flags && msg.settings.flags.stripAffiliate);
-      await syncAffiliateStripRule(stripEnabled);
+      const safeSettings = structuredClone(msg.settings || {});
+      delete safeSettings.openCorporatesToken;
+      let networkError = null;
+      try {
+        await syncNetworkRules(safeSettings);
+      } catch (error) {
+        networkError = error;
+      }
       const url = await getAmazonUrlPatterns();
       chrome.tabs.query({ url }, (tabs) => {
         for (const t of tabs) {
-          chrome.tabs.sendMessage(t.id, { type: 'AMZE_SETTINGS_UPDATED', settings: msg.settings }).catch(() => {});
+          chrome.tabs.sendMessage(t.id, { type: 'AMZE_SETTINGS_UPDATED', settings: safeSettings }).catch(() => {});
         }
-        sendResponse({ ok: true, count: tabs.length });
+        sendResponse({
+          ok: !networkError,
+          count: tabs.length,
+          error: networkError ? 'network_rules_failed' : null
+        });
       });
-    })().catch(() => sendResponse({ ok: false, count: 0 }));
+    })().catch(error => {
+      reportBackgroundError(error, 'settings:broadcast');
+      sendResponse({ ok: false, count: 0, error: 'broadcast_failed' });
+    });
     return true;
   }
 });

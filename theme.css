@@ -647,6 +647,9 @@ html[data-amze-hideSponsored="1"] [class*="gateway-btf_ad"],
 html[data-amze-hideSponsored="1"] [class*="gateway-atf_ad"],
 html[data-amze-hideSponsored="1"] [id*="desktop-homepage-btf-card"],
 html[data-amze-hideSponsored="1"] [id*="desktop-homepage-atf-card"],
+html[data-amze-hideSponsored="1"] .featured-brand-container,
+html[data-amze-hideSponsored="1"] [id^="featured-brand-"],
+html[data-amze-hideSponsored="1"] #sc-new-upsell,
 html[data-amze-hideSponsored="1"] [data-gwi*="btf-grid"][data-gwi*="active"],
 html[data-amze-hideSponsored="1"] iframe[title="Sponsored ad"],
 html[data-amze-hideSponsored="1"] iframe[src*="amazon-adsystem.com"],
@@ -750,6 +753,7 @@ html[data-amze-hideSubSave="1"] #oneTimePurchase_feature_div + #snsAccordionRow,
 html[data-amze-hideSubSave="1"] input[name="subscribeAndSave"][value="1"] { display: none !important; }
 
 html[data-amze-hideCartUpsell="1"] #sc-upsell,
+html[data-amze-hideCartUpsell="1"] #sc-new-upsell,
 html[data-amze-hideCartUpsell="1"] #sw-pickup-locker-feature,
 html[data-amze-hideCartUpsell="1"] #sc-saved-cart,
 html[data-amze-hideCartUpsell="1"] .sc-badging-widget,
@@ -769,20 +773,41 @@ html[data-amze-hideHomeClutter="1"] #nav-xshop { display: none !important; }
 html[data-amze-hideFooter="1"] #navFooter,
 html[data-amze-hideFooter="1"] #navBackToTop { display: none !important; }
 
-/* Rufus / Alexa AI chatbot dismisser */
+/* Alexa for Shopping (formerly Rufus): panel and launcher roots only. */
 html[data-amze-hideRufus="1"] #rufus-chat-widget,
 html[data-amze-hideRufus="1"] #rufus-chat-container,
-html[data-amze-hideRufus="1"] [data-cel-widget*="rufus"],
-html[data-amze-hideRufus="1"] [data-cel-widget*="Rufus"],
-html[data-amze-hideRufus="1"] [id*="rufus"],
-html[data-amze-hideRufus="1"] [class*="rufus"],
-html[data-amze-hideRufus="1"] [data-csa-c-content-id*="rufus"],
+html[data-amze-hideRufus="1"] #nav-flyout-rufus,
+html[data-amze-hideRufus="1"] .rufus-panel-container,
+html[data-amze-hideRufus="1"] .rufus-container,
+html[data-amze-hideRufus="1"] .rufus-chat-container,
+html[data-amze-hideRufus="1"] .rufus-conversation-container,
+html[data-amze-hideRufus="1"] .rufus-view-filler,
+html[data-amze-hideRufus="1"] [class*="rufus-panel" i],
+html[data-amze-hideRufus="1"] [class*="rufus-chat" i],
+html[data-amze-hideRufus="1"] .copilot-modal-container,
+html[data-amze-hideRufus="1"] .copilot-chat-root,
+html[data-amze-hideRufus="1"] aside[data-copilot-chat-root],
+html[data-amze-hideRufus="1"] #nav-rufus-disco,
+html[data-amze-hideRufus="1"] .nav-rufus-disco,
+html[data-amze-hideRufus="1"] [data-action*="rufus" i],
 html[data-amze-hideRufus="1"] #ai-shopping-assistant,
-html[data-amze-hideRufus="1"] [class*="ai-shopping"],
-html[data-amze-hideRufus="1"] [data-cel-widget*="alexa"],
-html[data-amze-hideRufus="1"] [class*="chat-widget"],
-html[data-amze-hideRufus="1"] [id*="chatbot-widget"],
+html[data-amze-hideRufus="1"] [class*="ai-shopping-assistant" i],
+html[data-amze-hideRufus="1"] [data-cel-widget*="alexa-shopping" i],
 html[data-amze-hideRufus="1"] #GW-Rufus-container { display: none !important; }
+
+html[data-amze-hideRufus="1"] body {
+  --rufus-docked-panel-width: 0px !important;
+  --total-rufus-panel-full-width: 0px !important;
+  --total-rufus-panel-half-width: 0px !important;
+}
+
+html[data-amze-hideRufus="1"] body.rufus-docked-left,
+html[data-amze-hideRufus="1"] body.rufus-docked-right {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
 
 /* Result padding squeeze */
 html[data-amze-density="compact"] .s-result-item[data-component-type="s-search-result"] {
@@ -839,6 +864,13 @@ html[data-amze-hidePadding="1"] .s-widget-spacing-small:empty { display: none !i
   color: var(--amze-text, #cdd6f4);
   font: 12px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   box-shadow: var(--amze-shadow, 0 2px 10px rgba(0,0,0,.25));
+}
+
+.amze-sponsored-shaded {
+  position: relative !important;
+  background: var(--amze-sponsor-tint) !important;
+  outline: 1px dashed var(--amze-danger) !important;
+  opacity: 0.55 !important;
 }
 .amze-weighted-sort summary {
   cursor: pointer;

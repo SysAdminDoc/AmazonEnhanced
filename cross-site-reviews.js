@@ -31,7 +31,7 @@
     {
       name: 'Best Buy',
       host: /(^|\.)bestbuy\.com$/i,
-      productPath: /\/site\/.*\/\d+\.p(?:\?|$)/i,
+      productPath: /(?:\/site\/.*\/\d+\.p(?:\/|$)|\/product\/.*\/sku\/\d+(?:\/|$))/i,
       reviewSelectors: ['.review-item', '[data-testid*="review" i]', '[class*="review-item" i]', '[class*="review" i]'],
       titleSelectors: ['[data-testid*="review-title" i]', '[class*="review-title" i]', 'h3', 'h4'],
       bodySelectors: ['[data-testid*="review-text" i]', '[class*="review-text" i]', '[itemprop="reviewBody"]', 'p'],

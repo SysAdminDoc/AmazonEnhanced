@@ -1,8 +1,11 @@
 (function (root, factory) {
-  const api = factory();
+  const dependency = typeof module === 'object' && module.exports
+    ? require('./network-rules.js')
+    : root.AmzeNetworkRules;
+  const api = factory(dependency || {});
   if (typeof module === 'object' && module.exports) module.exports = api;
   root.AmzeRedirectStripper = api;
-})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+})(typeof globalThis !== 'undefined' ? globalThis : this, function (networkRules) {
   'use strict';
 
   const REDIRECT_HOSTS = [
@@ -35,7 +38,9 @@
   }
 
   function isAmazonHost(hostname) {
-    return /(^|\.)amazon\.[a-z.]+$/i.test(String(hostname || ''));
+    return typeof networkRules.isAmazonHost === 'function'
+      ? networkRules.isAmazonHost(hostname)
+      : false;
   }
 
   function candidateUrls(url) {

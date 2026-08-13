@@ -16,6 +16,7 @@ test('maps existing declutter flags to bounded Prime Video selectors', () => {
   const selectors = getSelectors({ hideVideoAds: true, hidePrimeNag: true, hideBanners: false });
   assert.ok(selectors.includes('#dv-player-ad-container'));
   assert.ok(selectors.includes('[data-testid="upsell"]'));
+  assert.ok(selectors.includes('[data-testid="pv-nav-join-prime"]'));
   assert.equal(selectors.includes('.dv-hero-carousel'), false);
   assert.equal(new Set(selectors).size, selectors.length);
 });

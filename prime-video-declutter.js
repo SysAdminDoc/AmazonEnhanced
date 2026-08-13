@@ -23,6 +23,7 @@
     hidePrimeNag: [
       '.tancaccept',
       '[data-testid="upsell"]',
+      '[data-testid="pv-nav-join-prime"]',
       '[data-testid*="try-prime" i]',
       '[data-testid*="free-trial" i]',
       '[id*="prime-upsell" i]',

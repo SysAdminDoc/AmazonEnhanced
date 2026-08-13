@@ -13,14 +13,16 @@
     "[class*=\"gateway-atf_ad\"]",
     "[id*=\"desktop-homepage-btf-card\"]",
     "[id*=\"desktop-homepage-atf-card\"]",
+    ".featured-brand-container",
+    "[id^=\"featured-brand-\"]",
+    "#sc-new-upsell",
     ".ape-placement"
   ],
   "sponsoredLabels": [
     ".s-sponsored-label-info-icon",
     ".puis-label-popover-default",
     "[aria-label*=\"Sponsored\" i]",
-    ".puis-sponsored-label-text",
-    "span.a-color-secondary"
+    ".puis-sponsored-label-text"
   ],
   "localeOverrides": {
     "co.jp": {
@@ -29,8 +31,7 @@
         ".puis-label-popover-default",
         "[aria-label*=\"スポンサー\"]",
         "[aria-label*=\"Sponsored\" i]",
-        ".puis-sponsored-label-text",
-        "span.a-color-secondary"
+        ".puis-sponsored-label-text"
       ]
     },
     "de": {
@@ -39,8 +40,7 @@
         ".puis-label-popover-default",
         "[aria-label*=\"Gesponsert\"]",
         "[aria-label*=\"Sponsored\" i]",
-        ".puis-sponsored-label-text",
-        "span.a-color-secondary"
+        ".puis-sponsored-label-text"
       ]
     },
     "fr": {
@@ -49,8 +49,7 @@
         ".puis-label-popover-default",
         "[aria-label*=\"Sponsorisé\"]",
         "[aria-label*=\"Sponsored\" i]",
-        ".puis-sponsored-label-text",
-        "span.a-color-secondary"
+        ".puis-sponsored-label-text"
       ]
     },
     "it": {
@@ -59,8 +58,7 @@
         ".puis-label-popover-default",
         "[aria-label*=\"Sponsorizzato\"]",
         "[aria-label*=\"Sponsored\" i]",
-        ".puis-sponsored-label-text",
-        "span.a-color-secondary"
+        ".puis-sponsored-label-text"
       ]
     },
     "es": {
@@ -69,8 +67,7 @@
         ".puis-label-popover-default",
         "[aria-label*=\"Patrocinado\"]",
         "[aria-label*=\"Sponsored\" i]",
-        ".puis-sponsored-label-text",
-        "span.a-color-secondary"
+        ".puis-sponsored-label-text"
       ]
     },
     "com.br": {
@@ -79,8 +76,7 @@
         ".puis-label-popover-default",
         "[aria-label*=\"Patrocinado\"]",
         "[aria-label*=\"Sponsored\" i]",
-        ".puis-sponsored-label-text",
-        "span.a-color-secondary"
+        ".puis-sponsored-label-text"
       ]
     },
     "in": {
@@ -89,8 +85,7 @@
         ".puis-label-popover-default",
         "[aria-label*=\"Sponsored\" i]",
         "[aria-label*=\"प्रायोजित\"]",
-        ".puis-sponsored-label-text",
-        "span.a-color-secondary"
+        ".puis-sponsored-label-text"
       ]
     }
   }
