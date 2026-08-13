@@ -1,0 +1,72 @@
+{
+  "version": 1,
+  "sites": [
+    {
+      "id": "walmart",
+      "name": "Walmart",
+      "hostname": "www.walmart.com",
+      "productPaths": ["/ip/privacy-safe-product/123456789"],
+      "nonProductPath": "/browse/privacy-safe-category",
+      "selectors": {
+        "section": "[data-testid=\"reviews\"]",
+        "review": "[data-testid=\"review\"]",
+        "title": "[data-testid=\"review-title\"]",
+        "body": "[data-testid=\"review-text\"]",
+        "rating": "[data-testid=\"review-rating\"]",
+        "count": "[data-testid=\"review-count\"]",
+        "author": "[data-testid=\"review-author\"]"
+      }
+    },
+    {
+      "id": "target",
+      "name": "Target",
+      "hostname": "www.target.com",
+      "productPaths": ["/p/privacy-safe-product/-/A-12345678"],
+      "nonProductPath": "/c/privacy-safe-category",
+      "selectors": {
+        "section": "[data-test=\"reviews\"]",
+        "review": "[data-test=\"review\"]",
+        "title": "[data-test=\"review-title\"]",
+        "body": "[data-test=\"review-text\"]",
+        "rating": "[data-test=\"review-rating\"]",
+        "count": "[data-test=\"review-count\"]",
+        "author": "[data-test=\"review-author\"]"
+      }
+    },
+    {
+      "id": "bestbuy",
+      "name": "Best Buy",
+      "hostname": "www.bestbuy.com",
+      "productPaths": [
+        "/product/privacy-safe-product/sku/1234567",
+        "/site/privacy-safe-product/1234567.p"
+      ],
+      "nonProductPath": "/site/privacy-safe-category",
+      "selectors": {
+        "section": ".reviews-list",
+        "review": ".review-item",
+        "title": ".review-title",
+        "body": ".ugc-review-body",
+        "rating": ".review-rating",
+        "count": ".review-count",
+        "author": ".ugc-author"
+      }
+    },
+    {
+      "id": "etsy",
+      "name": "Etsy",
+      "hostname": "www.etsy.com",
+      "productPaths": ["/listing/123456789/privacy-safe-listing"],
+      "nonProductPath": "/search",
+      "selectors": {
+        "section": "[data-testid=\"reviews\"]",
+        "review": "[data-review-id]",
+        "title": "[data-review-title]",
+        "body": "[data-review-body]",
+        "rating": "[data-rating]",
+        "count": "[data-review-count]",
+        "author": "[data-review-author]"
+      }
+    }
+  ]
+}

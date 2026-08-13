@@ -10,6 +10,7 @@
 - Added a privacy-safe local diagnostic report with latest-per-route selector health, delayed-label observation counts, managed request-rule verification, and bounded runtime errors; structural health fields contain no page text, URLs, or account data.
 - Added a dependency-free isolated Chromium release smoke that loads `dist/`, verifies the MV3 service worker/content runtime and all 27 managed rules, checks synthetic search/PDP/cart/Prime outcomes, and proves eight known-ad probes cannot reach interception or response.
 - Added exact localized sponsorship-label and stable search/PDP fixture coverage for all 20 declared Amazon marketplaces, including Dutch, Polish, Swedish, Turkish, Hindi, Japanese, and Arabic labels.
+- Added privacy-safe Walmart, Target, Best Buy, and Etsy structural fixtures plus unpacked-browser coverage for delayed review insertion and same-tab product-route transitions.
 
 ### Changed
 - Reworked the default Amazon and settings-popup appearance into the premium Midnight Gallery theme, with layered navy/slate surfaces, cool product-image mats, clearer focus states, and preserved yellow commerce actions.
@@ -18,6 +19,7 @@
 - Limited Alexa for Shopping removal to precise panel/launcher roots and updated current Best Buy product-route recognition.
 - Preserved functional Amazon search/product parameters during navigation cleanup while continuing to remove attribution and affiliate parameters.
 - Replaced localized `aria-label` substring selectors with precise structural label hooks plus locale-scoped exact text classification, and added stable PDP sponsorship IDs to the shared selector catalog.
+- Replaced cross-site wildcard review/test-ID selectors with bounded retailer adapters and added route polling so stale review analysis is removed when a single-page navigation leaves or changes a product.
 - Scoped Prime Video decluttering so the non-subscriber page keeps its core offer action while the redundant top Join Prime control is hidden.
 
 ### Fixed
@@ -26,6 +28,7 @@
 - Fixed broad shopping-assistant selectors that could hide product imagery or cart content after Amazon's Rufus-to-Alexa rename.
 - Replaced silent runtime catches in the core feature pack with the bounded local error-reporting path.
 - Included shared network-rule, sponsored-detection, health-report, and review-corpus dependencies in the hand-packed Chromium/Firefox release file lists.
+- Fixed Etsy ratings stored on a child `data-rating` hook and compact retailer review counts such as `1.2K`.
 
 ## [2.0.16] - 2026-08-12
 

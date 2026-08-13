@@ -3,121 +3,20 @@
 
   const KERNEL = globalThis.AmzeReviewScoreKernel;
   const SHADOW_UI = globalThis.AmzeShadowUI;
-  if (!KERNEL || !SHADOW_UI || typeof SHADOW_UI.mountElement !== 'function') return;
-
-  const SITE_CONFIGS = [
-    {
-      name: 'Walmart',
-      host: /(^|\.)walmart\.com$/i,
-      productPath: /\/ip\//i,
-      reviewSelectors: ['[data-testid="review"]', '[data-automation-id="review"]', '[data-testid*="review" i]', '[class*="review" i]'],
-      titleSelectors: ['[data-testid*="review-title" i]', '[data-automation-id*="review-title" i]', 'h3', 'h4'],
-      bodySelectors: ['[data-testid*="review-text" i]', '[data-automation-id*="review-text" i]', '[data-testid="review-body"]', 'p'],
-      ratingSelectors: ['[data-testid*="rating" i]', '[data-automation-id*="rating" i]', '[aria-label*="out of 5" i]'],
-      reviewCountSelectors: ['[data-testid*="review-count" i]', '[data-automation-id*="review-count" i]', 'a[href*="review" i]'],
-      reviewSectionSelectors: ['[data-testid*="reviews" i]', '[data-automation-id*="reviews" i]']
-    },
-    {
-      name: 'Target',
-      host: /(^|\.)target\.com$/i,
-      productPath: /\/p\/.*-\/[A-Z]-\d+/i,
-      reviewSelectors: ['[data-test="review"]', '[data-testid="review"]', '[data-testid*="review" i]', '[class*="review" i]'],
-      titleSelectors: ['[data-test*="review-title" i]', '[data-testid*="review-title" i]', 'h3', 'h4'],
-      bodySelectors: ['[data-test*="review-text" i]', '[data-testid*="review-text" i]', '[itemprop="reviewBody"]', 'p'],
-      ratingSelectors: ['[data-test*="rating" i]', '[data-testid*="rating" i]', '[aria-label*="out of 5" i]'],
-      reviewCountSelectors: ['[data-test*="review-count" i]', '[data-testid*="review-count" i]', 'a[href*="review" i]'],
-      reviewSectionSelectors: ['[data-test*="reviews" i]', '[data-testid*="reviews" i]']
-    },
-    {
-      name: 'Best Buy',
-      host: /(^|\.)bestbuy\.com$/i,
-      productPath: /(?:\/site\/.*\/\d+\.p(?:\/|$)|\/product\/.*\/sku\/\d+(?:\/|$))/i,
-      reviewSelectors: ['.review-item', '[data-testid*="review" i]', '[class*="review-item" i]', '[class*="review" i]'],
-      titleSelectors: ['[data-testid*="review-title" i]', '[class*="review-title" i]', 'h3', 'h4'],
-      bodySelectors: ['[data-testid*="review-text" i]', '[class*="review-text" i]', '[itemprop="reviewBody"]', 'p'],
-      ratingSelectors: ['[data-testid*="rating" i]', '[class*="rating" i]', '[aria-label*="out of 5" i]'],
-      reviewCountSelectors: ['[data-testid*="review-count" i]', '[class*="review-count" i]', 'a[href*="review" i]'],
-      reviewSectionSelectors: ['[data-testid*="reviews" i]', '[class*="reviews" i]']
-    },
-    {
-      name: 'Etsy',
-      host: /(^|\.)etsy\.com$/i,
-      productPath: /\/listing\/\d+/i,
-      reviewSelectors: ['[data-review-id]', '[data-review]', '[data-testid*="review" i]', '[class*="review" i]'],
-      titleSelectors: ['[data-review-title]', '[data-testid*="review-title" i]', 'h3', 'h4'],
-      bodySelectors: ['[data-review-body]', '[data-testid*="review-text" i]', '[itemprop="reviewBody"]', 'p'],
-      ratingSelectors: ['[data-rating]', '[aria-label*="out of 5" i]', '[class*="rating" i]'],
-      reviewCountSelectors: ['[data-review-count]', '[data-testid*="review-count" i]', 'a[href*="review" i]'],
-      reviewSectionSelectors: ['[data-testid*="reviews" i]', '[id*="reviews" i]', '[class*="reviews" i]']
-    }
-  ];
+  const ADAPTERS = globalThis.AmzeCrossSiteReviewAdapters;
+  if (!KERNEL || !ADAPTERS || !SHADOW_UI || typeof SHADOW_UI.mountElement !== 'function') return;
 
   let enabled = true;
   let panelHost = null;
   let observer = null;
   let timer = null;
+  let routeTimer = null;
   let lastSignature = '';
+  let lastRouteKey = '';
+  let observedPath = `${location.hostname}${location.pathname}`;
 
   function currentSite() {
-    return SITE_CONFIGS.find(site => site.host.test(location.hostname) && site.productPath.test(location.pathname)) || null;
-  }
-
-  function readText(element, selectors, maxLength = 240) {
-    if (!element) return '';
-    for (const selector of selectors || []) {
-      const node = element.querySelector(selector);
-      if (!node) continue;
-      const value = String(node.getAttribute('aria-label') || node.textContent || '').replace(/\s+/g, ' ').trim().slice(0, maxLength);
-      if (value) return value;
-    }
-    return '';
-  }
-
-  function parseRating(element, selectors) {
-    const attr = element.getAttribute('data-rating') || element.getAttribute('data-score') || '';
-    const value = attr || readText(element, selectors, 100);
-    const match = value.match(/([\d.]+)\s*(?:out\s*of\s*5|\/\s*5|stars?)/i) || value.match(/^\s*([1-5](?:\.\d+)?)\s*$/);
-    return match ? KERNEL.normalizeRating(match[1]) : null;
-  }
-
-  function parseReviewCount(value) {
-    const match = String(value || '').replace(/,/g, '').match(/\d+(?:\.\d+)?/);
-    return match ? Number(match[0]) : 0;
-  }
-
-  function collectReviews(site) {
-    const seen = new Set();
-    const reviews = [];
-    for (const selector of site.reviewSelectors) {
-      for (const element of document.querySelectorAll(selector)) {
-        if (reviews.length >= KERNEL.MAX_REVIEWS || seen.has(element)) continue;
-        const body = readText(element, site.bodySelectors, 700);
-        if (!body) continue;
-        const review = KERNEL.normalizeReview({
-          id: element.getAttribute('data-review-id') || element.getAttribute('data-reviewid') || element.id || '',
-          title: readText(element, site.titleSelectors, 180),
-          text: body,
-          rating: parseRating(element, site.ratingSelectors),
-          verified: /verified\s+(?:purchase|buyer)|purchased/i.test(element.textContent || ''),
-          author: readText(element, ['[data-review-author]', '[data-testid*="author" i]', '[class*="author" i]'], 100)
-        }, reviews.length);
-        if (!review || seen.has(review.id)) continue;
-        seen.add(review.id);
-        reviews.push(review);
-      }
-      if (reviews.length >= KERNEL.MAX_REVIEWS) break;
-    }
-    return reviews;
-  }
-
-  function totalReviewCount(site) {
-    for (const selector of site.reviewCountSelectors) {
-      const element = document.querySelector(selector);
-      if (!element) continue;
-      const count = parseReviewCount(element.getAttribute('aria-label') || element.textContent);
-      if (count) return count;
-    }
-    return 0;
+    return ADAPTERS.findSite(location.hostname, location.pathname);
   }
 
   function signature(reviews) {
@@ -193,19 +92,37 @@
   }
 
   function run() {
+    const site = currentSite();
+    const nextRouteKey = ADAPTERS.routeKey(location);
+    if (nextRouteKey !== lastRouteKey) {
+      panelHost?.remove();
+      panelHost = null;
+      lastSignature = '';
+      lastRouteKey = nextRouteKey;
+    }
     if (!enabled) {
       panelHost?.remove();
       panelHost = null;
       lastSignature = '';
       return;
     }
-    const site = currentSite();
-    if (!site) return;
-    const reviews = collectReviews(site);
-    if (!reviews.length) return;
-    const nextSignature = `${signature(reviews)}|${totalReviewCount(site)}`;
+    if (!site) {
+      panelHost?.remove();
+      panelHost = null;
+      lastSignature = '';
+      return;
+    }
+    const reviews = ADAPTERS.collectReviews(document, site, KERNEL);
+    if (!reviews.length) {
+      panelHost?.remove();
+      panelHost = null;
+      lastSignature = '';
+      return;
+    }
+    const reviewCount = ADAPTERS.totalReviewCount(document, site);
+    const nextSignature = `${signature(reviews)}|${reviewCount}`;
     if (nextSignature === lastSignature && panelHost?.isConnected) return;
-    const metrics = KERNEL.scoreReviews(reviews, totalReviewCount(site));
+    const metrics = KERNEL.scoreReviews(reviews, reviewCount);
     if (!metrics) return;
     lastSignature = nextSignature;
     render(site, reviews, metrics);
@@ -214,6 +131,13 @@
   function schedule() {
     clearTimeout(timer);
     timer = setTimeout(run, 220);
+  }
+
+  function checkRoute() {
+    const nextPath = `${location.hostname}${location.pathname}`;
+    if (nextPath === observedPath) return;
+    observedPath = nextPath;
+    schedule();
   }
 
   function loadSetting() {
@@ -238,5 +162,10 @@
 
   observer = new MutationObserver(schedule);
   observer.observe(document.documentElement, { childList: true, subtree: true });
+  addEventListener('popstate', checkRoute);
+  addEventListener('hashchange', checkRoute);
+  try { navigation?.addEventListener('navigatesuccess', checkRoute); } catch (e) {}
+  routeTimer = setInterval(checkRoute, 500);
+  addEventListener('pagehide', () => clearInterval(routeTimer), { once: true });
   loadSetting();
 })();

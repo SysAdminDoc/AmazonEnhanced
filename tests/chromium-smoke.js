@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const networkRules = require('../network-rules.js');
+const crossSiteFixtures = require('./fixtures/cross-site-reviews.json');
 
 const ROOT = path.resolve(__dirname, '..');
 const DIST = path.join(ROOT, 'dist');
@@ -20,6 +21,10 @@ const AD_PROBE_URLS = Object.freeze([
   `https://unagi-na.amazon.com/1/events/com.amazon.eel.SponsoredProductsEventTracking.prod/${AD_MARKER}`,
   `https://m.media-amazon.com/images/G/01/ad-feedback/${AD_MARKER}.gif`
 ]);
+
+const RETAIL_FIXTURES = Object.freeze(Object.fromEntries(
+  crossSiteFixtures.sites.map(fixture => [fixture.id, fixture])
+));
 
 const ROUTES = Object.freeze([
   {
@@ -152,6 +157,171 @@ const ROUTES = Object.freeze([
         && hidden('#prime-join')
         && hidden('#prime-sponsored')
         && window.__amzeFixture?.adProbeSettled === true;
+    })()`
+  },
+  {
+    name: 'walmart-reviews',
+    url: `https://${RETAIL_FIXTURES.walmart.hostname}${RETAIL_FIXTURES.walmart.productPaths[0]}`,
+    html: `<!doctype html>
+      <html><head><meta charset="utf-8"><title>Walmart reviews fixture</title></head><body>
+        <main>
+          <section data-testid="reviews">
+            <span data-testid="review-count">1.2K reviews</span>
+            <div id="fixture-review-list"></div>
+          </section>
+        </main>
+        <script>
+          window.__amzeFixture = { reviewsInserted: false };
+          setTimeout(() => {
+            document.querySelector('#fixture-review-list').innerHTML = \
+              '<article data-testid="review" data-reviewid="walmart-1">Verified purchase' +
+                '<h3 data-testid="review-title">Useful</h3>' +
+                '<p data-testid="review-text">Privacy-safe Walmart fixture one.</p>' +
+                '<span data-testid="review-rating" aria-label="5 out of 5 stars"></span>' +
+                '<span data-testid="review-author">Fixture author one</span></article>' +
+              '<article data-testid="review" data-reviewid="walmart-2">' +
+                '<h3 data-testid="review-title">Limited</h3>' +
+                '<p data-testid="review-text">Privacy-safe Walmart fixture two.</p>' +
+                '<span data-testid="review-rating" aria-label="2 out of 5 stars"></span>' +
+                '<span data-testid="review-author">Fixture author two</span></article>';
+            window.__amzeFixture.reviewsInserted = true;
+          }, 350);
+        </script>
+      </body></html>`,
+    expression: `(() => {
+      const host = document.querySelector('#amze-cross-site-review');
+      const text = host?.shadowRoot?.textContent || '';
+      return window.__amzeFixture?.reviewsInserted === true
+        && text.includes('AmazonEnhanced review analysis · Walmart')
+        && text.includes('Visible sample: 2')
+        && text.includes('Total reviews: 1,200');
+    })()`
+  },
+  {
+    name: 'target-reviews',
+    url: `https://${RETAIL_FIXTURES.target.hostname}${RETAIL_FIXTURES.target.productPaths[0]}`,
+    html: `<!doctype html>
+      <html><head><meta charset="utf-8"><title>Target reviews fixture</title></head><body>
+        <main>
+          <section data-test="reviews">
+            <span data-test="review-count">842 reviews</span>
+            <div id="fixture-review-list"></div>
+          </section>
+        </main>
+        <script>
+          window.__amzeFixture = { reviewsInserted: false };
+          setTimeout(() => {
+            document.querySelector('#fixture-review-list').innerHTML = \
+              '<article data-test="review" data-reviewid="target-1">Verified buyer' +
+                '<h3 data-test="review-title">Useful</h3>' +
+                '<p data-test="review-text">Privacy-safe Target fixture one.</p>' +
+                '<span data-test="review-rating" aria-label="4 out of 5 stars"></span>' +
+                '<span data-test="review-author">Fixture author one</span></article>' +
+              '<article data-test="review" data-reviewid="target-2">' +
+                '<h3 data-test="review-title">Limited</h3>' +
+                '<p data-test="review-text">Privacy-safe Target fixture two.</p>' +
+                '<span data-test="review-rating" aria-label="2 out of 5 stars"></span>' +
+                '<span data-test="review-author">Fixture author two</span></article>';
+            window.__amzeFixture.reviewsInserted = true;
+          }, 350);
+        </script>
+      </body></html>`,
+    expression: `(() => {
+      const host = document.querySelector('#amze-cross-site-review');
+      const text = host?.shadowRoot?.textContent || '';
+      return window.__amzeFixture?.reviewsInserted === true
+        && text.includes('AmazonEnhanced review analysis · Target')
+        && text.includes('Visible sample: 2')
+        && text.includes('Total reviews: 842');
+    })()`
+  },
+  {
+    name: 'bestbuy-route-change',
+    url: `https://${RETAIL_FIXTURES.bestbuy.hostname}${RETAIL_FIXTURES.bestbuy.productPaths[0]}`,
+    html: `<!doctype html>
+      <html><head><meta charset="utf-8"><title>Best Buy reviews fixture</title></head><body>
+        <main>
+          <section class="reviews-list">
+            <span class="review-count">2.4K reviews</span>
+            <div id="fixture-review-list"></div>
+          </section>
+        </main>
+        <script>
+          window.__amzeFixture = { firstInserted: false, panelRemovedAfterLeave: false, secondInserted: false };
+          const reviews = prefix =>
+            '<article class="review-item" data-review-id="' + prefix + '-1">Verified purchase' +
+              '<h3 class="review-title">' + prefix + ' useful</h3>' +
+              '<p class="ugc-review-body">Privacy-safe Best Buy ' + prefix + ' fixture one.</p>' +
+              '<span class="review-rating" aria-label="5 out of 5 stars"></span>' +
+              '<span class="ugc-author">Fixture author one</span></article>' +
+            '<article class="review-item" data-review-id="' + prefix + '-2">' +
+              '<h3 class="review-title">' + prefix + ' limited</h3>' +
+              '<p class="ugc-review-body">Privacy-safe Best Buy ' + prefix + ' fixture two.</p>' +
+              '<span class="review-rating" aria-label="1 out of 5 stars"></span>' +
+              '<span class="ugc-author">Fixture author two</span></article>';
+          setTimeout(() => {
+            document.querySelector('#fixture-review-list').innerHTML = reviews('First');
+            window.__amzeFixture.firstInserted = true;
+          }, 350);
+          setTimeout(() => {
+            history.pushState({}, '', '${RETAIL_FIXTURES.bestbuy.nonProductPath}');
+            setTimeout(() => {
+              window.__amzeFixture.panelRemovedAfterLeave = !document.querySelector('#amze-cross-site-review');
+              history.pushState({}, '', '/product/second-privacy-safe-product/sku/7654321');
+              document.querySelector('#fixture-review-list').innerHTML = reviews('Second');
+              window.__amzeFixture.secondInserted = true;
+            }, 800);
+          }, 1300);
+        </script>
+      </body></html>`,
+    expression: `(() => {
+      const host = document.querySelector('#amze-cross-site-review');
+      const text = host?.shadowRoot?.textContent || '';
+      return window.__amzeFixture?.firstInserted === true
+        && window.__amzeFixture?.panelRemovedAfterLeave === true
+        && window.__amzeFixture?.secondInserted === true
+        && location.pathname === '/product/second-privacy-safe-product/sku/7654321'
+        && text.includes('AmazonEnhanced review analysis · Best Buy')
+        && text.includes('Second useful')
+        && !text.includes('First useful');
+    })()`
+  },
+  {
+    name: 'etsy-reviews',
+    url: `https://${RETAIL_FIXTURES.etsy.hostname}${RETAIL_FIXTURES.etsy.productPaths[0]}`,
+    html: `<!doctype html>
+      <html><head><meta charset="utf-8"><title>Etsy reviews fixture</title></head><body>
+        <main>
+          <section data-testid="reviews">
+            <span data-review-count>315 reviews</span>
+            <div id="fixture-review-list"></div>
+          </section>
+        </main>
+        <script>
+          window.__amzeFixture = { reviewsInserted: false };
+          setTimeout(() => {
+            document.querySelector('#fixture-review-list').innerHTML = \
+              '<article data-review-id="etsy-1">Verified buyer' +
+                '<h3 data-review-title>Useful</h3>' +
+                '<p data-review-body>Privacy-safe Etsy fixture one.</p>' +
+                '<span data-rating="5"></span>' +
+                '<span data-review-author>Fixture author one</span></article>' +
+              '<article data-review-id="etsy-2">' +
+                '<h3 data-review-title>Limited</h3>' +
+                '<p data-review-body>Privacy-safe Etsy fixture two.</p>' +
+                '<span data-rating="3"></span>' +
+                '<span data-review-author>Fixture author two</span></article>';
+            window.__amzeFixture.reviewsInserted = true;
+          }, 350);
+        </script>
+      </body></html>`,
+    expression: `(() => {
+      const host = document.querySelector('#amze-cross-site-review');
+      const text = host?.shadowRoot?.textContent || '';
+      return window.__amzeFixture?.reviewsInserted === true
+        && text.includes('AmazonEnhanced review analysis · Etsy')
+        && text.includes('Visible sample: 2')
+        && text.includes('Total reviews: 315');
     })()`
   }
 ]);
@@ -510,7 +680,9 @@ async function openFixture(client, route, adEvidence) {
         return style.display !== 'none' && style.visibility !== 'hidden';
       }).length
     })`);
-    assert.equal(state.url, route.url, `${route.name} fixture URL changed unexpectedly`);
+    if (route.name !== 'bestbuy-route-change') {
+      assert.equal(state.url, route.url, `${route.name} fixture URL changed unexpectedly`);
+    }
     assert.equal(state.visibleAdShells, 0, `${route.name} left a visible ad shell`);
     return state;
   } finally {

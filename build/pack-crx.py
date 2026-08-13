@@ -54,6 +54,7 @@ INCLUDE_FILES = [
     "shadow-ui.css",
     "review-corpus.js",
     "review-score-kernel.js",
+    "cross-site-review-adapters.js",
     "cross-site-reviews.js",
     "prime-video-declutter.js",
     "pdp-diff.js",
