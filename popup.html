@@ -15,10 +15,13 @@
       <span id="amze-version">v2.0.16</span>
     </div>
   </div>
-  <button id="amze-reset" title="Restore defaults" class="amze-btn amze-btn-ghost">Reset</button>
+  <div class="amze-head-actions">
+    <span id="amze-save-status" class="amze-save-status" role="status" aria-live="polite">Loading…</span>
+    <button id="amze-reset" title="Restore defaults" class="amze-btn amze-btn-ghost">Reset</button>
+  </div>
 </header>
 
-<nav class="amze-tabs" role="tablist" aria-label="Settings sections">
+<nav class="amze-tabs" role="tablist" aria-label="Settings sections" aria-orientation="vertical">
   <button id="amze-tab-ads" class="amze-tab amze-tab-active" data-tab="ads" role="tab" aria-selected="true" aria-controls="amze-pane-ads" tabindex="0">Ads</button>
   <button id="amze-tab-declutter" class="amze-tab" data-tab="declutter" role="tab" aria-selected="false" aria-controls="amze-pane-declutter" tabindex="-1">Declutter</button>
   <button id="amze-tab-reviews" class="amze-tab" data-tab="reviews" role="tab" aria-selected="false" aria-controls="amze-pane-reviews" tabindex="-1">Reviews</button>
@@ -31,10 +34,11 @@
   <button id="amze-tab-theme" class="amze-tab" data-tab="theme" role="tab" aria-selected="false" aria-controls="amze-pane-theme" tabindex="-1">Theme</button>
 </nav>
 
-<main>
+<main class="amze-content">
 
 <section id="amze-pane-ads" class="amze-pane amze-pane-active" data-pane="ads" role="tabpanel" aria-labelledby="amze-tab-ads" tabindex="-1">
   <h2>Ad &amp; sponsored removal</h2>
+  <p class="amze-lead">Keep paid placements and promotional interruptions out of your shopping flow.</p>
   <label class="amze-row">
     <span><strong>Hide sponsored results</strong><small>Removes sponsored tiles in search + PDP carousels.</small></span>
     <input type="checkbox" data-flag="hideSponsored" class="amze-switch">
@@ -59,6 +63,7 @@
 
 <section id="amze-pane-declutter" class="amze-pane" data-pane="declutter" role="tabpanel" aria-labelledby="amze-tab-declutter" tabindex="-1">
   <h2>Section declutter</h2>
+  <p class="amze-lead">Choose which recommendation rails and heavy merchandising sections stay visible.</p>
   <label class="amze-row">
     <span>"Brands related to this category"<small></small></span>
     <input type="checkbox" data-flag="hideBrandsRelated" class="amze-switch">
@@ -112,13 +117,14 @@
     <input type="checkbox" data-flag="hidePadding" class="amze-switch">
   </label>
   <label class="amze-row">
-    <span>Hide Rufus / AI chatbot<small>Dismisses Amazon's persistent Rufus AI sidebar widget and related chat elements.</small></span>
+    <span>Hide Alexa for Shopping<small>Dismisses Amazon's shopping-assistant sidebar and launcher without hiding product content.</small></span>
     <input type="checkbox" data-flag="hideRufus" class="amze-switch">
   </label>
 </section>
 
 <section id="amze-pane-reviews" class="amze-pane" data-pane="reviews" role="tabpanel" aria-labelledby="amze-tab-reviews" tabindex="-1">
   <h2>Reviews &amp; trust</h2>
+  <p class="amze-lead">Make visible review evidence easier to interpret without sending shopping data away.</p>
   <label class="amze-row">
     <span><strong>Review-quality scoring</strong><small>Shows adjusted rating + polarization + verified-sample ratio on product pages.</small></span>
     <input type="checkbox" data-flag="reviewScore" class="amze-switch">
@@ -140,6 +146,7 @@
 
 <section id="amze-pane-price" class="amze-pane" data-pane="price" role="tabpanel" aria-labelledby="amze-tab-price" tabindex="-1">
   <h2>Price tools</h2>
+  <p class="amze-lead">Expose unit cost, misleading discounts, clean links, and local price changes.</p>
   <label class="amze-row">
     <span><strong>Inline price-per-unit badges</strong><small>Auto-computes $/oz, $/kg, $/ct on search-result tiles when Amazon doesn't show it.</small></span>
     <input type="checkbox" data-flag="pricePerUnit" class="amze-switch">
@@ -164,6 +171,7 @@
 
 <section id="amze-pane-brands" class="amze-pane" data-pane="brands" role="tabpanel" aria-labelledby="amze-tab-brands" tabindex="-1">
   <h2>Brand &amp; seller filters</h2>
+  <p class="amze-lead">Filter brand patterns from Amazon search results using local rules.</p>
   <label class="amze-row">
     <span>Hide Amazon in-house brands<small>Amazon Basics, Essentials, Solimo, Pinzon, Goodthreads, etc.</small></span>
     <input type="checkbox" data-flag="hideAmazonBrands" class="amze-switch">
@@ -179,11 +187,13 @@
   <div class="amze-field">
     <label for="amze-brands">Custom brand blocklist (regex, one per line)</label>
     <textarea id="amze-brands" rows="6" spellcheck="false" placeholder="^AOEUFG$&#10;Brand Name 1&#10;^[A-Z]{5,8}$"></textarea>
+    <small id="amze-brands-help" class="amze-field-help">Enable “Hide custom brands” to edit this list.</small>
   </div>
 </section>
 
 <section id="amze-pane-cart" class="amze-pane" data-pane="cart" role="tabpanel" aria-labelledby="amze-tab-cart" tabindex="-1">
   <h2>Cart, checkout &amp; dark patterns</h2>
+  <p class="amze-lead">Reduce surprise upsells, preselected extras, and silent checkout changes.</p>
   <label class="amze-row">
     <span><strong>Auto-decline warranty / protection plan</strong><small>Silently selects "No thanks" on SquareTrade/Allstate upsells at PDP, cart, and post-add-to-cart interstitial.</small></span>
     <input type="checkbox" data-flag="autoDeclineWarranty" class="amze-switch">
@@ -216,6 +226,7 @@
 
 <section id="amze-pane-trust" class="amze-pane" data-pane="trust" role="tabpanel" aria-labelledby="amze-tab-trust" tabindex="-1">
   <h2>Transparency &amp; trust</h2>
+  <p class="amze-lead">Understand who is selling and how listings change across products and visits.</p>
   <label class="amze-row">
     <span>Country-of-origin badge<small>Pulls "Country of Origin" from the product details table and displays it as a badge on PDP. Caches per-ASIN for later search-page badging.</small></span>
     <input type="checkbox" data-flag="countryBadge" class="amze-switch">
@@ -235,6 +246,7 @@
   <div class="amze-field">
     <label for="amze-oc-token">OpenCorporates API token</label>
     <input id="amze-oc-token" type="password" spellcheck="false" autocomplete="off" placeholder="Stored locally only">
+    <small id="amze-oc-permission-status" class="amze-field-help">Enable seller lookup to grant access to OpenCorporates.</small>
   </div>
   <label class="amze-row">
     <span>Variation bait warning<small>Flags listings where variant prices span more than 3× — a common bait-and-switch pattern.</small></span>
@@ -256,6 +268,7 @@
 
 <section id="amze-pane-tools" class="amze-pane" data-pane="tools" role="tabpanel" aria-labelledby="amze-tab-tools" tabindex="-1">
   <h2>Tools &amp; data</h2>
+  <p class="amze-lead">Use local productivity tools and control the data AmazonEnhanced stores.</p>
   <label class="amze-row">
     <span>Copy clean product link<small>Adds a "📋 Copy clean link" button on PDPs that puts a Markdown-formatted link + price on the clipboard.</small></span>
     <input type="checkbox" data-flag="copyCleanLink" class="amze-switch">
@@ -314,6 +327,7 @@
 
 <section id="amze-pane-a11y" class="amze-pane" data-pane="a11y" role="tabpanel" aria-labelledby="amze-tab-a11y" tabindex="-1">
   <h2>Accessibility &amp; safety</h2>
+  <p class="amze-lead">Improve readability, screen-reader labels, and ingredient awareness.</p>
   <label class="amze-row">
     <span>Large text mode<small>Bumps body text to 17px, headings scale accordingly.</small></span>
     <input type="checkbox" data-flag="largeText" class="amze-switch">
@@ -333,11 +347,13 @@
   <div class="amze-field">
     <label for="amze-allergens">Allergen / ingredient watchlist (one term per line)</label>
     <textarea id="amze-allergens" rows="5" spellcheck="false" placeholder="peanut&#10;palm oil&#10;fragrance&#10;parabens"></textarea>
+    <small id="amze-allergens-help" class="amze-field-help">Enable the watchlist to edit these terms.</small>
   </div>
 </section>
 
 <section id="amze-pane-theme" class="amze-pane" data-pane="theme" role="tabpanel" aria-labelledby="amze-tab-theme" tabindex="-1">
   <h2>Theme &amp; density</h2>
+  <p class="amze-lead">Tune Amazon’s palette, spacing, and image treatment for desktop browsing.</p>
   <div class="amze-theme-picker">
     <label>
       <input type="radio" name="amze-theme" value="dark" />

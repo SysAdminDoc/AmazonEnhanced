@@ -1,29 +1,161 @@
 /**
  * AmazonEnhanced — popup.js
- * Binds the settings form to chrome.storage.local and broadcasts changes
- * to all open Amazon tabs via the background service worker.
+ * Accessible settings shell, local persistence, and live settings broadcast.
  */
 (function () {
   'use strict';
 
-  let DEFAULT_SETTINGS = null;
-  let current = null;
-  let clearConfirmTimer = null;
+  const OPEN_CORPORATES_ORIGIN = 'https://api.opencorporates.com/*';
+  const POPUP_TAB_KEY = 'amzePopupTab';
   const PRICE_HISTORY_IO = globalThis.AmzePriceHistoryIO || {};
   const ERROR_REPORTER = globalThis.AmzeErrorBuffer && globalThis.AmzeErrorBuffer.createReporter
     ? globalThis.AmzeErrorBuffer.createReporter(chrome.storage.local, { source: 'popup' })
     : null;
+
+  let DEFAULT_SETTINGS = null;
+  let current = null;
+  let sellerToken = '';
+  let clearConfirmTimer = null;
+  let resetConfirmTimer = null;
+  let saveSequence = 0;
+
   if (ERROR_REPORTER && globalThis.AmzeErrorBuffer.attachGlobalListeners) {
     globalThis.AmzeErrorBuffer.attachGlobalListeners(globalThis, ERROR_REPORTER, 'popup');
   }
 
-  function $(sel, root) { return (root || document).querySelector(sel); }
-  function $$(sel, root) { return Array.from((root || document).querySelectorAll(sel)); }
+  function $(selector, root) {
+    return (root || document).querySelector(selector);
+  }
+
+  function $$(selector, root) {
+    return Array.from((root || document).querySelectorAll(selector));
+  }
+
+  function reportPopupError(error, context) {
+    if (ERROR_REPORTER && typeof ERROR_REPORTER.record === 'function') {
+      ERROR_REPORTER.record(error, context || 'popup').catch(() => {});
+    }
+  }
+
+  function lastRuntimeError() {
+    try {
+      return chrome.runtime && chrome.runtime.lastError;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function storageGet(keys) {
+    return new Promise((resolve, reject) => {
+      try {
+        chrome.storage.local.get(keys, result => {
+          const error = lastRuntimeError();
+          if (error) reject(error);
+          else resolve(result || {});
+        });
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  function storageSet(value) {
+    return new Promise((resolve, reject) => {
+      try {
+        chrome.storage.local.set(value, () => {
+          const error = lastRuntimeError();
+          if (error) reject(error);
+          else resolve();
+        });
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  function storageRemove(keys) {
+    return new Promise((resolve, reject) => {
+      try {
+        chrome.storage.local.remove(keys, () => {
+          const error = lastRuntimeError();
+          if (error) reject(error);
+          else resolve();
+        });
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  function sendRuntimeMessage(message) {
+    return new Promise(resolve => {
+      try {
+        chrome.runtime.sendMessage(message, response => {
+          if (lastRuntimeError()) resolve({ ok: false, error: 'runtime_unavailable' });
+          else resolve(response || { ok: false, error: 'empty_response' });
+        });
+      } catch (error) {
+        reportPopupError(error, 'message:' + (message && message.type || 'unknown'));
+        resolve({ ok: false, error: 'runtime_unavailable' });
+      }
+    });
+  }
+
+  function containsOpenCorporatesPermission() {
+    return new Promise(resolve => {
+      if (!chrome.permissions || typeof chrome.permissions.contains !== 'function') {
+        resolve(false);
+        return;
+      }
+      try {
+        chrome.permissions.contains({ origins: [OPEN_CORPORATES_ORIGIN] }, granted => {
+          resolve(!lastRuntimeError() && !!granted);
+        });
+      } catch (error) {
+        reportPopupError(error, 'permissions:contains');
+        resolve(false);
+      }
+    });
+  }
+
+  function requestOpenCorporatesPermission() {
+    return new Promise(resolve => {
+      if (!chrome.permissions || typeof chrome.permissions.request !== 'function') {
+        resolve(false);
+        return;
+      }
+      try {
+        chrome.permissions.request({ origins: [OPEN_CORPORATES_ORIGIN] }, granted => {
+          resolve(!lastRuntimeError() && !!granted);
+        });
+      } catch (error) {
+        reportPopupError(error, 'permissions:request');
+        resolve(false);
+      }
+    });
+  }
+
+  function removeOpenCorporatesPermission() {
+    return new Promise(resolve => {
+      if (!chrome.permissions || typeof chrome.permissions.remove !== 'function') {
+        resolve(false);
+        return;
+      }
+      try {
+        chrome.permissions.remove({ origins: [OPEN_CORPORATES_ORIGIN] }, removed => {
+          resolve(!lastRuntimeError() && !!removed);
+        });
+      } catch (error) {
+        reportPopupError(error, 'permissions:remove');
+        resolve(false);
+      }
+    });
+  }
 
   async function loadDefaultSettings() {
-    const res = await fetch(chrome.runtime.getURL('defaults.json'));
-    if (!res.ok) throw new Error('Failed to load defaults.json');
-    return res.json();
+    const response = await fetch(chrome.runtime.getURL('defaults.json'));
+    if (!response.ok) throw new Error('Failed to load defaults.json');
+    return response.json();
   }
 
   function cloneDefaultSettings() {
@@ -33,7 +165,25 @@
   function mergeSettings(saved) {
     const merged = Object.assign(cloneDefaultSettings(), saved || {});
     merged.flags = Object.assign({}, DEFAULT_SETTINGS.flags, (saved && saved.flags) || {});
+    if (merged.flags.hideSponsored && merged.flags.shadeSponsored) {
+      merged.flags.shadeSponsored = false;
+    }
+    delete merged.openCorporatesToken;
     return merged;
+  }
+
+  function setSaveStatus(text, state) {
+    const status = $('#amze-save-status');
+    if (!status) return;
+    status.textContent = text;
+    if (state) status.dataset.state = state;
+    else delete status.dataset.state;
+  }
+
+  function applyPopupAppearance() {
+    if (!current) return;
+    document.documentElement.dataset.amzeTheme = current.theme || 'dark';
+    document.documentElement.dataset.amzeDensity = current.density || 'comfortable';
   }
 
   function syncSwitchAria(input) {
@@ -41,126 +191,148 @@
     input.setAttribute('aria-checked', String(!!input.checked));
   }
 
-  function activateTab(btn, moveFocus) {
-    $$('.amze-tab').forEach(t => {
-      const active = t === btn;
-      t.classList.toggle('amze-tab-active', active);
-      t.setAttribute('aria-selected', String(active));
-      t.tabIndex = active ? 0 : -1;
-    });
+  function syncDependentFields() {
+    const brandField = $('#amze-brands');
+    const allergenField = $('#amze-allergens');
+    const tokenField = $('#amze-oc-token');
+    const permissionStatus = $('#amze-oc-permission-status');
 
-    $$('.amze-pane').forEach(p => {
-      const active = p.dataset.pane === btn.dataset.tab;
-      p.classList.toggle('amze-pane-active', active);
-      if (active) {
-        p.removeAttribute('hidden');
-        if (moveFocus) p.focus({ preventScroll: true });
-      } else {
-        p.setAttribute('hidden', '');
-      }
-    });
-  }
-
-  function load() {
-    chrome.storage.local.get(['amzeSettings'], (r) => {
-      current = mergeSettings(r && r.amzeSettings);
-      renderForm();
-    });
+    if (brandField) brandField.disabled = !current.flags.hideCustomBrands;
+    if (allergenField) allergenField.disabled = !current.flags.allergenScan;
+    if (tokenField) tokenField.disabled = !current.flags.sellerLookup;
+    if (permissionStatus && permissionStatus.dataset.state !== 'error') {
+      permissionStatus.textContent = current.flags.sellerLookup
+        ? 'Permission granted. The token is stored separately from page-visible settings.'
+        : 'Enable seller lookup to grant access to OpenCorporates.';
+      permissionStatus.dataset.state = current.flags.sellerLookup ? 'success' : '';
+    }
   }
 
   function renderForm() {
-    // Theme
-    $$('input[name="amze-theme"]').forEach(r => {
-      r.checked = r.value === current.theme;
+    applyPopupAppearance();
+    $$('input[name="amze-theme"]').forEach(input => {
+      input.checked = input.value === current.theme;
     });
-    // Density segmented
-    $$('.amze-seg-btn[data-density]').forEach(b => {
-      b.classList.toggle('amze-seg-active', b.dataset.density === current.density);
+    $$('.amze-seg-btn[data-density]').forEach(button => {
+      const active = button.dataset.density === current.density;
+      button.classList.toggle('amze-seg-active', active);
+      button.setAttribute('aria-pressed', String(active));
     });
-    // Image mode segmented
-    $$('.amze-seg-btn[data-image]').forEach(b => {
-      b.classList.toggle('amze-seg-active', b.dataset.image === (current.imageMode || 'tile'));
+    $$('.amze-seg-btn[data-image]').forEach(button => {
+      const active = button.dataset.image === (current.imageMode || 'tile');
+      button.classList.toggle('amze-seg-active', active);
+      button.setAttribute('aria-pressed', String(active));
     });
-    // Flag switches
-    $$('input[data-flag]').forEach(i => {
-      i.checked = !!current.flags[i.dataset.flag];
-      syncSwitchAria(i);
+    $$('input[data-flag]').forEach(input => {
+      input.checked = !!current.flags[input.dataset.flag];
+      syncSwitchAria(input);
     });
-    // Meta switches (e.g., toastsEnabled)
-    $$('input[data-meta]').forEach(i => {
-      i.checked = !!current[i.dataset.meta];
-      syncSwitchAria(i);
+    $$('input[data-meta]').forEach(input => {
+      input.checked = !!current[input.dataset.meta];
+      syncSwitchAria(input);
     });
-    // Custom brand textarea
-    const ta = $('#amze-brands');
-    if (ta) ta.value = current.customBrands || '';
-    const al = $('#amze-allergens');
-    if (al) al.value = current.allergens || '';
+
+    const brands = $('#amze-brands');
+    const allergens = $('#amze-allergens');
     const token = $('#amze-oc-token');
-    if (token) token.value = current.openCorporatesToken || '';
+    if (brands) brands.value = current.customBrands || '';
+    if (allergens) allergens.value = current.allergens || '';
+    if (token) token.value = sellerToken;
+    syncDependentFields();
   }
 
-  function persistAndBroadcast() {
-    chrome.storage.local.set({ amzeSettings: current }, () => {
-      try {
-        chrome.runtime.sendMessage({ type: 'AMZE_BROADCAST_SETTINGS', settings: current });
-      } catch (e) {}
+  function activateTab(button, persist) {
+    if (!button) return;
+    $$('.amze-tab').forEach(tab => {
+      const active = tab === button;
+      tab.classList.toggle('amze-tab-active', active);
+      tab.setAttribute('aria-selected', String(active));
+      tab.tabIndex = active ? 0 : -1;
     });
+    $$('.amze-pane').forEach(pane => {
+      const active = pane.dataset.pane === button.dataset.tab;
+      pane.classList.toggle('amze-pane-active', active);
+      pane.toggleAttribute('hidden', !active);
+    });
+    const content = $('.amze-content');
+    if (content) content.scrollTop = 0;
+    if (persist) {
+      storageSet({ [POPUP_TAB_KEY]: button.dataset.tab })
+        .catch(error => reportPopupError(error, 'tab:persist'));
+    }
+  }
+
+  async function getSellerToken() {
+    const response = await sendRuntimeMessage({ type: 'AMZE_GET_SELLER_LOOKUP_TOKEN' });
+    return response.ok ? String(response.token || '') : '';
+  }
+
+  function setSellerToken(value) {
+    return sendRuntimeMessage({
+      type: 'AMZE_SET_SELLER_LOOKUP_TOKEN',
+      token: String(value || '')
+    });
+  }
+
+  async function load() {
+    const stored = await storageGet(['amzeSettings', POPUP_TAB_KEY]);
+    const legacyToken = String(stored.amzeSettings && stored.amzeSettings.openCorporatesToken || '').trim();
+    current = mergeSettings(stored.amzeSettings);
+    if (legacyToken) {
+      await setSellerToken(legacyToken);
+      await storageSet({ amzeSettings: current });
+    }
+    sellerToken = await getSellerToken();
+
+    if (current.flags.sellerLookup && !await containsOpenCorporatesPermission()) {
+      current.flags.sellerLookup = false;
+      await storageSet({ amzeSettings: current });
+    }
+
+    renderForm();
+    const requestedTab = stored[POPUP_TAB_KEY];
+    const tab = requestedTab
+      ? $('.amze-tab[data-tab="' + requestedTab + '"]')
+      : $('.amze-tab-active');
+    activateTab(tab || $('.amze-tab'), false);
+    setSaveStatus('Saved', 'saved');
+  }
+
+  async function persistAndBroadcast() {
+    const sequence = ++saveSequence;
+    setSaveStatus('Saving…', 'saving');
+    try {
+      delete current.openCorporatesToken;
+      await storageSet({ amzeSettings: current });
+      const response = await sendRuntimeMessage({
+        type: 'AMZE_BROADCAST_SETTINGS',
+        settings: current
+      });
+      if (sequence !== saveSequence) return response;
+      if (response.ok) setSaveStatus('Saved', 'saved');
+      else setSaveStatus('Saved; protection error', 'error');
+      return response;
+    } catch (error) {
+      reportPopupError(error, 'settings:persist');
+      if (sequence === saveSequence) setSaveStatus('Couldn’t save', 'error');
+      return { ok: false, error: 'storage_failed' };
+    }
   }
 
   function clearDataCaches() {
-    return new Promise(resolve => {
-      try {
-        chrome.runtime.sendMessage({ type: 'AMZE_CLEAR_LOCAL_DATA' }, (response) => {
-          if (chrome.runtime.lastError) {
-            resolve({ ok: false });
-          } else {
-            resolve(response || { ok: false });
-          }
-        });
-      } catch (e) {
-        resolve({ ok: false });
-      }
-    });
+    return sendRuntimeMessage({ type: 'AMZE_CLEAR_LOCAL_DATA' });
   }
 
   function mergeImportedPriceHistory(entries) {
-    return new Promise(resolve => {
-      try {
-        chrome.runtime.sendMessage({ type: 'AMZE_IDB_MERGE_PRICE_HISTORY', entries }, response => {
-          if (chrome.runtime.lastError) resolve({ ok: false, imported: 0 });
-          else resolve(response || { ok: false, imported: 0 });
-        });
-      } catch (e) {
-        resolve({ ok: false, imported: 0 });
-      }
-    });
+    return sendRuntimeMessage({ type: 'AMZE_IDB_MERGE_PRICE_HISTORY', entries });
   }
 
   function requestErrorReport() {
-    return new Promise(resolve => {
-      try {
-        chrome.runtime.sendMessage({ type: 'AMZE_GET_ERROR_REPORT' }, response => {
-          if (chrome.runtime.lastError) resolve({ ok: false, report: null });
-          else resolve(response || { ok: false, report: null });
-        });
-      } catch (e) {
-        resolve({ ok: false, report: null });
-      }
-    });
+    return sendRuntimeMessage({ type: 'AMZE_GET_ERROR_REPORT' });
   }
 
   function clearErrorBuffer() {
-    return new Promise(resolve => {
-      try {
-        chrome.runtime.sendMessage({ type: 'AMZE_CLEAR_ERROR_BUFFER' }, response => {
-          if (chrome.runtime.lastError) resolve({ ok: false });
-          else resolve(response || { ok: false });
-        });
-      } catch (e) {
-        resolve({ ok: false });
-      }
-    });
+    return sendRuntimeMessage({ type: 'AMZE_CLEAR_ERROR_BUFFER' });
   }
 
   function downloadJson(value, filename) {
@@ -173,117 +345,166 @@
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
-  function resetClearDataButton(btn, status) {
-    delete btn.dataset.confirming;
-    btn.disabled = false;
-    btn.textContent = 'Clear local data';
+  function resetClearDataButton(button, status) {
+    delete button.dataset.confirming;
+    button.disabled = false;
+    button.textContent = 'Clear local data';
     if (status && !status.textContent) status.textContent = '';
   }
 
-  function wireUp() {
-    // Tabs
-    $$('.amze-tab').forEach(btn => {
-      btn.addEventListener('click', () => {
-        activateTab(btn, true);
+  function wireTabs() {
+    const tabs = $$('.amze-tab');
+    tabs.forEach((button, index) => {
+      button.addEventListener('click', () => activateTab(button, true));
+      button.addEventListener('keydown', event => {
+        let nextIndex = null;
+        if (event.key === 'ArrowDown' || event.key === 'ArrowRight') nextIndex = (index + 1) % tabs.length;
+        if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') nextIndex = (index - 1 + tabs.length) % tabs.length;
+        if (event.key === 'Home') nextIndex = 0;
+        if (event.key === 'End') nextIndex = tabs.length - 1;
+        if (nextIndex === null) return;
+        event.preventDefault();
+        tabs[nextIndex].focus();
+        activateTab(tabs[nextIndex], true);
       });
     });
-    const activeTab = $('.amze-tab-active') || $('.amze-tab');
-    if (activeTab) activateTab(activeTab, false);
+    activateTab($('.amze-tab-active') || tabs[0], false);
+  }
 
-    // Flag checkboxes
-    $$('input[data-flag]').forEach(i => {
-      syncSwitchAria(i);
-      i.addEventListener('change', () => {
-        current.flags[i.dataset.flag] = i.checked;
-        syncSwitchAria(i);
-        persistAndBroadcast();
-      });
-    });
-
-    // Meta checkboxes
-    $$('input[data-meta]').forEach(i => {
-      syncSwitchAria(i);
-      i.addEventListener('change', () => {
-        current[i.dataset.meta] = i.checked;
-        syncSwitchAria(i);
-        persistAndBroadcast();
-      });
-    });
-
-    // Theme radios
-    $$('input[name="amze-theme"]').forEach(r => {
-      r.addEventListener('change', () => {
-        if (r.checked) {
-          current.theme = r.value;
-          persistAndBroadcast();
+  function wireSettings() {
+    $$('input[data-flag]').forEach(input => {
+      syncSwitchAria(input);
+      input.addEventListener('change', async () => {
+        const flag = input.dataset.flag;
+        if (flag === 'sellerLookup' && input.checked) {
+          setSaveStatus('Requesting access…', 'saving');
+          const granted = await requestOpenCorporatesPermission();
+          if (!granted) {
+            input.checked = false;
+            syncSwitchAria(input);
+            const helper = $('#amze-oc-permission-status');
+            if (helper) {
+              helper.textContent = 'OpenCorporates access was not granted; seller lookup remains off.';
+              helper.dataset.state = 'error';
+            }
+            setSaveStatus('Access not granted', 'error');
+            return;
+          }
+          const helper = $('#amze-oc-permission-status');
+          if (helper) delete helper.dataset.state;
         }
-      });
-    });
 
-    // Density segmented
-    $$('.amze-seg-btn[data-density]').forEach(b => {
-      b.addEventListener('click', () => {
-        current.density = b.dataset.density;
-        $$('.amze-seg-btn[data-density]').forEach(x => x.classList.toggle('amze-seg-active', x === b));
-        persistAndBroadcast();
-      });
-    });
-
-    // Image-mode segmented
-    $$('.amze-seg-btn[data-image]').forEach(b => {
-      b.addEventListener('click', () => {
-        current.imageMode = b.dataset.image;
-        $$('.amze-seg-btn[data-image]').forEach(x => x.classList.toggle('amze-seg-active', x === b));
-        persistAndBroadcast();
-      });
-    });
-
-    // Custom brands textarea (debounced)
-    const ta = $('#amze-brands');
-    if (ta) {
-      let t;
-      ta.addEventListener('input', () => {
-        clearTimeout(t);
-        t = setTimeout(() => {
-          current.customBrands = ta.value;
-          persistAndBroadcast();
-        }, 350);
-      });
-    }
-    // Allergens textarea (debounced)
-    const al = $('#amze-allergens');
-    if (al) {
-      let t;
-      al.addEventListener('input', () => {
-        clearTimeout(t);
-        t = setTimeout(() => {
-          current.allergens = al.value;
-          persistAndBroadcast();
-        }, 350);
-      });
-    }
-    const ocToken = $('#amze-oc-token');
-    if (ocToken) {
-      let t;
-      ocToken.addEventListener('input', () => {
-        clearTimeout(t);
-        t = setTimeout(() => {
-          current.openCorporatesToken = ocToken.value.trim();
-          persistAndBroadcast();
-        }, 350);
-      });
-    }
-
-    // Reset
-    const reset = $('#amze-reset');
-    if (reset) {
-      reset.addEventListener('click', () => {
-        current = cloneDefaultSettings();
+        current.flags[flag] = input.checked;
+        if (flag === 'hideSponsored' && input.checked) current.flags.shadeSponsored = false;
+        if (flag === 'shadeSponsored' && input.checked) current.flags.hideSponsored = false;
+        if (flag === 'sellerLookup' && !input.checked) {
+          removeOpenCorporatesPermission().catch(() => {});
+        }
         renderForm();
-        persistAndBroadcast();
+        await persistAndBroadcast();
+      });
+    });
+
+    $$('input[data-meta]').forEach(input => {
+      syncSwitchAria(input);
+      input.addEventListener('change', async () => {
+        current[input.dataset.meta] = input.checked;
+        syncSwitchAria(input);
+        await persistAndBroadcast();
+      });
+    });
+
+    $$('input[name="amze-theme"]').forEach(input => {
+      input.addEventListener('change', async () => {
+        if (!input.checked) return;
+        current.theme = input.value;
+        renderForm();
+        await persistAndBroadcast();
+      });
+    });
+
+    $$('.amze-seg-btn[data-density]').forEach(button => {
+      button.addEventListener('click', async () => {
+        current.density = button.dataset.density;
+        renderForm();
+        await persistAndBroadcast();
+      });
+    });
+
+    $$('.amze-seg-btn[data-image]').forEach(button => {
+      button.addEventListener('click', async () => {
+        current.imageMode = button.dataset.image;
+        renderForm();
+        await persistAndBroadcast();
+      });
+    });
+
+    [
+      ['#amze-brands', 'customBrands'],
+      ['#amze-allergens', 'allergens']
+    ].forEach(binding => {
+      const field = $(binding[0]);
+      const key = binding[1];
+      if (!field) return;
+      let timer;
+      field.addEventListener('input', () => {
+        clearTimeout(timer);
+        timer = setTimeout(async () => {
+          current[key] = field.value;
+          await persistAndBroadcast();
+        }, 350);
+      });
+    });
+
+    const token = $('#amze-oc-token');
+    if (token) {
+      let timer;
+      token.addEventListener('input', () => {
+        clearTimeout(timer);
+        timer = setTimeout(async () => {
+          sellerToken = token.value.trim();
+          setSaveStatus('Saving…', 'saving');
+          const response = await setSellerToken(sellerToken);
+          setSaveStatus(response.ok ? 'Saved' : 'Couldn’t save', response.ok ? 'saved' : 'error');
+        }, 350);
       });
     }
+  }
 
+  function wireReset() {
+    const reset = $('#amze-reset');
+    if (!reset) return;
+    reset.addEventListener('click', async () => {
+      if (reset.dataset.confirming !== '1') {
+        reset.dataset.confirming = '1';
+        reset.textContent = 'Reset?';
+        setSaveStatus('Click Reset again', 'saving');
+        clearTimeout(resetConfirmTimer);
+        resetConfirmTimer = setTimeout(() => {
+          delete reset.dataset.confirming;
+          reset.textContent = 'Reset';
+          setSaveStatus('Saved', 'saved');
+        }, 5000);
+        return;
+      }
+
+      clearTimeout(resetConfirmTimer);
+      delete reset.dataset.confirming;
+      reset.textContent = 'Reset';
+      current = cloneDefaultSettings();
+      sellerToken = '';
+      await Promise.all([
+        setSellerToken(''),
+        removeOpenCorporatesPermission(),
+        storageRemove(POPUP_TAB_KEY).catch(() => null)
+      ]);
+      renderForm();
+      activateTab($('#amze-tab-ads'), false);
+      await persistAndBroadcast();
+    });
+  }
+
+  function wireDataActions() {
     const clearData = $('#amze-clear-data');
     const clearStatus = $('#amze-clear-status');
     if (clearData) {
@@ -291,22 +512,19 @@
         if (clearData.dataset.confirming !== '1') {
           clearData.dataset.confirming = '1';
           clearData.textContent = 'Click again to clear';
-          if (clearStatus) clearStatus.textContent = 'Clears local price, seller/origin, watched-order, and error caches. Settings stay unchanged.';
+          if (clearStatus) clearStatus.textContent = 'Clears local history and caches. Settings and your API token stay unchanged.';
           clearTimeout(clearConfirmTimer);
           clearConfirmTimer = setTimeout(() => resetClearDataButton(clearData, clearStatus), 5000);
           return;
         }
-
         clearTimeout(clearConfirmTimer);
         clearData.disabled = true;
-        if (clearStatus) clearStatus.textContent = 'Clearing local data...';
+        if (clearStatus) clearStatus.textContent = 'Clearing local data…';
         const result = await clearDataCaches();
-        delete clearData.dataset.confirming;
-        clearData.disabled = false;
-        clearData.textContent = 'Clear local data';
+        resetClearDataButton(clearData, clearStatus);
         if (clearStatus) {
           clearStatus.textContent = result.ok
-            ? 'Local data cleared. Settings were kept.'
+            ? 'Local history and caches cleared.'
             : 'Could not clear local data. Reload the popup and try again.';
         }
       });
@@ -321,7 +539,7 @@
         const file = importFile.files && importFile.files[0];
         if (!file) return;
         importButton.disabled = true;
-        if (importStatus) importStatus.textContent = 'Reading price history...';
+        if (importStatus) importStatus.textContent = 'Reading price history…';
         try {
           const parsed = typeof PRICE_HISTORY_IO.parsePriceHistoryImport === 'function'
             ? PRICE_HISTORY_IO.parsePriceHistoryImport(await file.text())
@@ -329,8 +547,12 @@
           if (!parsed || !parsed.entries.length) throw new Error('No usable price history found.');
           const result = await mergeImportedPriceHistory(parsed.entries);
           if (!result.ok) throw new Error('The extension could not save the imported history.');
-          if (importStatus) importStatus.textContent = `Imported history for ${result.imported} ASIN${result.imported === 1 ? '' : 's'}.`;
+          if (importStatus) {
+            importStatus.textContent = 'Imported history for ' + result.imported + ' ASIN'
+              + (result.imported === 1 ? '' : 's') + '.';
+          }
         } catch (error) {
+          reportPopupError(error, 'price-history:import');
           if (importStatus) importStatus.textContent = error.message || 'Could not import price history.';
         } finally {
           importButton.disabled = false;
@@ -345,15 +567,18 @@
     if (exportErrors) {
       exportErrors.addEventListener('click', async () => {
         exportErrors.disabled = true;
-        if (errorStatus) errorStatus.textContent = 'Collecting the local error buffer...';
+        if (errorStatus) errorStatus.textContent = 'Collecting the local error buffer…';
         const result = await requestErrorReport();
         exportErrors.disabled = false;
         if (!result.ok || !result.report) {
-          if (errorStatus) errorStatus.textContent = 'Could not collect the error report. Reload the popup and try again.';
+          if (errorStatus) errorStatus.textContent = 'Could not collect the error report.';
           return;
         }
-        downloadJson(result.report, `amazonenhanced-error-report-${Date.now()}.json`);
-        if (errorStatus) errorStatus.textContent = `Downloaded ${result.report.entries.length} recorded error${result.report.entries.length === 1 ? '' : 's'}.`;
+        downloadJson(result.report, 'amazonenhanced-error-report-' + Date.now() + '.json');
+        if (errorStatus) {
+          errorStatus.textContent = 'Downloaded ' + result.report.entries.length + ' recorded error'
+            + (result.report.entries.length === 1 ? '' : 's') + '.';
+        }
       });
     }
     if (clearErrors) {
@@ -361,16 +586,23 @@
         clearErrors.disabled = true;
         const result = await clearErrorBuffer();
         clearErrors.disabled = false;
-        if (errorStatus) errorStatus.textContent = result.ok
-          ? 'Local error buffer cleared.'
-          : 'Could not clear the local error buffer.';
+        if (errorStatus) {
+          errorStatus.textContent = result.ok
+            ? 'Local error buffer cleared.'
+            : 'Could not clear the local error buffer.';
+        }
       });
     }
+  }
 
-    // Version display
-    const v = $('#amze-version');
-    if (v && chrome.runtime && chrome.runtime.getManifest) {
-      v.textContent = 'v' + chrome.runtime.getManifest().version;
+  function wireUp() {
+    wireTabs();
+    wireSettings();
+    wireReset();
+    wireDataActions();
+    const version = $('#amze-version');
+    if (version && chrome.runtime && chrome.runtime.getManifest) {
+      version.textContent = 'v' + chrome.runtime.getManifest().version;
     }
   }
 
@@ -379,9 +611,11 @@
       DEFAULT_SETTINGS = await loadDefaultSettings();
       current = cloneDefaultSettings();
       wireUp();
-      load();
-    } catch (e) {
+      await load();
+    } catch (error) {
+      reportPopupError(error, 'boot');
       document.body.dataset.amzeDefaultsError = '1';
+      setSaveStatus('Couldn’t load', 'error');
     }
   });
 })();
