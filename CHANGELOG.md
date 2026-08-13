@@ -11,6 +11,7 @@
 - Added a dependency-free isolated Chromium release smoke that loads `dist/`, verifies the MV3 service worker/content runtime and all 27 managed rules, checks synthetic search/PDP/cart/Prime outcomes, and proves eight known-ad probes cannot reach interception or response.
 - Added exact localized sponsorship-label and stable search/PDP fixture coverage for all 20 declared Amazon marketplaces, including Dutch, Polish, Swedish, Turkish, Hindi, Japanese, and Arabic labels.
 - Added privacy-safe Walmart, Target, Best Buy, and Etsy structural fixtures plus unpacked-browser coverage for delayed review insertion and same-tab product-route transitions.
+- Added isolated packaged-browser parity automation: Edge loads the extracted generated Add-ons ZIP tree and Firefox temporarily installs the generated XPI, then both verify settings, optional-permission defaults, side-panel/sidebar mapping, 27 rules, and Amazon search/PDP golden paths.
 
 ### Changed
 - Reworked the default Amazon and settings-popup appearance into the premium Midnight Gallery theme, with layered navy/slate surfaces, cool product-image mats, clearer focus states, and preserved yellow commerce actions.

@@ -168,6 +168,7 @@ build/pack-firefox.py XPI packer with Firefox manifest adaptation and 20-locale 
 build/pack-edge.py   Edge Add-ons ZIP packer with MV3 and 20-locale validation
 build/release.js     esbuild per-file minifier and deterministic release ZIP builder
 tests/chromium-smoke.js isolated unpacked-extension Chromium/CDP release smoke
+tests/firefox-smoke.js isolated generated-XPI Firefox/WebDriver parity smoke
 ```
 
 Feature helper bundles are injected into the isolated content-script world only after the active settings flags are known; the static content entry point keeps the settings/observer core small. For performance profiling on an Amazon page, inspect `window.__amzeMutationMetrics` in the console. It records full-document versus targeted scan counts and elapsed work, plus queue coalescing statistics; counters reset when the content script reloads.
@@ -175,6 +176,8 @@ Feature helper bundles are injected into the isolated content-script world only 
 For a minified release tree, run `npm ci` and then `npm run build:release`. The command writes ignored output to `dist/` and creates a deterministic `AmazonEnhanced-v<version>-release.zip`; source files remain readable and the runtime's per-file module boundaries are preserved.
 
 Run `npm run verify:release` for the repository-owned unpacked browser smoke. It builds `dist/`, launches an installed Chromium-family browser in a disposable OS-temporary profile, loads only the unpacked extension, and uses synthetic Amazon/Prime documents without live account or shopping data. The smoke verifies the service worker and content script, all 27 managed dynamic rules, search/PDP/cart/Prime core and ad-removal outcomes, eight known-ad request probes, and visible-shell cleanup. Set `AMZE_CHROMIUM_PATH` to an explicit Chrome, Chromium, or Edge executable when auto-discovery is not suitable; set `AMZE_SMOKE_HEADFUL=1` only when debugging the harness.
+
+Run `npm run verify:parity` for packaged Edge/Firefox parity. The command builds the release ZIP, Edge Add-ons ZIP, and Firefox XPI; extracts the Edge tree to OS-temporary storage; temporarily installs the XPI through `geckodriver`; and uses fresh isolated profiles. Both checks cover the 10-tab settings shell, default-off optional OpenCorporates permission state, side-panel/sidebar mapping, 27 managed rules, and synthetic Amazon search/PDP golden paths with a request-level ad probe. Browser chrome retains control of the actual optional-host permission consent prompt, so automation verifies that access is declared, available, and never pre-granted without accepting it. Set `AMZE_EDGE_PATH`, `AMZE_FIREFOX_PATH`, or `GECKODRIVER_PATH` when auto-discovery is not suitable.
 
 ## License
 

@@ -9,6 +9,7 @@ const crossSiteFixtures = require('./fixtures/cross-site-reviews.json');
 const ROOT = path.resolve(__dirname, '..');
 const DIST = path.join(ROOT, 'dist');
 const PROFILE_PREFIX = 'amazonenhanced-chromium-smoke-';
+const EDGE_TREE_PREFIX = 'amazonenhanced-edge-package-';
 const TIMEOUT_MS = 20000;
 const AD_MARKER = 'amze-smoke-ad';
 
@@ -341,13 +342,18 @@ function withTimeout(promise, timeoutMs, label) {
 }
 
 function findChromium() {
-  const environment = [process.env.AMZE_CHROMIUM_PATH, process.env.CHROME_PATH].filter(Boolean);
+  const edgePackage = process.argv.includes('--edge-package');
+  const environment = [
+    edgePackage ? process.env.AMZE_EDGE_PATH : '',
+    process.env.AMZE_CHROMIUM_PATH,
+    process.env.CHROME_PATH
+  ].filter(Boolean);
   if (environment.length) {
     const explicit = path.resolve(environment[0]);
     if (!fs.existsSync(explicit)) throw new Error(`Configured Chromium binary does not exist: ${explicit}`);
     return explicit;
   }
-  const platformCandidates = process.platform === 'win32'
+  let platformCandidates = process.platform === 'win32'
     ? [
         'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
         'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
@@ -364,11 +370,33 @@ function findChromium() {
           '/usr/bin/chromium', '/usr/bin/chromium-browser', '/usr/bin/microsoft-edge',
           '/usr/bin/google-chrome', '/usr/bin/google-chrome-stable'
         ];
+  if (edgePackage) {
+    platformCandidates = platformCandidates.filter(candidate => /(?:^|[/\\])(?:msedge(?:\.exe)?|Microsoft Edge|microsoft-edge)$/i.test(candidate));
+  }
   const found = platformCandidates.find(candidate => fs.existsSync(candidate));
   if (!found) {
     throw new Error('Chromium not found. Set AMZE_CHROMIUM_PATH to an installed Chrome/Chromium/Edge binary.');
   }
   return path.resolve(found);
+}
+
+function prepareExtensionTree() {
+  if (!process.argv.includes('--edge-package')) {
+    return { extensionPath: DIST, temporaryTree: '' };
+  }
+  const edgeZip = path.join(ROOT, `AmazonEnhanced-v${JSON.parse(fs.readFileSync(path.join(ROOT, 'manifest.json'), 'utf8')).version}-edge.zip`);
+  assert.ok(fs.existsSync(edgeZip), `Edge package is missing: ${edgeZip}; run npm run build:edge first`);
+  const temporaryTree = fs.mkdtempSync(path.join(os.tmpdir(), EDGE_TREE_PREFIX));
+  const extracted = spawnSync('tar', ['-xf', edgeZip, '-C', temporaryTree], {
+    cwd: os.tmpdir(),
+    windowsHide: true,
+    encoding: 'utf8'
+  });
+  if (extracted.status !== 0) {
+    removeTemporaryTree(temporaryTree, EDGE_TREE_PREFIX);
+    throw new Error(`Could not extract Edge package: ${extracted.stderr || extracted.stdout || extracted.status}`);
+  }
+  return { extensionPath: temporaryTree, temporaryTree };
 }
 
 async function waitForFile(filePath, child, timeoutMs = TIMEOUT_MS) {
@@ -455,8 +483,8 @@ class CdpClient {
   }
 }
 
-async function launchChromium(binary) {
-  assert.ok(fs.existsSync(path.join(DIST, 'manifest.json')), 'dist/manifest.json is missing; run npm run build:release first');
+async function launchChromium(binary, extensionPath) {
+  assert.ok(fs.existsSync(path.join(extensionPath, 'manifest.json')), `extension manifest is missing from ${extensionPath}`);
   const profile = fs.mkdtempSync(path.join(os.tmpdir(), PROFILE_PREFIX));
   const args = [
     `--user-data-dir=${profile}`,
@@ -471,8 +499,8 @@ async function launchChromium(binary) {
     '--metrics-recording-only',
     '--disable-search-engine-choice-screen',
     '--disable-features=AutofillServerCommunication,MediaRouter,OptimizationHints,Translate',
-    `--disable-extensions-except=${DIST}`,
-    `--load-extension=${DIST}`,
+    `--disable-extensions-except=${extensionPath}`,
+    `--load-extension=${extensionPath}`,
     '--window-size=1440,900',
     '--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1',
     ...(process.env.AMZE_SMOKE_HEADFUL === '1' ? [] : ['--headless=new']),
@@ -514,10 +542,14 @@ function terminateProcessTree(child) {
 }
 
 function removeProfile(profile) {
-  const resolved = path.resolve(profile);
+  removeTemporaryTree(profile, PROFILE_PREFIX);
+}
+
+function removeTemporaryTree(target, expectedPrefix) {
+  const resolved = path.resolve(target);
   const tempRoot = path.resolve(os.tmpdir()) + path.sep;
-  if (!resolved.startsWith(tempRoot) || !path.basename(resolved).startsWith(PROFILE_PREFIX)) {
-    throw new Error(`Refusing to remove unexpected profile path: ${resolved}`);
+  if (!resolved.startsWith(tempRoot) || !path.basename(resolved).startsWith(expectedPrefix)) {
+    throw new Error(`Refusing to remove unexpected temporary path: ${resolved}`);
   }
   fs.rmSync(resolved, {
     recursive: true,
@@ -541,12 +573,12 @@ async function waitForServiceWorker(client) {
   throw new Error('AmazonEnhanced service worker target was not observed');
 }
 
-function evaluate(client, sessionId, expression) {
+function evaluate(client, sessionId, expression, options = {}) {
   return client.send('Runtime.evaluate', {
     expression,
     awaitPromise: true,
     returnByValue: true,
-    userGesture: false
+    userGesture: !!options.userGesture
   }, sessionId).then(result => {
     if (result.exceptionDetails) {
       const description = result.exceptionDetails.exception?.description || result.exceptionDetails.text;
@@ -554,6 +586,28 @@ function evaluate(client, sessionId, expression) {
     }
     return result.result?.value;
   });
+}
+
+async function inspectExtensionPage(client, url, expression, label) {
+  const { targetId } = await client.send('Target.createTarget', { url: 'about:blank' });
+  const { sessionId } = await client.send('Target.attachToTarget', { targetId, flatten: true });
+  await Promise.all([
+    client.send('Page.enable', {}, sessionId),
+    client.send('Runtime.enable', {}, sessionId)
+  ]);
+  try {
+    const loaded = client.waitForEvent(
+      'Page.loadEventFired',
+      (_params, eventSessionId) => eventSessionId === sessionId
+    );
+    await client.send('Page.navigate', { url }, sessionId);
+    await loaded;
+    const value = await waitForValue(client, sessionId, expression, label);
+    return { sessionId, value };
+  } catch (error) {
+    await client.send('Target.closeTarget', { targetId }).catch(() => {});
+    throw error;
+  }
 }
 
 async function waitForValue(client, sessionId, expression, label, timeoutMs = TIMEOUT_MS) {
@@ -696,7 +750,8 @@ async function openFixture(client, route, adEvidence) {
 
 async function main() {
   const binary = findChromium();
-  const manifest = JSON.parse(fs.readFileSync(path.join(DIST, 'manifest.json'), 'utf8'));
+  const packageTree = prepareExtensionTree();
+  const manifest = JSON.parse(fs.readFileSync(path.join(packageTree.extensionPath, 'manifest.json'), 'utf8'));
   assert.equal(manifest.background?.service_worker, 'background.js');
   const amazonScripts = manifest.content_scripts.find(script => (
     script.js?.includes('content.js') && script.matches?.some(match => match.includes('amazon.com'))
@@ -704,14 +759,75 @@ async function main() {
   assert.ok(amazonScripts, 'dist manifest is missing the Amazon content script');
   assert.ok(amazonScripts.js.includes('health-report.js'), 'health-report.js is missing from the content-script chain');
 
-  const runtime = await launchChromium(binary);
+  let runtime;
   const adEvidence = { escaped: [], responses: [], failures: [] };
   let primaryError = null;
   try {
+    runtime = await launchChromium(binary, packageTree.extensionPath);
     await runtime.client.send('Target.setDiscoverTargets', { discover: true });
     const serviceWorker = await waitForServiceWorker(runtime.client);
     const extensionId = new URL(serviceWorker.url).hostname;
-    const { rules } = await verifyDynamicRules(runtime.client, serviceWorker);
+    const { sessionId: workerSessionId, rules } = await verifyDynamicRules(runtime.client, serviceWorker);
+    const platform = await evaluate(runtime.client, workerSessionId, `(async () => {
+      const manifest = chrome.runtime.getManifest();
+      return {
+        sidePanel: manifest.side_panel?.default_path || '',
+        hasSidePanelPermission: manifest.permissions.includes('sidePanel'),
+        optionalOpenCorporates: manifest.optional_host_permissions?.includes('https://api.opencorporates.com/*') || false,
+        openCorporatesGranted: await chrome.permissions.contains({ origins: ['https://api.opencorporates.com/*'] }),
+        settingsSeeded: !!(await chrome.storage.local.get(['amzeSettings'])).amzeSettings
+      };
+    })()`);
+    assert.deepEqual(platform, {
+      sidePanel: 'sidepanel.html',
+      hasSidePanelPermission: true,
+      optionalOpenCorporates: true,
+      openCorporatesGranted: false,
+      settingsSeeded: true
+    });
+
+    const popup = await inspectExtensionPage(
+      runtime.client,
+      `chrome-extension://${extensionId}/popup.html`,
+      `(() => {
+        const seller = document.querySelector('[data-flag="sellerLookup"]');
+        const token = document.querySelector('#amze-oc-token');
+        const helper = document.querySelector('#amze-oc-permission-status');
+        return document.querySelectorAll('[role="tab"]').length === 10
+          && seller && !seller.checked && token && token.disabled && helper
+          && helper.textContent.includes('Enable seller lookup') ? {
+          tabCount: 10,
+          sellerEnabled: seller.checked,
+          tokenDisabled: token.disabled,
+          permissionCopy: helper.textContent.trim()
+        } : null;
+      })()`,
+      'settings popup state'
+    );
+    assert.deepEqual(popup.value, {
+      tabCount: 10,
+      sellerEnabled: false,
+      tokenDisabled: true,
+      permissionCopy: 'Enable seller lookup to grant access to OpenCorporates.'
+    });
+    const permissionFlow = await evaluate(runtime.client, popup.sessionId, `(async () => ({
+      requestApi: typeof chrome.permissions?.request === 'function',
+      removeApi: typeof chrome.permissions?.remove === 'function',
+      granted: await chrome.permissions.contains({ origins: ['https://api.opencorporates.com/*'] })
+    }))()`);
+    assert.deepEqual(permissionFlow, { requestApi: true, removeApi: true, granted: false });
+
+    const sidePanel = await inspectExtensionPage(
+      runtime.client,
+      `chrome-extension://${extensionId}/sidepanel.html`,
+      `(() => document.querySelectorAll('.amze-sp-tab').length === 2 ? {
+        title: document.title,
+        empty: document.querySelector('#sp-empty')?.textContent.trim() || ''
+      } : null)()`,
+      'side-panel page state'
+    );
+    assert.equal(sidePanel.value.title, 'AmazonEnhanced — Price History');
+    assert.match(sidePanel.value.empty, /Browse Amazon product pages/);
     const outcomes = [];
     for (const route of ROUTES) outcomes.push(await openFixture(runtime.client, route, adEvidence));
 
@@ -724,23 +840,36 @@ async function main() {
     );
 
     console.log(`Chromium: ${binary}`);
+    console.log(`Package: ${packageTree.temporaryTree ? 'generated Edge ZIP tree' : 'dist release tree'}`);
     console.log(`Extension: ${extensionId} (${serviceWorker.url})`);
     console.log(`Dynamic rules: ${rules.length} (7 block / 20 redirect)`);
+    console.log('Settings: 10 tabs; OpenCorporates permission optional, available, and not pre-granted');
+    console.log('Side panel: manifest mapping and empty state verified');
     console.log(`Routes: ${outcomes.map(outcome => outcome.title.replace(' fixture', '')).join(', ')}`);
     console.log(`Ad probes: ${AD_PROBE_URLS.length + 1} blocked before response; visible ad shells: 0`);
   } catch (error) {
     primaryError = error;
-    if (runtime.stderr()) error.message += `\nChromium stderr:\n${runtime.stderr()}`;
+    if (runtime && runtime.stderr()) error.message += `\nChromium stderr:\n${runtime.stderr()}`;
     throw error;
   } finally {
-    runtime.client.close();
-    terminateProcessTree(runtime.child);
-    await sleep(300);
-    try {
-      removeProfile(runtime.profile);
-    } catch (cleanupError) {
-      if (!primaryError) throw cleanupError;
-      primaryError.message += `\nProfile cleanup also failed: ${cleanupError.message}`;
+    if (runtime) {
+      runtime.client.close();
+      terminateProcessTree(runtime.child);
+      await sleep(300);
+      try {
+        removeProfile(runtime.profile);
+      } catch (cleanupError) {
+        if (!primaryError) throw cleanupError;
+        primaryError.message += `\nProfile cleanup also failed: ${cleanupError.message}`;
+      }
+    }
+    if (packageTree.temporaryTree) {
+      try {
+        removeTemporaryTree(packageTree.temporaryTree, EDGE_TREE_PREFIX);
+      } catch (cleanupError) {
+        if (!primaryError) throw cleanupError;
+        primaryError.message += `\nEdge package cleanup also failed: ${cleanupError.message}`;
+      }
     }
   }
 }
