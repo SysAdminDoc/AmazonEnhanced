@@ -1,5 +1,25 @@
 # Changelog
 
+## [2.0.17] - 2026-08-13
+
+### Added
+- Added seven bounded Manifest V3 dynamic request-blocking rules for ad systems observed on current Amazon desktop routes, alongside the existing 20-marketplace navigation cleanup rules.
+- Added a reusable exact-label sponsored classifier with localized labels and regression coverage for ordinary secondary metadata.
+- Added a fixed-shell 560×640 desktop settings redesign across all 10 tabs, with persistent vertical navigation, saved/error feedback, light/AMOLED parity, density support, dependent disabled states, keyboard arrow/Home/End navigation, and two-step destructive actions.
+- Added a local popup preview server for repeatable full-interface visual and interaction checks without exposing extension data.
+
+### Changed
+- Moved the optional OpenCorporates token out of page-visible extension settings into a background-only IndexedDB secrets store and request its host access only when seller lookup is enabled.
+- Made Hide Sponsored and Shade Sponsored mutually exclusive, reclassified delayed sponsored labels before marking tiles complete, and removed stale shade state when modes change.
+- Limited Alexa for Shopping removal to precise panel/launcher roots and updated current Best Buy product-route recognition.
+- Preserved functional Amazon search/product parameters during navigation cleanup while continuing to remove attribution and affiliate parameters.
+- Scoped Prime Video decluttering so the non-subscriber page keeps its core offer action while the redundant top Join Prime control is hidden.
+
+### Fixed
+- Fixed sponsor detection that treated generic secondary text as advertising and missed featured-brand/cart promo containers or labels inserted after initial scan.
+- Fixed broad shopping-assistant selectors that could hide product imagery or cart content after Amazon's Rufus-to-Alexa rename.
+- Replaced silent runtime catches in the core feature pack with the bounded local error-reporting path.
+
 ## [2.0.16] - 2026-08-12
 
 ### Added

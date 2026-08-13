@@ -5,13 +5,13 @@
 <h1 align="center">AmazonEnhanced</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-2.0.16-89b4fa?style=flat-square" alt="version" />
+  <img src="https://img.shields.io/badge/version-2.0.17-89b4fa?style=flat-square" alt="version" />
   <img src="https://img.shields.io/badge/license-MIT-a6e3a1?style=flat-square" alt="license" />
-  <img src="https://img.shields.io/badge/platform-Chrome%20%2B%20Firefox%20MV3-f9e2af?style=flat-square" alt="platform" />
+  <img src="https://img.shields.io/badge/platform-Chrome%20%2B%20Edge%20%2B%20Firefox%20MV3-f9e2af?style=flat-square" alt="platform" />
 </p>
 
 <p align="center">
-  Chrome extension that de-clutters Amazon, blocks dark patterns, adds seller transparency, price history, order/wishlist portability, and accessibility tools.
+  Privacy-first desktop extension that de-clutters Amazon, blocks known separable ad requests and rendered sponsorships, adds seller transparency, price history, order/wishlist portability, and accessibility tools.
 </p>
 
 ---
@@ -19,7 +19,8 @@
 ## Features
 
 ### Ads & sponsored
-- Sponsored-result removal (search pages, PDP carousels, infinite scroll)
+- Request-level blocking for observed Amazon ad scripts, frames, media, pixels, and sponsored-event beacons through Manifest V3 dynamic `declarativeNetRequest` rules
+- Render-time sponsored-result removal for first-party records embedded in Amazon's own page response (search pages, PDP carousels, featured-brand units, and infinite scroll)
 - Optional shade mode (keeps tiles visible but dimmed + outlined)
 - Video-ad and Prime-upsell nag removal on Amazon, plus Prime Video self-promotion/ad-break decluttering using the same existing toggles
 - Hero banner / promo strip removal
@@ -39,7 +40,7 @@
 ### Transparency & trust
 - **Country-of-origin badge** on PDPs + cached search-tile badges.
 - **Reveal seller.** Actual third-party seller name + link near the product title.
-- **OpenCorporates seller lookup.** Optional, token-backed, rate-limited seller entity lookup.
+- **OpenCorporates seller lookup.** Optional, permission-gated, token-backed, rate-limited seller entity lookup. The token is held in a background-only IndexedDB store rather than page-visible extension settings.
 - **Counterfeit-risk warning.** Flags brand / marketplace-seller name mismatches.
 - **Variation bait warning.** Flags listings with >3× price spread across variants.
 - **Variant local price map.** Shows every color / size option with its lowest price seen in this browser.
@@ -95,22 +96,34 @@
 
 From the [Releases page](https://github.com/SysAdminDoc/AmazonEnhanced/releases):
 
-- `AmazonEnhanced-v2.0.16-release.zip` — extract, then **Load unpacked** in `chrome://extensions/` (Developer mode).
-- `AmazonEnhanced-v2.0.16.crx` — secondary package for enterprise/self-host tooling that accepts CRX files.
-- `AmazonEnhanced-v2.0.16.xpi` — Firefox package; install from `about:addons` when using a signed build or a Firefox development profile.
+- `AmazonEnhanced-v2.0.17-release.zip` — extract, then **Load unpacked** in `chrome://extensions/` (Developer mode).
+- `AmazonEnhanced-v2.0.17.crx` — secondary package for enterprise/self-host tooling that accepts CRX files.
+- `AmazonEnhanced-v2.0.17.xpi` — Firefox package; install from `about:addons` when using a signed build or a Firefox development profile.
 
-- `AmazonEnhanced-v2.0.16-edge.zip` — Microsoft Edge Add-ons package; upload this ZIP through Partner Center.
+- `AmazonEnhanced-v2.0.17-edge.zip` — Microsoft Edge Add-ons package; upload this ZIP through Partner Center.
 
 The Firefox package uses a fixed Gecko add-on ID, a background event page fallback, Firefox's `sidebar_action` equivalent for the price-history panel, and Mozilla's `webextension-polyfill` 0.12.0 runtime. Build it with `python build/pack-firefox.py`.
 The Edge package keeps the Chromium MV3 service worker and side panel unchanged. Build it with `python build/pack-edge.py`; for local testing, open `edge://extensions`, enable Developer mode, and choose **Load unpacked** on the repository directory.
 
 ## Settings
 
-Toolbar popup with 10 tabs: Ads, Declutter, Reviews, Price, Cart, Trust, Tools, Brands, A11y, Theme. Changes broadcast live to every open Amazon tab.
+The fixed 560×640 desktop toolbar popup has 10 persistent vertical tabs: Ads, Declutter, Reviews, Price, Cart, Trust, Tools, Brands, A11y, and Theme. Changes broadcast live to open Amazon tabs. The interface exposes saved/error feedback, keyboard arrow/Home/End navigation, disabled dependency states, mutually exclusive hide/shade controls, two-step reset and data-clear actions, and its own Catppuccin, AMOLED, and Light themes.
 
 ## Privacy
 
-AmazonEnhanced stores settings, local price history, sampled review excerpts, bounded PDP snapshots, seller/origin cache entries, watched-order dates, the bounded error buffer, custom brand rules, OpenCorporates API token, and allergen terms only in the browser profile. It does not send analytics, telemetry, browsing history, shopping data, or affiliate data to external services. Invoice PDF ZIP export fetches same-origin invoice candidates through the signed-in Amazon page session and assembles the ZIP locally; it does not upload invoices. If OpenCorporates seller lookup is enabled, seller names are sent to OpenCorporates with your local API token. The Tools tab includes local price-history JSON import, a manual local error-report export, and local data-clear actions.
+AmazonEnhanced stores settings, local price history, sampled review excerpts, bounded PDP snapshots, seller/origin cache entries, watched-order dates, the bounded error buffer, custom brand rules, and allergen terms only in the browser profile. The optional OpenCorporates token is stored separately in extension-context IndexedDB and is available only to trusted extension pages and the background worker. AmazonEnhanced does not send analytics, telemetry, browsing history, shopping data, or affiliate data to external services. Invoice PDF ZIP export fetches same-origin invoice candidates through the signed-in Amazon page session and assembles the ZIP locally; it does not upload invoices. If OpenCorporates seller lookup is enabled and its optional host permission is granted, seller names are sent to OpenCorporates with the local API token. The Tools tab includes local price-history JSON import, a manual local error-report export, and local data-clear actions.
+
+## Permissions
+
+| Permission | Why it is used |
+|---|---|
+| `storage` | Local settings, bounded session markers, and retained browser-only feature data |
+| `alarms`, `notifications` | Service-worker maintenance and opt-in late-delivery alerts |
+| `declarativeNetRequest` | Seven observed ad-endpoint block rules and locale-specific navigation cleanup rules |
+| `sidePanel` | Local price-history and product-comparison surfaces |
+| `scripting` | Conditional injection of enabled feature modules |
+| Amazon, Prime Video, Walmart, Target, Best Buy, and Etsy host access | The declared Amazon features plus local-only review scoring on supported retailer product pages |
+| Optional `https://api.opencorporates.com/*` | Requested only when the user enables seller lookup; removable when the feature is disabled |
 
 ## Architecture
 
@@ -122,6 +135,9 @@ browser-polyfill.min.js Mozilla browser/browser.* compatibility runtime
 early-inject.js      document_start: theme + a11y attributes
 theme.css            document_start: theme + declutter + image-mode + feature chrome
 content.js           document_end: feature runtime + MutationObserver
+network-rules.js     bounded DNR ad filters and 20-marketplace affiliate cleanup rules
+sponsored-detection.js exact localized sponsored-label classifier
+selectors.json       versioned, conservative Amazon selector groups
 feature-modules.js   active-flag-to-bundle map for conditional content injection
 smart-sort.js        bounded weighted ranking kernel for visible search results
 pdp-diff.js          bounded PDP snapshot normalization and duplicate matching
@@ -141,8 +157,8 @@ wishlist-import.js   JSON parser and bounded ASIN helpers for wishlist import
 invoice-export.js    visible order invoice-link discovery and PDF validation
 zip-store.js         dependency-free store-only ZIP writer
 receipt-markdown.js  local Markdown receipt formatter and safe filenames
-background.js        Service worker: defaults, IDB caches, alarms, DNR, tab broadcast
-popup.html/css/js    10-tab settings UI
+background.js        Service worker: defaults, IDB caches/secrets, alarms, DNR, tab broadcast
+popup.html/css/js    fixed-shell 10-tab desktop settings UI
 icons/               16/32/48/128/512 PNGs
 build/pack-crx.py    CRX3 packer
 build/pack-firefox.py XPI packer with Firefox manifest adaptation and 20-locale validation
