@@ -1,21 +1,21 @@
 :root {
   color-scheme: dark;
-  --bg: #1e1e2e;
-  --chrome: #181825;
-  --panel: #242438;
-  --surface: #313244;
-  --surface-hover: #393a4f;
-  --border: #45475a;
-  --border-soft: rgba(69, 71, 90, 0.62);
-  --text: #cdd6f4;
-  --heading: #f5f5fb;
-  --muted: #a6adc8;
-  --accent: #89b4fa;
-  --accent-soft: rgba(137, 180, 250, 0.16);
-  --success: #a6e3a1;
-  --danger: #f38ba8;
-  --warning: #f9e2af;
-  --shadow: rgba(0, 0, 0, 0.28);
+  --bg: #090d16;
+  --chrome: #0b1220;
+  --panel: #101827;
+  --surface: #172033;
+  --surface-hover: #1d2a42;
+  --border: #334155;
+  --border-soft: #223047;
+  --text: #e8eef7;
+  --heading: #f5f8fc;
+  --muted: #93a1b4;
+  --accent: #2f8ef4;
+  --accent-soft: rgba(47, 142, 244, 0.16);
+  --success: #7edc69;
+  --danger: #f04461;
+  --warning: #fbbf24;
+  --shadow: rgba(2, 6, 23, 0.36);
 }
 
 :root[data-amze-theme="amoled"] {
@@ -478,7 +478,7 @@ textarea:focus-visible,
 }
 
 .amze-swatch-dark {
-  background: #1e1e2e;
+  background: #090d16;
 }
 
 .amze-swatch-amoled {

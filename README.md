@@ -83,7 +83,7 @@
 - Allergen / ingredient watchlist (user-defined terms, banner on match)
 
 ### Theme
-- Catppuccin Mocha (default) · AMOLED · Light
+- Midnight Gallery (default) · AMOLED · Light
 - Comfortable or Compact density
 - Anti-FOUC
 - Image dark-mode: Off · Tile · Dim · Darken · Invert · Smart (canvas corner-sample to detect white backgrounds)
@@ -107,7 +107,7 @@ The Edge package keeps the Chromium MV3 service worker and side panel unchanged.
 
 ## Settings
 
-The fixed 560×640 desktop toolbar popup has 10 persistent vertical tabs: Ads, Declutter, Reviews, Price, Cart, Trust, Tools, Brands, A11y, and Theme. Changes broadcast live to open Amazon tabs. The interface exposes saved/error feedback, keyboard arrow/Home/End navigation, disabled dependency states, mutually exclusive hide/shade controls, two-step reset and data-clear actions, and its own Catppuccin, AMOLED, and Light themes.
+The fixed 560×640 desktop toolbar popup has 10 persistent vertical tabs: Ads, Declutter, Reviews, Price, Cart, Trust, Tools, Brands, A11y, and Theme. Changes broadcast live to open Amazon tabs. The interface exposes saved/error feedback, keyboard arrow/Home/End navigation, disabled dependency states, mutually exclusive hide/shade controls, two-step reset and data-clear actions, and its own Midnight Gallery, AMOLED, and Light themes.
 
 ## Privacy
 
