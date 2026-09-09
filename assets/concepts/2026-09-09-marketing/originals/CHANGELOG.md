@@ -1,0 +1,299 @@
+# Changelog
+
+## [2.0.17] - 2026-08-13
+
+### Added
+- Added seven bounded Manifest V3 dynamic request-blocking rules for ad systems observed on current Amazon desktop routes, alongside the existing 20-marketplace navigation cleanup rules.
+- Added a reusable exact-label sponsored classifier with localized labels and regression coverage for ordinary secondary metadata.
+- Added a fixed-shell 560×640 desktop settings redesign across all 10 tabs, with persistent vertical navigation, saved/error feedback, light/AMOLED parity, density support, dependent disabled states, keyboard arrow/Home/End navigation, and two-step destructive actions.
+- Added a local popup preview server for repeatable full-interface visual and interaction checks without exposing extension data.
+- Added a privacy-safe local diagnostic report with latest-per-route selector health, delayed-label observation counts, managed request-rule verification, and bounded runtime errors; structural health fields contain no page text, URLs, or account data.
+- Added a dependency-free isolated Chromium release smoke that loads `dist/`, verifies the MV3 service worker/content runtime and all 27 managed rules, checks synthetic search/PDP/cart/Prime outcomes, and proves eight known-ad probes cannot reach interception or response.
+- Added exact localized sponsorship-label and stable search/PDP fixture coverage for all 20 declared Amazon marketplaces, including Dutch, Polish, Swedish, Turkish, Hindi, Japanese, and Arabic labels.
+- Added privacy-safe Walmart, Target, Best Buy, and Etsy structural fixtures plus unpacked-browser coverage for delayed review insertion and same-tab product-route transitions.
+- Added isolated packaged-browser parity automation: Edge loads the extracted generated Add-ons ZIP tree and Firefox temporarily installs the generated XPI, then both verify settings, optional-permission defaults, side-panel/sidebar mapping, 27 rules, and Amazon search/PDP golden paths.
+
+### Changed
+- Reworked the default Amazon and settings-popup appearance into the premium Midnight Gallery theme, with layered navy/slate surfaces, cool product-image mats, clearer focus states, and preserved yellow commerce actions.
+- Moved the optional OpenCorporates token out of page-visible extension settings into a background-only IndexedDB secrets store and request its host access only when seller lookup is enabled.
+- Made Hide Sponsored and Shade Sponsored mutually exclusive, reclassified delayed sponsored labels before marking tiles complete, and removed stale shade state when modes change.
+- Limited Alexa for Shopping removal to precise panel/launcher roots and updated current Best Buy product-route recognition.
+- Preserved functional Amazon search/product parameters during navigation cleanup while continuing to remove attribution and affiliate parameters.
+- Replaced localized `aria-label` substring selectors with precise structural label hooks plus locale-scoped exact text classification, and added stable PDP sponsorship IDs to the shared selector catalog.
+- Replaced cross-site wildcard review/test-ID selectors with bounded retailer adapters and added route polling so stale review analysis is removed when a single-page navigation leaves or changes a product.
+- Scoped Prime Video decluttering so the non-subscriber page keeps its core offer action while the redundant top Join Prime control is hidden.
+
+### Fixed
+- Restored Amazon's native logo, hamburger, and search glyph by removing an over-broad theme rule that erased navigation sprite assets.
+- Fixed sponsor detection that treated generic secondary text as advertising and missed featured-brand/cart promo containers or labels inserted after initial scan.
+- Fixed broad shopping-assistant selectors that could hide product imagery or cart content after Amazon's Rufus-to-Alexa rename.
+- Replaced silent runtime catches in the core feature pack with the bounded local error-reporting path.
+- Included shared network-rule, sponsored-detection, health-report, and review-corpus dependencies in the hand-packed Chromium/Firefox release file lists.
+- Fixed Etsy ratings stored on a child `data-rating` hook and compact retailer review counts such as `1.2K`.
+
+## [2.0.16] - 2026-08-12
+
+### Added
+- Added price-per-unit badges to Amazon Fresh and Whole Foods product cards, including grocery-specific weight, volume, pack, and count formats.
+- Added 90 / 180 / 365-day range controls to local PDP price-history sparklines; CSV export follows the selected range.
+- Added a PDP variant local-price map for color / size options, backed by the lowest price recorded per ASIN in IndexedDB.
+- Added versioned JSON price-history import in the Tools tab, legacy ASIN-map compatibility, and full current-ASIN JSON export beside the PDP sparkline CSV action.
+- Added an opt-in-by-setting recommended-upgrade skipper for cart and post-add-to-cart prompts, limited to explicit decline actions.
+- Added checkout-only Prime free-trial pre-check handling for 30-day/free-month copy and explicit no-trial alternatives.
+- Added a stable-baseline checkout warning when the selected shipping tier or delivery slot changes after initial rendering.
+- Added a PDP frequently-returned warning with bounded reason extraction from Amazon's nearby list/table disclosure content.
+- Added wishlist JSON import with a bounded, user-started, rate-limited queue that uses Amazon's visible Add to List controls and reports per-item results.
+- Added visible order invoice PDF ZIP export with same-origin checks, `%PDF` validation, 50-item bounds, a 2.5-second request delay, cancellation, and per-item failure reporting.
+- Added one-click Markdown receipt downloads to each visible order card.
+- Replaced mutation-triggered document scans with a WeakRef-backed, debounced affected-root queue; added runtime scan timing counters at `window.__amzeMutationMetrics` for CPU profiling.
+- Added conditional content-module injection: helper bundles such as price history, variant pricing, checkout guards, order exports, and wishlist import load only when their active flags require them.
+- Isolated injected PDP badges, panels, warnings, and controls inside Shadow DOM hosts with extension-owned styles.
+- Added a periodic MV3 service-worker warm-start alarm that refreshes retained data and affiliate-rule state after worker suspension or browser startup.
+- Added a Firefox XPI build with a Gecko ID, event-page background fallback, sidebar mapping, 20-locale validation, and Mozilla's browser API polyfill.
+- Added a Microsoft Edge Add-ons ZIP build with Chromium MV3 validation and documented sideload / Partner Center installation paths.
+- Added an esbuild release target that minifies each extension file independently, preserves dynamic-module boundaries, and emits a deterministic release ZIP.
+- Added a bounded local runtime-error buffer with manual JSON report export and clear controls in the Tools tab.
+- Added bounded `chrome.storage.session` page markers for processed result tiles and scan batches; durable settings and price data remain in their existing stores.
+- Added a bounded per-ASIN visible-review corpus with one-year local retention, top/bottom excerpt selection, IndexedDB clear-data support, and a Reviews-tab toggle.
+- Added weighted smart sorting for currently loaded search results, with live rating, review-count, price, unit-price, and trust-score sliders plus a tested ranking kernel.
+- Added safe Honey and common attribution-redirect unwrapping for Amazon-target links, including capture-phase click and middle-click navigation handling.
+- Added the shared review-scoring kernel and visible-review panels for Walmart, Target, Best Buy, and Etsy product pages, with site-scoped selectors and local-only processing.
+- Added a Prime Video document-start declutter adapter that reuses the existing video-ad, Prime-nag, banner, and sponsored-content flags for self-promotion and ad-break overlays.
+- Added local PDP snapshots and a side-by-side duplicate/A-B listing diff view, including bounded retention, clear-data support, title/brand matching, and changed-field highlighting.
+- Added a local bought-too-much order summary that deduplicates visited order cards by ASIN/order ID, counts quantities and subscription-marked purchases, and links to Subscribe & Save cleanup.
+
+## [2.0.15] - 2026-06-27
+
+### Added
+- Added optional OpenCorporates seller enrichment with local API-token storage, a rate-limited service-worker lookup cache, and clear-data support for seller lookup records.
+- Added PDP counterfeit-risk warnings for product-brand / marketplace-seller name mismatches.
+- Added local deal-badge normalization when "Limited time deal" labels match the user's recent 30-day local price baseline.
+
+### Changed
+- Preserved non-Amazon host permissions when release packaging regenerates Amazon locale match patterns.
+- Pruned `ROADMAP.md` to remaining actionable work only.
+
+## [2.0.14] - 2026-06-16
+
+### Added
+- Added popup tablist/tab/tabpanel semantics, synchronized switch `aria-checked`, and moved focus into the active panel on tab changes.
+- Added live toast status semantics, accessible price-history sparkline labels, and ARIA labels for injected buttons and trust/price badges.
+
+## [2.0.13] - 2026-06-16
+
+### Changed
+- Added `locales.json` as the locale/domain/pattern source of truth.
+- Updated background settings broadcasts and content locale detection to read `locales.json`.
+- Updated CRX/ZIP packaging so packaged manifest match lists are generated from `locales.json`.
+
+## [2.0.12] - 2026-06-16
+
+### Added
+- Added Chrome Web Store i18n metadata with `_locales/en/messages.json` and manifest `__MSG_*__` name/description wiring.
+
+## [2.0.11] - 2026-06-16
+
+### Added
+- Added a Tools-tab privacy disclosure and README privacy section covering local-only settings, price, origin, watched-order, custom-brand, and allergen data.
+- Added a two-click local data clear action that wipes IndexedDB price/origin caches plus legacy price/origin and watched-order storage while preserving settings.
+
+## [2.0.10] - 2026-06-16
+
+### Changed
+- Deferred smart-image dark-mode canvas sampling with `IntersectionObserver`, processing product images only when they are visible or within the near-viewport preload margin.
+
+## [2.0.9] - 2026-06-16
+
+### Changed
+- Merged duplicate full-page MutationObservers into one debounced scan path.
+- Moved runtime white-background cleanup to idle-scheduled sweeps with batched reads before DOM marker writes.
+- Removed fixed 1.5s/4s/8s white-background re-sweeps in favor of mutation-triggered idle cleanup.
+
+## [2.0.8] - 2026-06-16
+
+### Added
+- Added automatic local data retention in the MV3 service worker: price history points older than 365 days and watched orders older than 90 days are purged on worker wake and before late-order scans.
+
+## [2.0.7] - 2026-06-16
+
+### Changed
+- Migrated local price history and country-of-origin cache storage from `chrome.storage.local` to IndexedDB, including one-time migration and legacy key cleanup.
+- Added 3-second content-script runtime message timeouts so sleeping service workers cannot hang feature flows indefinitely.
+- Kept extension permissions minimal by avoiding the no-longer-needed `unlimitedStorage` fallback.
+
+## [2.0.6] - 2026-06-16
+
+### Changed
+- Consolidated extension defaults into `defaults.json` and load that single source from the content script, background service worker, and popup.
+
+## [2.0.5] - 2026-06-16
+
+### Fixed
+- Removed all `innerHTML` rendering paths from the Amazon content script. Review analysis, seller/origin badges, variation warnings, price sparklines, export controls, and allergen alerts now use DOM API construction with text-only user/page data.
+
+## [2.0.4] - 2026-04-14
+
+### Fixed (regression from v2.0.3)
+- **Products not loading** on some pages. Root cause: over-broad catch-all selectors in the image-mode rules (`.a-cardui img`, `.gw-card img`, `[class*="p13n-sc-"] img`, `[class*="octopus-"] img`) matched too many non-product images, and some of the stonecrusher-derived sponsored selectors (`#sidebar-top`, `#sidebar-bottom`, `#masrw-top > #skippedLink ~ div[cel_widget_id^="desktop-dp-atf_"]`) potentially hid legitimate content on certain Amazon locales.
+- Tightened image-mode selectors to **explicit class names only** — no wildcard container-descendant matches.
+- Kept only the stonecrusher sponsored selectors that are both specific and verified safe (`#pdagEncapsulated`, `.sponsoredBy`, `.adFeedback__text`, `.bit-aa-install-widget-contents`, `#cs-app-prompt`).
+
+## [2.0.3] - 2026-04-14
+
+### Fixed
+- **Invert mode not applying to related-items carousels** ("Consider these items" / "Related to items you've viewed"). Those carousels use p13n/octopus class names not covered by the original selectors. All image-mode rules (tile/dim/invert/smart/darken) now target the full set via `:is()`:
+  - `img.p13n-sc-dynamic-image`, `img.p13n-product-image`
+  - `img.octopus-sims-img`, `img.octopus-pc-item-image`
+  - `img.sims-fbt-image`, `img.asin-image`, `img.g-itemImage`
+  - `img.s-access-image`, `img.bxc-grid__image`
+  - `img.imageThumbnail`, `img.coupon-image`
+  - `img.recs-carousel-element-img-outer`
+  - `img.octopus-quick-look-product-image`
+  - `[class*="p13n-sc-"] img`, `[class*="octopus-"] img`
+  - `.a-cardui img`, `.gw-card img` (homepage cards)
+
+### Added
+- **New image mode: Darken.** Opacity 0.75 + transparent background. Inspired by stonecrusher's userstyle. Cleanest option: no color distortion, no filter artifacts — just a subtle brightness reduction. Added as a 6th button in the Theme tab's image picker.
+- **Integrated stonecrusher sponsored-ad selectors** (via [stylus-UserCSS/amazon](https://github.com/stonecrusher/stylus-UserCSS/tree/master/amazon)): `#pdagEncapsulated`, `#atfResults h5[class*="sponsored"]`, `.sponsoredBy`, `.adFeedback__text`, `#sidebar-top`, `#sidebar-bottom`, `#masrw-top > #skippedLink ~ div[cel_widget_id^="desktop-dp-atf_"]`, `.bit-aa-install-widget-contents`, `#cs-app-prompt`.
+- **Prime Video self-ad hiding:** `.tancaccept`, `.dv-dp-top-banner`, `.dv-hero-carousel`, `.dv-superhero-carousel`, `.av-hql-container`.
+
+## [2.0.2] - 2026-04-14
+
+### Fixed
+- **Block Amazon APE / Javelin SafeFrame sponsored ads.** The homepage/gateway "Featured in Video Games"-style sponsored cards render through a different system than the `sp-sponsored-result` tiles on search pages. They use `cel_widget_id="adplacements:..."`, `data-csa-c-painter="JavelinRenderingService"`, `[class*="ad-placements"]`, and `ape_*_placement`/`ape_*_iframe` IDs. All of these are now covered by both the CSS `hideSponsored`/`shadeSponsored` rules and the JS sponsored detector.
+
+## [2.0.1] - 2026-04-14
+
+### Fixed
+- **Persistent white widgets on PDP and homepage.** Investigation of raw MHTML snapshots showed the problem: `rgb(255, 255, 255)` values are declared in Amazon's embedded `<style>` blocks (not inline `style=""` attributes), so CSS attribute-selectors can't reach them. The runtime JS sweep (`killWhiteBackgrounds`) is now the primary defense.
+- **Expanded JS sweep coverage** to cover the 200+ `*_feature_div` ids on a typical PDP via `[id$="_feature_div"]`, plus `#buybox`, `#desktop_buybox`, `#apex_*`, `#corePrice*`, cart/orders containers, review blocks, table rows, homepage `.a-carousel*` and `.a-cardui*` patterns.
+- **Dropped once-only check gate** — Amazon's own JS paints backgrounds after our first sweep; elements now remain eligible until they're marked dark.
+- **Raised per-sweep cap** from 400 to 800 elements (modern PDPs have 200+ feature_divs alone).
+- **Lowered near-white threshold** from 230 to 235 across all RGB channels — catches `#fff`, `#f7f7f7`, `#eaeded`, and Amazon's common off-whites while leaving genuine grey tones alone.
+- **Delayed re-sweeps** at 1.5s, 4s, and 8s post-init to catch elements styled by Amazon's late-running JS (carousel widgets, lazy-loaded sections).
+- **Explicit CSS pre-paint** for 25 common PDP widget ids so they're dark on first paint, avoiding flash-of-white before the sweep runs.
+
+## [2.0.0] - 2026-04-14
+
+Major feature release. 15 new features across dark-pattern protection, transparency tools, data portability, and accessibility.
+
+### Added — Dark-pattern pack
+- **Auto-decline warranty / protection plan.** Silently selects "No thanks" on SquareTrade/Allstate upsells at PDP, cart, and post-ATC interstitials (`#siNoCoverage`, `[data-feature-name="attachWarranty"]`, cart service-contract selects).
+- **Force one-time purchase.** Detects pre-selected Subscribe & Save radios at PDP load and switches back to one-time (`#oneTimePurchase`, `input[name="subscriptionPlan"]`).
+- **Auto-uncheck gift-receipt / share-info / add-on dark patterns** at checkout.
+- **Extra "Sort by" options** — injects *Most reviews*, *Newest*, *Best $/unit* into the search sort dropdown (client-side DOM reorder; leverages existing unit-price calc).
+- **CPU Tamer** (experimental) — MAIN-world-injected throttler that clamps background `setInterval`/`setTimeout` to ≥1s when tab is hidden.
+
+### Added — Transparency pack
+- **Country-of-origin badge.** Parses the Product Details table on PDPs, caches per ASIN in `chrome.storage.local`, and surfaces the origin both as a PDP badge and inline on cached search tiles.
+- **Reveal seller** (SoldBy-clone). Shows the actual 3P seller name + seller-page link near the product title.
+- **Variation bait detector.** Warns when a listing groups variants with >3× price spread — a common bait-and-switch pattern.
+- **Local price history.** Logs each observed PDP price per ASIN to `chrome.storage.local` (capped at 60 entries/ASIN). Renders an inline SVG sparkline with low/high/current when you revisit a product. No external API, no Keepa account.
+
+### Added — Tools & data portability
+- **Copy clean product link.** Button on PDPs that copies a Markdown-formatted link + price to clipboard.
+- **Order history export.** Buttons on `/your-orders` pages to export the currently-visible page as CSV or JSON.
+- **Wishlist export.** Buttons on wishlist pages to export as CSV, JSON, or Markdown.
+- **Late-delivery watcher.** Background alarm (every 6 hours) scans seeded orders; fires a Chrome notification when a promised delivery date passes without "Delivered" status. Uses new `notifications` permission.
+
+### Added — Accessibility & safety
+- **Large-text mode** — bumps body text to 17px, headings scale accordingly.
+- **High-contrast mode** — yellow-on-black with cyan links, green prices; overrides theme until toggled off.
+- **ARIA fixes** — adds `aria-label` to Amazon's icon-only buttons so screen readers can announce them.
+- **Allergen / ingredient watchlist.** User-defined terms (newline-separated) scan product title, bullets, description, A+ content, and details on every PDP. Matches show a warning banner.
+
+### Added — UI
+- Popup expanded from 6 tabs to 10: *Ads · Declutter · Reviews · Price · Cart · Trust · Tools · Brands · A11y · Theme*.
+- Width bumped 420→460px.
+- New chrome classes: `.amze-pdp-badge`, `.amze-pdp-warn`, `.amze-action-btn`, `.amze-export-wrap`, `.amze-badge-country`.
+
+### Changed
+- `manifest.json` — added `notifications` permission for the late-delivery watcher.
+- `early-inject.js` — also sets `data-amze-large-text` / `data-amze-high-contrast` on `<html>`.
+
+## [1.1.2] - 2026-04-14
+
+### Fixed
+- Persistent white backgrounds on cart, checkout, and PDP widgets. Added inline-style attribute CSS overrides + runtime JS sweep that marks near-white containers with `data-amze-kw`.
+- Tile image-mode now has 10px padding + visible border/shadow (was near-invisible at 4px).
+
+## [1.1.1] - 2026-04-14
+
+### Fixed
+- Lavender-card homepage bug — `.a-dynamic-image` was hitting container divs. All image-mode selectors now `img`-scoped.
+- Added dark-theme coverage for `.a-cardui`, `.gw-card`, `[class*="FluidCard"]`, `#hlb-message`, `#hlb-subcart`, `#sw-subtotal`, `#rcx_container`, and other widgets.
+
+## [1.1.0] - 2026-04-14
+
+### Added
+- Image dark-mode system: `off`, `tile` (default), `dim`, `invert`, `smart`.
+- Broader dark-theme coverage (autocomplete, modals, reviews, side refinement panel, checkout, account/orders, variant swatches).
+
+## [1.0.0] - 2026-04-14
+
+Initial release — 20 Amazon locales; sponsored removal, 13 declutter toggles, review scoring, price-per-unit, MSRP flag, affiliate stripper, brand filters, Catppuccin/AMOLED/Light themes.
+
+## Roadmap archive — 2026-08-10 — ROADMAP.md
+
+<details>
+<summary>Original roadmap snapshot</summary>
+
+```markdown
+# AmazonEnhanced Roadmap
+
+Actionable work only. Move true blockers to `Roadmap_Blocked.md`.
+
+## Core Detection
+
+- Fresh / Whole Foods support: port price-per-unit badges to the grocery UI.
+
+## Price Intelligence
+
+- Keepa-style 90 / 180 / 365-day range selector for the local PDP sparkline.
+- Cross-variant price map on PDPs showing every color / size and its lowest locally-seen price.
+- Import price history from older installs or other browsers with a JSON round trip.
+- JSON export of full local ASIN price history from the sparkline panel.
+
+## Dark Patterns
+
+- Auto-skip "Recommended upgrade" prompts in cart and post-add-to-cart flows.
+- Detect and disable Amazon Prime 30-day-trial pre-checks at checkout.
+- Warn when Amazon silently changes shipping tier or delivery slot during checkout.
+- Flag "frequently returned" items with reason breakdown when Amazon exposes that data.
+
+## Data Portability
+
+- Wishlist import into a new Amazon account from exported JSON.
+- Order-history export: invoice PDFs in a single ZIP, with conservative Amazon rate limiting.
+- Markdown receipt export for individual orders.
+
+## Performance / Architecture
+
+- Move the MutationObserver scan path to a WeakRef-backed debounced queue and measure CPU reduction.
+- Split `content.js` into feature modules loaded only when active feature flags need them.
+- Move injected PDP UI into Shadow DOM hosts to stop Amazon CSS from leaking into badges and controls.
+- Add service-worker warm-start alarms for MV3 suspend resilience.
+
+## Cross-Browser / Distribution
+
+- Firefox port: add `browser_specific_settings.gecko.id`, build `.xpi`, test all 20 locale patterns, and add `webextension-polyfill` for unified `browser.*` support.
+- Edge port: verify MV3 behavior, package for Edge Add-ons, and document Edge install steps.
+- Add esbuild or rollup packaging for release builds while keeping a readable source tree.
+
+## Defensive / Resilience
+
+- Add a local error buffer with a user-visible manual report/export action.
+- Use `chrome.storage.session` for transient scan markers and processed-element state.
+
+## Feature Research Backlog
+
+- Review-corpus sampler: scrape a bounded visible review set, cache it locally per ASIN, and surface top/bottom excerpts with the trust score.
+- Weighted smart sort: client-side sliders for rating, review count, price, unit price, and trust score.
+- Honey redirect stripping: intercept `r.honey.is` and similar attribution redirects before navigation.
+- Cross-site review scoring kernel for Walmart, Target, Best Buy, and Etsy.
+- Prime Video ad-nag suppressor using the existing Amazon declutter flags.
+- Side-by-side PDP diff view for duplicate or A/B-priced listings.
+- Local "bought too much" summary that counts repeated ASIN purchases and suggests Subscribe & Save cleanup.
+```
+
+</details>

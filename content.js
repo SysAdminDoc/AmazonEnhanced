@@ -2723,12 +2723,12 @@
     warn.id = 'amze-counterfeit-warn';
     warn.className = 'amze-pdp-badge amze-pdp-warn';
     warn.setAttribute('role', 'alert');
-    appendStrong(warn, 'Counterfeit risk check:');
+    appendStrong(warn, 'Brand and seller names differ:');
     appendText(warn, ' product brand "' + brand + '" does not resemble seller "' + seller + '".');
     if (suspiciousSellerShape) {
-      appendText(warn, ' Seller naming also matches a higher-risk marketplace pattern.');
+      appendText(warn, ' The seller name also matches a broad local naming rule.');
     }
-    appendText(warn, ' Verify the seller before buying.');
+    appendText(warn, ' A name mismatch is not proof of a counterfeit. Check the seller before buying.');
     const target = document.querySelector('#amze-seller-reveal, #titleSection') || document.querySelector('#centerCol');
     if (target) mountPdpElement(warn, target, 'after');
   }

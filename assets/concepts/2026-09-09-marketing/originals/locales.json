@@ -1,0 +1,24 @@
+{
+  "locales": [
+    { "domain": "amazon.com", "tld": "com", "pattern": "*://*.amazon.com/*" },
+    { "domain": "amazon.co.uk", "tld": "co.uk", "pattern": "*://*.amazon.co.uk/*" },
+    { "domain": "amazon.ca", "tld": "ca", "pattern": "*://*.amazon.ca/*" },
+    { "domain": "amazon.de", "tld": "de", "pattern": "*://*.amazon.de/*" },
+    { "domain": "amazon.fr", "tld": "fr", "pattern": "*://*.amazon.fr/*" },
+    { "domain": "amazon.it", "tld": "it", "pattern": "*://*.amazon.it/*" },
+    { "domain": "amazon.es", "tld": "es", "pattern": "*://*.amazon.es/*" },
+    { "domain": "amazon.nl", "tld": "nl", "pattern": "*://*.amazon.nl/*" },
+    { "domain": "amazon.pl", "tld": "pl", "pattern": "*://*.amazon.pl/*" },
+    { "domain": "amazon.se", "tld": "se", "pattern": "*://*.amazon.se/*" },
+    { "domain": "amazon.com.tr", "tld": "com.tr", "pattern": "*://*.amazon.com.tr/*" },
+    { "domain": "amazon.in", "tld": "in", "pattern": "*://*.amazon.in/*" },
+    { "domain": "amazon.co.jp", "tld": "co.jp", "pattern": "*://*.amazon.co.jp/*" },
+    { "domain": "amazon.com.au", "tld": "com.au", "pattern": "*://*.amazon.com.au/*" },
+    { "domain": "amazon.com.mx", "tld": "com.mx", "pattern": "*://*.amazon.com.mx/*" },
+    { "domain": "amazon.com.br", "tld": "com.br", "pattern": "*://*.amazon.com.br/*" },
+    { "domain": "amazon.sg", "tld": "sg", "pattern": "*://*.amazon.sg/*" },
+    { "domain": "amazon.sa", "tld": "sa", "pattern": "*://*.amazon.sa/*" },
+    { "domain": "amazon.ae", "tld": "ae", "pattern": "*://*.amazon.ae/*" },
+    { "domain": "amazon.eg", "tld": "eg", "pattern": "*://*.amazon.eg/*" }
+  ]
+}

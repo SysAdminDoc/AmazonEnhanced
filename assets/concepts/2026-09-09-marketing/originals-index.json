@@ -1,0 +1,506 @@
+{
+  "version": "2.0.17",
+  "commit": "12b830c7925622a63bb551bb096707dfe0f4ed5f",
+  "files": [
+    {
+      "path": ".gitignore",
+      "bytes": 663,
+      "sha256": "6166a23afe8a672db70fd9ade87f9c63ea54d8ba7893d5c61d56404655cc9acd"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "bytes": 23591,
+      "sha256": "2c59bea924b2ec0213bf03be716c51437594d4f77a0209519e5fbd3e4346d634"
+    },
+    {
+      "path": "LICENSE",
+      "bytes": 1068,
+      "sha256": "7deba526139cb110bee2ca05d808d7d7aade7fd637ccd13f4a46ef0a48a7c417"
+    },
+    {
+      "path": "README.md",
+      "bytes": 15801,
+      "sha256": "7c66aed4ed70cf77de34b883ed7ecc196a448779f00bdd51c5b9fb6e32820ca4"
+    },
+    {
+      "path": "THIRD_PARTY_NOTICES.txt",
+      "bytes": 279,
+      "sha256": "1a675fb16a6a7668339aa711c9542cee834c10fdbfc81ff1ceb2a5c05bba2b68"
+    },
+    {
+      "path": "_locales/en/messages.json",
+      "bytes": 353,
+      "sha256": "842434aecfc01deeac93bf58f6f59fe9798d42d70cea9326691312f26d0fdd83"
+    },
+    {
+      "path": "background.js",
+      "bytes": 54073,
+      "sha256": "1aea3c8090585de3bc829d74bcd35bf9f98c9f83523c09f5eea55d6d993cc83a"
+    },
+    {
+      "path": "browser-polyfill.min.js",
+      "bytes": 10113,
+      "sha256": "918ed891c0e7f9b58b39ac32c9c3133eb2a1fbaaa27f4aa7579ae55e7572cc21"
+    },
+    {
+      "path": "build/pack-crx.py",
+      "bytes": 7231,
+      "sha256": "cd615e024a1406081300d124b6b782ed38b69136e7940bd5b31ed232cdaafbc2"
+    },
+    {
+      "path": "build/pack-edge.py",
+      "bytes": 2792,
+      "sha256": "15b92c9a3904fc41ec9d7c9c492a1bcc685c3fdd7ce8586cd950294f74c2b8f9"
+    },
+    {
+      "path": "build/pack-firefox.py",
+      "bytes": 4389,
+      "sha256": "06c337182ac5d5bc4070f95171bb6fb92b0ddd6ea93a1004c1be5a627656f9a6"
+    },
+    {
+      "path": "build/release.js",
+      "bytes": 4560,
+      "sha256": "8e6a07f7b5600ec5788ec81b2367eef994d8e9af4066f933bb7d92574b04613e"
+    },
+    {
+      "path": "content.js",
+      "bytes": 189607,
+      "sha256": "daa81845179988705812926d5c4689ae5702cea0010a00ee923383964314b0fd"
+    },
+    {
+      "path": "cross-site-review-adapters.js",
+      "bytes": 8258,
+      "sha256": "16dcb7919a13439f86d12afc9e9a7b9df2500dd22ed071969c8ccde25df4351c"
+    },
+    {
+      "path": "cross-site-reviews.js",
+      "bytes": 6811,
+      "sha256": "ee07037d84c0181a0c679f37a90afe0e1002436dc883d34b194addbf50b432fc"
+    },
+    {
+      "path": "defaults.json",
+      "bytes": 1834,
+      "sha256": "a49a63974cb82ffc5d764f4d2bd187a3090b14380762d78cc824dbc154af0a76"
+    },
+    {
+      "path": "e4848a1f-5b72-49f5-891d-5b2d22d4d93c-large1x1_thumb_1311.png",
+      "bytes": 1124725,
+      "sha256": "5cc77dcce8ee27a6df33cdc8f2880585e27a0094bd29e85129ea48899b0db4b4"
+    },
+    {
+      "path": "early-inject.js",
+      "bytes": 1904,
+      "sha256": "9879af9a755f3869fbe2ebe651a3eb79e531d2570c277000c1219ee80ddd4d14"
+    },
+    {
+      "path": "error-buffer.js",
+      "bytes": 5586,
+      "sha256": "a7645d069d92a318379bb0822cb0f9e5550265c9461a76cb37497ce8b1b924f1"
+    },
+    {
+      "path": "feature-modules.js",
+      "bytes": 1810,
+      "sha256": "740d5d986c889bd898231672e42a894b526f2d15f65b7b28604ee42e01deee35"
+    },
+    {
+      "path": "health-report.js",
+      "bytes": 17875,
+      "sha256": "acfa93e1c158e71817a028f6b7b8e8ea51aa5817cf12aff515402a69c00289e0"
+    },
+    {
+      "path": "icon.png",
+      "bytes": 13537,
+      "sha256": "2834642047e0edab4f5e0415b42b4af4ae71d80ebfde91afbaa5e978c9ff6d17"
+    },
+    {
+      "path": "icons/128.png",
+      "bytes": 13537,
+      "sha256": "0cacd048b14477e18b3a6665853d6b8d408ca675cb63145808e08252c0f326f0"
+    },
+    {
+      "path": "icons/16.png",
+      "bytes": 1984,
+      "sha256": "449f542dbdf66b9cd9de43d78f52fb255443bca3e3fe8e12f544c9c56d022121"
+    },
+    {
+      "path": "icons/32.png",
+      "bytes": 5474,
+      "sha256": "b84e5ccfdc163cef489b8c9d7a382caa5e4eca40157f811a0bd4e5e966ed4328"
+    },
+    {
+      "path": "icons/48.png",
+      "bytes": 9471,
+      "sha256": "c4c332fd4ac10294af680f18c9fc2ec41ec888e012effd6fae1e44339ba2457b"
+    },
+    {
+      "path": "icons/512.png",
+      "bytes": 379151,
+      "sha256": "494ccb631eaed0cf131ada09d6d34ffc35d6136b6401f48d405f3548ce8e982c"
+    },
+    {
+      "path": "invoice-export.js",
+      "bytes": 5133,
+      "sha256": "0d0e318a4ca861bbff0bf6d7a815b71982c99f9415d26350fa845e626e036540"
+    },
+    {
+      "path": "locales.json",
+      "bytes": 1611,
+      "sha256": "8c8431a34997f1ce3276e36d889e7930dc0949923756b0bed493664101c67a38"
+    },
+    {
+      "path": "manifest.json",
+      "bytes": 4840,
+      "sha256": "1bf94e8d82876abee5a46088924de304961d4d6b7c99ad0f94c197e265b228ef"
+    },
+    {
+      "path": "mutation-queue.js",
+      "bytes": 2613,
+      "sha256": "2e45d5b99b36d17eb6d60cd47cc7bbdae2433c53231babda7f73b68f95e6c031"
+    },
+    {
+      "path": "network-rules.js",
+      "bytes": 3681,
+      "sha256": "d017b3f62f3c1a53adbfdc2e3394b855ab3c140ec5390b67c611e63bdf114612"
+    },
+    {
+      "path": "package-lock.json",
+      "bytes": 14851,
+      "sha256": "94702d9f39a187f1a659a0686f5d695ce23faf8645591bb0045b754f4c99f365"
+    },
+    {
+      "path": "package.json",
+      "bytes": 796,
+      "sha256": "b7d9d48e00ddd8a79effaa6a15aa23df9353835c8ce477794b50e1508c60565f"
+    },
+    {
+      "path": "pdp-diff.js",
+      "bytes": 3983,
+      "sha256": "899a674ebe45c8c9510810ab5363c33883c8e44f679857e52e4f1ccd6c3718e9"
+    },
+    {
+      "path": "popup.css",
+      "bytes": 11033,
+      "sha256": "9922226df4a231073db52b7e97f1bbd3d23ba3a75461777821a94048f2e7f7e2"
+    },
+    {
+      "path": "popup.html",
+      "bytes": 25581,
+      "sha256": "71524a229bd2b273d3aa0a83f2dd5fc370567e52484053a413011c981e3caea8"
+    },
+    {
+      "path": "popup.js",
+      "bytes": 21441,
+      "sha256": "23444fdacede11c185a0ec20d109b26e933d779bb6caee955cb596ff1d689877"
+    },
+    {
+      "path": "price-history-io.js",
+      "bytes": 3888,
+      "sha256": "ea0d3b6307bd11a49d9ac8a227eecf8d554d68c2b965814b84c1e025e8245004"
+    },
+    {
+      "path": "price-history.js",
+      "bytes": 1227,
+      "sha256": "ac17ba75238d3f9c45cf6728c013ac0da705b9f619aa8a90f030d5a6512821f0"
+    },
+    {
+      "path": "prime-trial.js",
+      "bytes": 1010,
+      "sha256": "4982e1e4047f0f1571430ef5cf1361d312ef05cd9f2e29f958ef5776dc6aeae5"
+    },
+    {
+      "path": "prime-video-declutter.js",
+      "bytes": 3916,
+      "sha256": "e8ed9c187b6983cab36c42a709e7b192ea78af89ccb32f0e5896c37390e9b2c9"
+    },
+    {
+      "path": "purchase-summary.js",
+      "bytes": 4828,
+      "sha256": "3d22eaf5caf8ec9524346713c00420f9623efd8238fdada6998377e6faa32136"
+    },
+    {
+      "path": "receipt-markdown.js",
+      "bytes": 1910,
+      "sha256": "ca6788f06600540d1dd88507fbb1840bf35052e77b858031a5e1d137d2e5b8e2"
+    },
+    {
+      "path": "redirect-stripper.js",
+      "bytes": 2564,
+      "sha256": "a9bda182e46905cb9faf296f3d4b000da003625df1ddaea26105c1d5e5d8ae05"
+    },
+    {
+      "path": "return-reasons.js",
+      "bytes": 1539,
+      "sha256": "3bbf37d0da952838dff4d3d591d45c4a9c501023ea5f6626a5c641d317fe0360"
+    },
+    {
+      "path": "review-corpus.js",
+      "bytes": 3492,
+      "sha256": "779d48484c6158916b3155733109c518a65c0c5e0c6adfdf36fbd871545a1122"
+    },
+    {
+      "path": "review-score-kernel.js",
+      "bytes": 4079,
+      "sha256": "ca084d40efaa5ed2dc94d3193dbea2ea60aa15535f167609e5ced227c3c359fe"
+    },
+    {
+      "path": "selectors.json",
+      "bytes": 1943,
+      "sha256": "9bc16aac0cf725dcf31e3c4ffeb1eca46d98365acca8c6c9bef8ffa9a882ba6e"
+    },
+    {
+      "path": "service-worker-warm.js",
+      "bytes": 1134,
+      "sha256": "b630b5e48d6f32ce74fb248248acfdb344cc0b5a0b9d53d1be2fbcd02b763f72"
+    },
+    {
+      "path": "session-state.js",
+      "bytes": 4844,
+      "sha256": "262f801cc85801fe315c0bf03f3f95aa93fa34f0a16309c3b320e3ce0986ddf5"
+    },
+    {
+      "path": "shadow-ui.css",
+      "bytes": 7688,
+      "sha256": "fc58b7aa984dcd04f5c89d20889ec3b61982f01e7a9509041514949ab82adf3a"
+    },
+    {
+      "path": "shadow-ui.js",
+      "bytes": 1324,
+      "sha256": "468214f861d204adf9b36ae3fff4e5417d8b67ff56184589d4f5d276ce5a27ae"
+    },
+    {
+      "path": "shipping-diff.js",
+      "bytes": 1225,
+      "sha256": "210817a644c9b7338ab88b6af1547331faac5e43b6d26a416f24aed84abc1aa5"
+    },
+    {
+      "path": "sidepanel.html",
+      "bytes": 2432,
+      "sha256": "990d85f497dca6735595651bcfd25691973a253c10f78db95a65c25fa4096e3c"
+    },
+    {
+      "path": "sidepanel.js",
+      "bytes": 6619,
+      "sha256": "3acc2fd3c0ec8514cbc6d918bd8fd950ea16cc9877e893faeaef8c4f7dff47dd"
+    },
+    {
+      "path": "smart-sort.js",
+      "bytes": 3129,
+      "sha256": "e35d77dfc48e8b370f0b976ab6bf323ec5b5a8314f37d1b99050243f6993396b"
+    },
+    {
+      "path": "sponsored-detection.js",
+      "bytes": 1110,
+      "sha256": "fab79d1cab35c1a5567c4e3dba7295812cafa21da2dca3caa019dfbfc1793537"
+    },
+    {
+      "path": "tests/chromium-smoke.js",
+      "bytes": 37540,
+      "sha256": "f5f6b9f5b8b6fda760dbdc9663b004abbf49f7a31ec33bc3b0b4ddfc1d13ebd8"
+    },
+    {
+      "path": "tests/cross-site-review-adapters.test.js",
+      "bytes": 5020,
+      "sha256": "70c53b5dd2a75cae74ac9a4dff8cf8ec2098254e43d3a4c37f08e84f48ffdb63"
+    },
+    {
+      "path": "tests/error-buffer.test.js",
+      "bytes": 2434,
+      "sha256": "07147b07deb5a292385bab48c1f187105c254dd00ec4c61d1b20f1c0379f9495"
+    },
+    {
+      "path": "tests/feature-modules.test.js",
+      "bytes": 742,
+      "sha256": "d70defccb8e45bce6916683b9e7cd04ba9e12756dfdd4c321b5f1759e193ba8d"
+    },
+    {
+      "path": "tests/firefox-smoke.js",
+      "bytes": 18707,
+      "sha256": "239d9c5ea20ee2b4c22f976b1ccef4e2b0ce82c500f278110a9df63705294ebb"
+    },
+    {
+      "path": "tests/fixtures/amazon-marketplaces.json",
+      "bytes": 2415,
+      "sha256": "fff196ce5f9b1310fa08f2a592a5429f0929b1a39402a7138a6e6da4906e5c67"
+    },
+    {
+      "path": "tests/fixtures/cross-site-reviews.json",
+      "bytes": 2266,
+      "sha256": "c7b1d6683ac227ad7a302722a070df11a3fdd58228a7fbdb1afbe1f7b0a81c46"
+    },
+    {
+      "path": "tests/health-report.test.js",
+      "bytes": 8175,
+      "sha256": "2988f2f6d08eb51d0ec3119da1a8a422c760aeb162e95e222cbd9a20346acedc"
+    },
+    {
+      "path": "tests/invoice-export.test.js",
+      "bytes": 3100,
+      "sha256": "1622c16126f0980910d822dcaceba898b95fbe0bcf399274ce9cc043514a1cbb"
+    },
+    {
+      "path": "tests/mutation-queue.test.js",
+      "bytes": 1117,
+      "sha256": "0b6c50769a5171884931d71538106db0d37cb89da6d6687b159375d3aa41752c"
+    },
+    {
+      "path": "tests/network-rules.test.js",
+      "bytes": 2560,
+      "sha256": "8efd73a8bd8e2f9cf97ca59ecafa907ed35dcb653041d81f4831dcb66070ae31"
+    },
+    {
+      "path": "tests/pdp-diff.test.js",
+      "bytes": 1853,
+      "sha256": "bf908633c5fce278b3057c0c042d9dde4b70c0df74703394af8f5ae901b573ba"
+    },
+    {
+      "path": "tests/popup-preview-server.js",
+      "bytes": 5433,
+      "sha256": "f969fefee122afaede4a77c86d1579f6cd0f716054648b60f80414a89cd03c83"
+    },
+    {
+      "path": "tests/price-history-io.test.js",
+      "bytes": 1458,
+      "sha256": "17321834169c0b7555de261fd05e60cdf0004204bb8743b9a729b2f33c91d475"
+    },
+    {
+      "path": "tests/price-history.test.js",
+      "bytes": 866,
+      "sha256": "10ac03fe4fcf857dd1cf88b38d6984ba7cae2a20ff51a1df12774dec17a5786c"
+    },
+    {
+      "path": "tests/prime-trial.test.js",
+      "bytes": 806,
+      "sha256": "d43b3573adab10e58671d8569e40f199e0faf25e57c746543641e03e650b6348"
+    },
+    {
+      "path": "tests/prime-video-declutter.test.js",
+      "bytes": 1162,
+      "sha256": "823f865b8acfc1a302fe6c51427d36124d46fee8ece933180a25c7799237bb35"
+    },
+    {
+      "path": "tests/purchase-summary.test.js",
+      "bytes": 1329,
+      "sha256": "8a20910c28485ca3021e2a17c03c3f730c8b171e4d0ebd8dc0916af44691883f"
+    },
+    {
+      "path": "tests/receipt-markdown.test.js",
+      "bytes": 977,
+      "sha256": "405be74006e917490564f59d619a483639b3ea6560e02686ae5e672f55fcde15"
+    },
+    {
+      "path": "tests/redirect-stripper.test.js",
+      "bytes": 1513,
+      "sha256": "fb93063096eae56c5d054a964231fc18cefd0ff486cceae5ba4ae46834e291e0"
+    },
+    {
+      "path": "tests/return-reasons.test.js",
+      "bytes": 989,
+      "sha256": "ca56c5402ffb664562f54ed993309507986a45978291724b543cacf658e737ba"
+    },
+    {
+      "path": "tests/review-corpus.test.js",
+      "bytes": 1878,
+      "sha256": "7087dc05bd8c8ea90327473dbaff6df02455cf15485612181bfc19ed1f4e1b45"
+    },
+    {
+      "path": "tests/review-score-kernel.test.js",
+      "bytes": 1285,
+      "sha256": "be911a89923deacbdc9a6dca9335af16843906b59d6b058a1ce8f27caf4b2966"
+    },
+    {
+      "path": "tests/service-worker-warm.test.js",
+      "bytes": 1294,
+      "sha256": "dc55ae289eb181ed8d7a0e2e976d4f046dc4e36c0e24614a643aa736bd838c08"
+    },
+    {
+      "path": "tests/session-state.test.js",
+      "bytes": 2127,
+      "sha256": "c15a3bfb2fc301a4dd99bcb880350f34ac7af3f6055d85731fc46735db5c591f"
+    },
+    {
+      "path": "tests/shadow-ui.test.js",
+      "bytes": 1795,
+      "sha256": "3cff67d974ec988d50a33e278d009658ee357697390f80db56e83714c6c40e55"
+    },
+    {
+      "path": "tests/shipping-diff.test.js",
+      "bytes": 1010,
+      "sha256": "0ffd1cc275a977fcf5ae225f872dbb97382f7342adcd43db65cee421a9a8d808"
+    },
+    {
+      "path": "tests/smart-sort.test.js",
+      "bytes": 1209,
+      "sha256": "1506f80869f8853073c5764d2dd09591c3ef2fc9c2e12bb7a244bccbf4cb4784"
+    },
+    {
+      "path": "tests/sponsored-detection.test.js",
+      "bytes": 1038,
+      "sha256": "403e0583706089e633b23b90d5977d5398bd8e17a7aee93e2c339cfe95e0540a"
+    },
+    {
+      "path": "tests/sponsored-locales.test.js",
+      "bytes": 3712,
+      "sha256": "43457fc4ea3b28caf632b894089cd05ae3ae17f9568e1c644a8812e9c63af524"
+    },
+    {
+      "path": "tests/theme-safety.test.js",
+      "bytes": 1853,
+      "sha256": "1339873f3bd7ba070de26c9318623d7cb3c4936d68a5b40ac313a0094a560755"
+    },
+    {
+      "path": "tests/unit-price.test.js",
+      "bytes": 850,
+      "sha256": "9ab03dec41aa1813bddf8e32cc137863561a51a2303407e45d86b7b051715766"
+    },
+    {
+      "path": "tests/upgrade-skip.test.js",
+      "bytes": 866,
+      "sha256": "eedeeeeb1d88440f0c953b93bab6c9a7c456b619851f942c3e32d3e4222becbc"
+    },
+    {
+      "path": "tests/variant-price.test.js",
+      "bytes": 1598,
+      "sha256": "b95723691beee4f3e2aca9bfd40ff1e4e1074e0606558cc90e141e77d92e2404"
+    },
+    {
+      "path": "tests/wishlist-import.test.js",
+      "bytes": 2066,
+      "sha256": "e1458f2b6775a4a0a5a14f9911d204d3139404003daaa76fcdaafc75633e95a3"
+    },
+    {
+      "path": "tests/zip-store.test.js",
+      "bytes": 1342,
+      "sha256": "4c455677527ca981f8872dba788305ee74dc50dec7d287e851b2f7b6d98549c2"
+    },
+    {
+      "path": "theme.css",
+      "bytes": 81991,
+      "sha256": "7302591a24a7587487e41e45725ea9a775e40b7f901c0e454fe0ac1676b84cc0"
+    },
+    {
+      "path": "unit-price.js",
+      "bytes": 3446,
+      "sha256": "1cab3030a0829d993ff33a39552b69ce585b2123214b10120486cf0c6414f48a"
+    },
+    {
+      "path": "upgrade-skip.js",
+      "bytes": 993,
+      "sha256": "160596acf098a96b2fb0139944a32cd281250c106c91d73f32eb8b5005034eb4"
+    },
+    {
+      "path": "variant-price.js",
+      "bytes": 3057,
+      "sha256": "f52e8629012a1a450ff1cbe8705dff3a4ef1d02c1f04205fcb0279b5e489a110"
+    },
+    {
+      "path": "wishlist-import.js",
+      "bytes": 3480,
+      "sha256": "54bf2379c6365df267b2efe91c10caa325810f1fd203b749ca75e5ccec4a1932"
+    },
+    {
+      "path": "zip-store.js",
+      "bytes": 3511,
+      "sha256": "5be6638b50ef1f2bfc9ba40dd726f66fbe1f4be243eaaa3e22c05ad79c619a2b"
+    }
+  ]
+}

@@ -47,11 +47,11 @@
     svg.setAttribute('height', String(h));
     svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
     svg.setAttribute('role', 'img');
-    svg.setAttribute('aria-label', `Price range: $${min.toFixed(2)} to $${max.toFixed(2)}`);
+    svg.setAttribute('aria-label', `Recorded price range: ${min.toFixed(2)} to ${max.toFixed(2)}. Currency not stored.`);
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     path.setAttribute('d', d.trim());
     path.setAttribute('fill', 'none');
-    path.setAttribute('stroke', '#89b4fa');
+    path.setAttribute('stroke', 'currentColor');
     path.setAttribute('stroke-width', '1.5');
     path.setAttribute('stroke-linecap', 'round');
     path.setAttribute('stroke-linejoin', 'round');
@@ -112,10 +112,10 @@
         span.appendChild(strong);
         priceRow.appendChild(span);
       };
-      addStat('Now:', '$' + current.toFixed(2));
-      addStat('Low:', '$' + min.toFixed(2));
-      addStat('High:', '$' + max.toFixed(2));
-      addStat('Pts:', String(entry.points.length));
+      addStat('Last seen', current.toFixed(2));
+      addStat('Low', min.toFixed(2));
+      addStat('High', max.toFixed(2));
+      addStat('Observations', String(entry.points.length));
       item.appendChild(priceRow);
 
       const sparkContainer = document.createElement('div');
@@ -123,6 +123,11 @@
       const svg = renderSparklineSvg(entry.points, 240, 30);
       if (svg) sparkContainer.appendChild(svg);
       item.appendChild(sparkContainer);
+
+      const observed = document.createElement('div');
+      observed.className = 'amze-sp-observed';
+      observed.textContent = 'Last recorded ' + lastDate.toLocaleDateString();
+      item.appendChild(observed);
 
       list.appendChild(item);
     }
@@ -162,8 +167,8 @@
       const status = document.createElement('div');
       status.className = 'amze-sp-alert';
       status.textContent = alert.notified
-        ? 'Triggered! Target: $' + alert.target.toFixed(2)
-        : 'Watching for: $' + alert.target.toFixed(2);
+        ? 'Target met in recorded history: ' + alert.target.toFixed(2)
+        : 'Target for the next recorded price: ' + alert.target.toFixed(2);
       item.appendChild(status);
 
       list.appendChild(item);
@@ -176,9 +181,25 @@
   }
 
   document.addEventListener('DOMContentLoaded', () => {
+    const applyTheme = settings => {
+      document.documentElement.dataset.amzeTheme = ['dark', 'amoled', 'light'].includes(settings?.theme) ? settings.theme : 'dark';
+    };
+    chrome.storage.local.get(['amzeSettings'], stored => {
+      if (chrome.runtime.lastError) {
+        if (errorReporter) errorReporter.record(chrome.runtime.lastError.message, 'theme:read');
+        return;
+      }
+      applyTheme(stored.amzeSettings);
+    });
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area === 'local' && changes.amzeSettings) applyTheme(changes.amzeSettings.newValue);
+    });
     $$('.amze-sp-tab').forEach(tab => {
       tab.addEventListener('click', () => {
-        $$('.amze-sp-tab').forEach(t => t.classList.toggle('active', t === tab));
+        $$('.amze-sp-tab').forEach(t => {
+          t.classList.toggle('active', t === tab);
+          t.setAttribute('aria-pressed', String(t === tab));
+        });
         currentView = tab.dataset.view;
         refresh();
       });

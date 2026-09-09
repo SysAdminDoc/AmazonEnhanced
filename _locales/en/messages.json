@@ -4,7 +4,7 @@
     "description": "Extension name."
   },
   "extDescription": {
-    "message": "Powerful Amazon companion: dark theme, sponsored removal, dark-pattern guards, seller transparency, price history, order/wishlist exports, accessibility.",
+    "message": "Make Amazon less cluttered. Hide sponsored placements, use a dark theme and keep a local record of prices you've seen.",
     "description": "Chrome Web Store extension description."
   }
 }

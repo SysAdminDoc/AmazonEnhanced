@@ -106,8 +106,8 @@ def build_xpi() -> Path:
                 archive.write(path, name)
         for directory in INCLUDE_DIRS:
             root = REPO / directory
-            if not root.exists():
-                continue
+            if not root.is_dir():
+                raise FileNotFoundError(root)
             for path in sorted(root.rglob("*")):
                 if path.is_file():
                     archive.write(path, path.relative_to(REPO).as_posix())

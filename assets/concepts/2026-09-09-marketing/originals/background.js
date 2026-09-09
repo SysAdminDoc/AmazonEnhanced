@@ -1,0 +1,1497 @@
+if (typeof importScripts === 'function') {
+  importScripts('network-rules.js');
+  importScripts('health-report.js');
+  importScripts('price-history-io.js');
+  importScripts('wishlist-import.js');
+  importScripts('feature-modules.js');
+  importScripts('service-worker-warm.js');
+  importScripts('error-buffer.js');
+  importScripts('review-corpus.js');
+  importScripts('pdp-diff.js');
+  importScripts('purchase-summary.js');
+}
+
+const AMZE_ERROR_REPORTER = globalThis.AmzeErrorBuffer && globalThis.AmzeErrorBuffer.createReporter
+  ? globalThis.AmzeErrorBuffer.createReporter(chrome.storage.local, { source: 'background' })
+  : null;
+if (AMZE_ERROR_REPORTER && globalThis.AmzeErrorBuffer.attachGlobalListeners) {
+  globalThis.AmzeErrorBuffer.attachGlobalListeners(globalThis, AMZE_ERROR_REPORTER, 'background');
+}
+
+function reportBackgroundError(error, context) {
+  if (AMZE_ERROR_REPORTER && typeof AMZE_ERROR_REPORTER.record === 'function') {
+    AMZE_ERROR_REPORTER.record(error, context || 'background').catch(() => {});
+  }
+}
+
+function configureSessionStorageAccess() {
+  const session = chrome.storage && chrome.storage.session;
+  if (!session || typeof session.setAccessLevel !== 'function') return;
+  try {
+    const result = session.setAccessLevel({ accessLevel: 'TRUSTED_AND_UNTRUSTED_CONTEXTS' });
+    if (result && typeof result.catch === 'function') result.catch(() => {});
+  } catch (e) {}
+}
+
+configureSessionStorageAccess();
+
+/**
+ * AmazonEnhanced — background.js (MV3 service worker)
+ *
+ * Responsibilities:
+ *   - Seed default settings on install.
+ *   - Relay popup <-> active-tab messages.
+ */
+
+let defaultSettingsPromise = null;
+let localePatternsPromise = null;
+
+async function getDefaultSettings() {
+  if (!defaultSettingsPromise) {
+    defaultSettingsPromise = fetch(chrome.runtime.getURL('defaults.json')).then((res) => {
+      if (!res.ok) throw new Error('Failed to load defaults.json');
+      return res.json();
+    });
+  }
+  return structuredClone(await defaultSettingsPromise);
+}
+
+function mergeSettings(defaults, saved) {
+  const merged = Object.assign({}, defaults, saved || {});
+  merged.flags = Object.assign({}, defaults.flags, (saved && saved.flags) || {});
+  merged.settingsVersion = defaults.settingsVersion;
+  return merged;
+}
+
+// -------------------------------------------------------------------
+// Structured settings migration
+//
+// Each entry in SETTINGS_MIGRATIONS maps a version number to a
+// migration function: (settings) => settings. Migrations run
+// sequentially from the saved settingsVersion up to the current one.
+// This enables safe renames, removals, and structural changes.
+// -------------------------------------------------------------------
+
+const SETTINGS_MIGRATIONS = {
+  // Version 0 → 1: initial schema version stamp. No structural changes
+  // needed; the mergeSettings forward-merge covers new flags.
+  2: (settings) => {
+    const next = Object.assign({}, settings || {});
+    next.flags = Object.assign({}, next.flags || {});
+    // Hiding and shading are mutually exclusive modes. Existing installs
+    // keep the stronger zero-ad behavior when both were accidentally set.
+    if (next.flags.hideSponsored && next.flags.shadeSponsored) {
+      next.flags.shadeSponsored = false;
+    }
+    // Seller lookup now uses a separately stored credential and an optional
+    // host permission that must be granted from the settings UI.
+    next.flags.sellerLookup = false;
+    delete next.openCorporatesToken;
+    return next;
+  }
+};
+
+function migrateSettings(settings, targetVersion) {
+  let v = (settings && typeof settings.settingsVersion === 'number')
+    ? settings.settingsVersion
+    : 0;
+  while (v < targetVersion) {
+    const fn = SETTINGS_MIGRATIONS[v];
+    if (typeof fn === 'function') {
+      settings = fn(settings);
+    }
+    v++;
+    settings.settingsVersion = v;
+  }
+  return settings;
+}
+
+async function getAmazonUrlPatterns() {
+  if (!localePatternsPromise) {
+    localePatternsPromise = fetch(chrome.runtime.getURL('locales.json'))
+      .then((res) => {
+        if (!res.ok) throw new Error('Failed to load locales.json');
+        return res.json();
+      })
+      .then((data) => {
+        const patterns = (data.locales || []).map(entry => entry.pattern).filter(Boolean);
+        return patterns.length ? patterns : ['*://*.amazon.com/*'];
+      })
+      .catch(() => ['*://*.amazon.com/*']);
+  }
+  return localePatternsPromise;
+}
+
+const DB_NAME = 'AmazonEnhancedDB';
+const DB_VERSION = 6;
+const PRICE_HISTORY_RETENTION_MS = 365 * 24 * 60 * 60 * 1000;
+const WATCHED_ORDER_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
+const SELLER_LOOKUP_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
+const REVIEW_CORPUS_RETENTION_MS = 365 * 24 * 60 * 60 * 1000;
+const PDP_SNAPSHOT_RETENTION_MS = 365 * 24 * 60 * 60 * 1000;
+const PDP_SNAPSHOT_MAX = 200;
+const PURCHASE_SUMMARY_RETENTION_MS = 730 * 24 * 60 * 60 * 1000;
+const SELLER_LOOKUP_MIN_INTERVAL_MS = 15 * 1000;
+let dbPromise = null;
+let legacyStorageMigrationPromise = null;
+let retentionPurgePromise = null;
+let lastSellerLookupAt = 0;
+
+const WISHLIST_IMPORT_DELAY_MS = 1800;
+const WISHLIST_IMPORT_RESPONSE_TIMEOUT_MS = 12000;
+const WISHLIST_IMPORT_MAX_DISPATCH_ATTEMPTS = 5;
+const wishlistImportJobs = new Map();
+
+function normalizeAsin(asin) {
+  return String(asin || '').toUpperCase();
+}
+
+function toFiniteTimestamp(value) {
+  const ts = Number(value);
+  return Number.isFinite(ts) && ts > 0 ? ts : 0;
+}
+
+function openDb() {
+  if (!dbPromise) {
+    dbPromise = new Promise((resolve, reject) => {
+      const req = indexedDB.open(DB_NAME, DB_VERSION);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        if (!db.objectStoreNames.contains('priceHistory')) {
+          db.createObjectStore('priceHistory', { keyPath: 'asin' });
+        }
+        if (!db.objectStoreNames.contains('origins')) {
+          db.createObjectStore('origins', { keyPath: 'asin' });
+        }
+        if (!db.objectStoreNames.contains('sellerLookups')) {
+          db.createObjectStore('sellerLookups', { keyPath: 'key' });
+        }
+        if (!db.objectStoreNames.contains('reviewCorpus')) {
+          db.createObjectStore('reviewCorpus', { keyPath: 'asin' });
+        }
+        if (!db.objectStoreNames.contains('pdpSnapshots')) {
+          db.createObjectStore('pdpSnapshots', { keyPath: 'asin' });
+        }
+        if (!db.objectStoreNames.contains('purchaseSummary')) {
+          db.createObjectStore('purchaseSummary', { keyPath: 'asin' });
+        }
+        if (!db.objectStoreNames.contains('secrets')) {
+          db.createObjectStore('secrets', { keyPath: 'key' });
+        }
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+  return dbPromise;
+}
+
+function idbRequest(req) {
+  return new Promise((resolve, reject) => {
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function idbTransactionDone(tx) {
+  return new Promise((resolve, reject) => {
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error);
+  });
+}
+
+async function idbGet(storeName, key) {
+  const db = await openDb();
+  return idbRequest(db.transaction(storeName, 'readonly').objectStore(storeName).get(key));
+}
+
+async function idbGetAll(storeName) {
+  const db = await openDb();
+  return idbRequest(db.transaction(storeName, 'readonly').objectStore(storeName).getAll());
+}
+
+async function idbPut(storeName, value) {
+  const db = await openDb();
+  const tx = db.transaction(storeName, 'readwrite');
+  tx.objectStore(storeName).put(value);
+  return idbTransactionDone(tx);
+}
+
+async function idbClear(storeName) {
+  const db = await openDb();
+  const tx = db.transaction(storeName, 'readwrite');
+  tx.objectStore(storeName).clear();
+  return idbTransactionDone(tx);
+}
+
+async function idbDelete(storeName, key) {
+  const db = await openDb();
+  const tx = db.transaction(storeName, 'readwrite');
+  tx.objectStore(storeName).delete(key);
+  return idbTransactionDone(tx);
+}
+
+const SELLER_LOOKUP_TOKEN_KEY = 'openCorporatesToken';
+
+async function readSellerLookupToken() {
+  const record = await idbGet('secrets', SELLER_LOOKUP_TOKEN_KEY);
+  return record && typeof record.value === 'string' ? record.value : '';
+}
+
+async function writeSellerLookupToken(value) {
+  const token = String(value || '').trim().slice(0, 1000);
+  if (!token) {
+    await idbDelete('secrets', SELLER_LOOKUP_TOKEN_KEY);
+    return '';
+  }
+  await idbPut('secrets', { key: SELLER_LOOKUP_TOKEN_KEY, value: token });
+  return token;
+}
+
+function hasOpenCorporatesPermission() {
+  return new Promise(resolve => {
+    if (!chrome.permissions || typeof chrome.permissions.contains !== 'function') {
+      resolve(false);
+      return;
+    }
+    try {
+      chrome.permissions.contains(
+        { origins: ['https://api.opencorporates.com/*'] },
+        granted => resolve(!chrome.runtime.lastError && !!granted)
+      );
+    } catch (error) {
+      reportBackgroundError(error, 'permissions:opencorporates');
+      resolve(false);
+    }
+  });
+}
+
+async function migrateLegacyStorageToIndexedDb() {
+  if (!legacyStorageMigrationPromise) {
+    legacyStorageMigrationPromise = (async () => {
+      const legacy = await chrome.storage.local.get(['amzePriceHistory', 'amzeOrigins']);
+      const keysToRemove = [];
+      if (legacy.amzePriceHistory && typeof legacy.amzePriceHistory === 'object') {
+        for (const [asin, points] of Object.entries(legacy.amzePriceHistory)) {
+          if (Array.isArray(points)) {
+            await idbPut('priceHistory', { asin: normalizeAsin(asin), points });
+          }
+        }
+        keysToRemove.push('amzePriceHistory');
+      }
+      if (legacy.amzeOrigins && typeof legacy.amzeOrigins === 'object') {
+        for (const [asin, entry] of Object.entries(legacy.amzeOrigins)) {
+          if (entry && entry.country) {
+            await idbPut('origins', {
+              asin: normalizeAsin(asin),
+              country: String(entry.country),
+              ts: entry.ts || Date.now()
+            });
+          }
+        }
+        keysToRemove.push('amzeOrigins');
+      }
+      if (keysToRemove.length) await chrome.storage.local.remove(keysToRemove);
+    })().catch(() => {});
+  }
+  return legacyStorageMigrationPromise;
+}
+
+async function readOriginCache() {
+  await migrateLegacyStorageToIndexedDb();
+  const entries = await idbGetAll('origins');
+  return entries.reduce((map, entry) => {
+    map[entry.asin] = { country: entry.country, ts: entry.ts };
+    return map;
+  }, {});
+}
+
+async function writeOriginCache(asin, country) {
+  const key = normalizeAsin(asin);
+  if (!key || !country) return;
+  await migrateLegacyStorageToIndexedDb();
+  await idbPut('origins', {
+    asin: key,
+    country: String(country),
+    ts: Date.now()
+  });
+}
+
+async function readPriceHistory(asin) {
+  const key = normalizeAsin(asin);
+  if (!key) return [];
+  await migrateLegacyStorageToIndexedDb();
+  const record = await idbGet('priceHistory', key);
+  return record && Array.isArray(record.points) ? record.points : [];
+}
+
+async function writePriceHistory(asin, points) {
+  const key = normalizeAsin(asin);
+  if (!key) return;
+  await migrateLegacyStorageToIndexedDb();
+  await idbPut('priceHistory', {
+    asin: key,
+    points: Array.isArray(points) ? points : []
+  });
+}
+
+async function readReviewCorpus(asin) {
+  const key = normalizeAsin(asin);
+  if (!key || !globalThis.AmzeReviewCorpus) return null;
+  const record = await idbGet('reviewCorpus', key);
+  if (!record || !Array.isArray(record.reviews)) return null;
+  if (record.updatedAt && Date.now() - record.updatedAt > REVIEW_CORPUS_RETENTION_MS) return null;
+  return globalThis.AmzeReviewCorpus.createCorpus(key, record.reviews, record.updatedAt);
+}
+
+async function mergeReviewCorpus(asin, reviews) {
+  const key = normalizeAsin(asin);
+  if (!key || !globalThis.AmzeReviewCorpus) return null;
+  const existing = await idbGet('reviewCorpus', key);
+  const merged = globalThis.AmzeReviewCorpus.mergeReviews(existing && existing.reviews, reviews);
+  const corpus = globalThis.AmzeReviewCorpus.createCorpus(key, merged, Date.now());
+  await idbPut('reviewCorpus', corpus);
+  return corpus;
+}
+
+async function readPdpSnapshots() {
+  if (!globalThis.AmzePdpDiff) return [];
+  const cutoff = Date.now() - PDP_SNAPSHOT_RETENTION_MS;
+  const entries = await idbGetAll('pdpSnapshots');
+  return entries
+    .map(entry => globalThis.AmzePdpDiff.normalizeSnapshot(entry))
+    .filter(entry => entry && entry.updatedAt >= cutoff)
+    .sort((a, b) => b.updatedAt - a.updatedAt)
+    .slice(0, PDP_SNAPSHOT_MAX);
+}
+
+async function writePdpSnapshot(snapshot) {
+  if (!globalThis.AmzePdpDiff) return [];
+  const normalized = globalThis.AmzePdpDiff.normalizeSnapshot(snapshot);
+  if (!normalized) return [];
+  await idbPut('pdpSnapshots', normalized);
+  const entries = await idbGetAll('pdpSnapshots');
+  const cutoff = Date.now() - PDP_SNAPSHOT_RETENTION_MS;
+  const valid = entries
+    .map(entry => globalThis.AmzePdpDiff.normalizeSnapshot(entry))
+    .filter(entry => entry && entry.updatedAt >= cutoff)
+    .sort((a, b) => b.updatedAt - a.updatedAt);
+  await Promise.all(valid.slice(PDP_SNAPSHOT_MAX).map(entry => idbDelete('pdpSnapshots', entry.asin)));
+  return valid.slice(0, PDP_SNAPSHOT_MAX);
+}
+
+async function readPurchaseSummary() {
+  if (!globalThis.AmzePurchaseSummary) return [];
+  const cutoff = Date.now() - PURCHASE_SUMMARY_RETENTION_MS;
+  const entries = await idbGetAll('purchaseSummary');
+  return entries
+    .map(entry => globalThis.AmzePurchaseSummary.normalizeEntry(entry))
+    .filter(entry => entry && entry.updatedAt >= cutoff)
+    .sort((a, b) => b.purchaseCount - a.purchaseCount);
+}
+
+async function mergePurchaseSummary(orders) {
+  if (!globalThis.AmzePurchaseSummary) return [];
+  const existing = await idbGetAll('purchaseSummary');
+  const merged = globalThis.AmzePurchaseSummary.mergePurchaseSummary(existing, orders);
+  await Promise.all(merged.map(entry => idbPut('purchaseSummary', entry)));
+  const keep = new Set(merged.map(entry => entry.asin));
+  await Promise.all(existing
+    .map(entry => entry && entry.asin)
+    .filter(asin => asin && !keep.has(asin))
+    .map(asin => idbDelete('purchaseSummary', asin)));
+  return merged;
+}
+
+function normalizeSellerLookupKey(name) {
+  return String(name || '')
+    .toLowerCase()
+    .replace(/&/g, ' and ')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\b(inc|incorporated|llc|ltd|limited|corp|corporation|co|company|store|shop|seller|official|the)\b/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 120);
+}
+
+function normalizeSellerLookupName(name) {
+  return String(name || '').replace(/\s+/g, ' ').trim().slice(0, 160);
+}
+
+function mapJurisdictionCountry(code) {
+  const normalized = String(code || '').toLowerCase();
+  if (!normalized) return '';
+  const first = normalized.split('_')[0].split('-')[0];
+  const countries = {
+    au: 'Australia',
+    br: 'Brazil',
+    ca: 'Canada',
+    de: 'Germany',
+    es: 'Spain',
+    fr: 'France',
+    gb: 'United Kingdom',
+    ie: 'Ireland',
+    in: 'India',
+    it: 'Italy',
+    jp: 'Japan',
+    mx: 'Mexico',
+    nl: 'Netherlands',
+    pl: 'Poland',
+    se: 'Sweden',
+    sg: 'Singapore',
+    tr: 'Turkey',
+    us: 'United States'
+  };
+  return countries[first] || first.toUpperCase();
+}
+
+function mapOpenCorporatesCompany(company, sellerName) {
+  const c = company || {};
+  const jurisdictionCode = String(c.jurisdiction_code || '');
+  return {
+    sellerName: normalizeSellerLookupName(sellerName),
+    companyName: String(c.name || '').slice(0, 180),
+    jurisdictionCode,
+    country: mapJurisdictionCountry(jurisdictionCode),
+    status: String(c.current_status || '').slice(0, 80),
+    companyType: String(c.company_type || '').slice(0, 80),
+    url: String(c.opencorporates_url || '').slice(0, 300),
+    fetchedAt: Date.now()
+  };
+}
+
+async function readSellerLookup(sellerName) {
+  const key = normalizeSellerLookupKey(sellerName);
+  if (!key) return null;
+  const record = await idbGet('sellerLookups', key);
+  if (!record || !record.fetchedAt) return null;
+  if ((Date.now() - record.fetchedAt) > SELLER_LOOKUP_RETENTION_MS) return null;
+  return record;
+}
+
+async function writeSellerLookup(sellerName, result) {
+  const key = normalizeSellerLookupKey(sellerName);
+  if (!key) return;
+  await idbPut('sellerLookups', Object.assign({ key }, result, { fetchedAt: Date.now() }));
+}
+
+async function lookupSellerEntity(sellerName) {
+  const normalizedName = normalizeSellerLookupName(sellerName);
+  const key = normalizeSellerLookupKey(normalizedName);
+  if (key.length < 3) return { ok: false, reason: 'short_name' };
+
+  const cached = await readSellerLookup(normalizedName);
+  if (cached) return { ok: true, cached: true, result: cached };
+
+  const defaults = await getDefaultSettings();
+  const { amzeSettings } = await chrome.storage.local.get(['amzeSettings']);
+  const settings = mergeSettings(defaults, migrateSettings(amzeSettings || defaults, defaults.settingsVersion));
+  if (!settings.flags || !settings.flags.sellerLookup) return { ok: false, reason: 'disabled' };
+
+  if (!await hasOpenCorporatesPermission()) {
+    return { ok: false, reason: 'permission_denied' };
+  }
+
+  const token = await readSellerLookupToken();
+  if (!token) return { ok: false, reason: 'missing_token' };
+
+  const now = Date.now();
+  const waitMs = SELLER_LOOKUP_MIN_INTERVAL_MS - (now - lastSellerLookupAt);
+  if (waitMs > 0) {
+    await new Promise(resolve => setTimeout(resolve, waitMs));
+  }
+  lastSellerLookupAt = Date.now();
+
+  const url = new URL('https://api.opencorporates.com/v0.4/companies/search');
+  url.searchParams.set('q', normalizedName);
+  url.searchParams.set('per_page', '3');
+  url.searchParams.set('inactive', 'false');
+  url.searchParams.set('normalise_company_name', 'true');
+  url.searchParams.set('api_token', token);
+
+  const response = await fetch(url.toString(), {
+    headers: { Accept: 'application/json' },
+    cache: 'no-store'
+  });
+  if (!response.ok) return { ok: false, reason: 'http_' + response.status };
+
+  const payload = await response.json();
+  const companies = payload && payload.results && Array.isArray(payload.results.companies)
+    ? payload.results.companies
+    : [];
+  const first = companies.map(item => item && item.company).find(Boolean);
+  const result = first
+    ? mapOpenCorporatesCompany(first, normalizedName)
+    : { sellerName: normalizedName, noMatch: true, fetchedAt: Date.now() };
+  await writeSellerLookup(normalizedName, result);
+  return { ok: true, cached: false, result };
+}
+
+async function purgePriceHistoryRetention(now = Date.now()) {
+  await migrateLegacyStorageToIndexedDb();
+  const cutoff = now - PRICE_HISTORY_RETENTION_MS;
+  const entries = await idbGetAll('priceHistory');
+  const entriesToPut = [];
+  const keysToDelete = [];
+
+  for (const entry of entries) {
+    const key = normalizeAsin(entry && entry.asin);
+    if (!key) continue;
+    const points = Array.isArray(entry.points) ? entry.points : [];
+    const retained = points.filter((point) => toFiniteTimestamp(point && point.t) >= cutoff);
+    if (retained.length === points.length) continue;
+    if (retained.length) {
+      entriesToPut.push({ asin: key, points: retained });
+    } else {
+      keysToDelete.push(key);
+    }
+  }
+
+  if (!entriesToPut.length && !keysToDelete.length) return;
+
+  const db = await openDb();
+  const tx = db.transaction('priceHistory', 'readwrite');
+  const store = tx.objectStore('priceHistory');
+  for (const entry of entriesToPut) store.put(entry);
+  for (const key of keysToDelete) store.delete(key);
+  await idbTransactionDone(tx);
+}
+
+// -------------------------------------------------------------------
+// declarativeNetRequest — safe link cleanup plus request-level ad blocking.
+// Rule construction lives in network-rules.js so it can be unit tested and
+// shared with the content-side URL cleaner.
+// -------------------------------------------------------------------
+
+async function syncNetworkRules(settings) {
+  const api = globalThis.AmzeNetworkRules;
+  if (!api || typeof api.buildDynamicRules !== 'function') {
+    const error = new Error('Network rule builder unavailable');
+    await recordNetworkRuleSync({
+      attemptedAt: Date.now(), status: 'failed', failureCode: 'builder_unavailable',
+      expectedCount: 0, installedCount: 0
+    });
+    reportBackgroundError(error, 'dnr:builder');
+    throw error;
+  }
+  if (!chrome.declarativeNetRequest || typeof chrome.declarativeNetRequest.updateDynamicRules !== 'function') {
+    const error = new Error('Declarative Net Request API unavailable');
+    await recordNetworkRuleSync({
+      attemptedAt: Date.now(), status: 'failed', failureCode: 'api_unavailable',
+      expectedCount: 0, installedCount: 0
+    });
+    reportBackgroundError(error, 'dnr:unavailable');
+    throw error;
+  }
+
+  const flags = settings && settings.flags ? settings.flags : {};
+  const addRules = api.buildDynamicRules({
+    stripAffiliate: !!flags.stripAffiliate,
+    hideSponsored: !!flags.hideSponsored
+  });
+  try {
+    await chrome.declarativeNetRequest.updateDynamicRules({
+      removeRuleIds: [...api.MANAGED_RULE_IDS],
+      addRules
+    });
+    await recordNetworkRuleSync({
+      attemptedAt: Date.now(), status: 'ok', expectedCount: addRules.length,
+      installedCount: addRules.length
+    });
+    return { ok: true, count: addRules.length };
+  } catch (error) {
+    await recordNetworkRuleSync({
+      attemptedAt: Date.now(), status: 'failed', failureCode: 'update_failed',
+      expectedCount: addRules.length, installedCount: 0
+    });
+    reportBackgroundError(error, 'dnr:sync');
+    throw error;
+  }
+}
+
+async function recordNetworkRuleSync(sync) {
+  const health = globalThis.AmzeHealthReport;
+  if (!health || typeof health.writeRuleSync !== 'function') return;
+  try {
+    await health.writeRuleSync(chrome.storage.local, sync);
+  } catch (error) {
+    reportBackgroundError(error, 'health:rule-sync');
+  }
+}
+
+async function warmStartServiceWorker() {
+  const [defaults, stored] = await Promise.all([
+    getDefaultSettings().catch(() => null),
+    chrome.storage.local.get(['amzeSettings'])
+  ]);
+  const settings = defaults
+    ? mergeSettings(defaults, stored.amzeSettings)
+    : stored.amzeSettings;
+  await Promise.all([
+    scheduleRetentionPurge(),
+    syncNetworkRules(settings).catch(() => null)
+  ]);
+}
+
+chrome.runtime.onInstalled.addListener(async (details) => {
+  globalThis.AmzeWarmStart.scheduleWarmStartAlarm(chrome.alarms);
+  const defaults = await getDefaultSettings();
+  const { amzeSettings } = await chrome.storage.local.get(['amzeSettings']);
+  const legacySellerToken = String(amzeSettings && amzeSettings.openCorporatesToken || '').trim();
+  if (legacySellerToken) await writeSellerLookupToken(legacySellerToken);
+  if (!amzeSettings) {
+    await chrome.storage.local.set({ amzeSettings: defaults });
+  } else {
+    // Run structured migrations, then forward-merge new flags.
+    const migrated = migrateSettings(amzeSettings, defaults.settingsVersion);
+    const merged = mergeSettings(defaults, migrated);
+    await chrome.storage.local.set({ amzeSettings: merged });
+  }
+  // Sync all dynamic network rules with current settings.
+  const settings = (await chrome.storage.local.get(['amzeSettings'])).amzeSettings;
+  await syncNetworkRules(settings).catch(() => null);
+  await scheduleRetentionPurge();
+});
+
+// -------------------------------------------------------------------
+// v2.0: Late-delivery watcher
+//
+// Content script on /your-orders sends AMZE_SEED_ORDERS with each
+// visible order's promised delivery date. We persist those to
+// chrome.storage.local and a daily alarm checks for any whose
+// promise date has passed without appearing as "Delivered" in a
+// subsequent visit. Notification fires once per order.
+// -------------------------------------------------------------------
+
+async function readWatchedOrders() {
+  const r = await chrome.storage.local.get(['amzeWatchedOrders']);
+  return r.amzeWatchedOrders || {};
+}
+async function writeWatchedOrders(map) {
+  await chrome.storage.local.set({ amzeWatchedOrders: map });
+}
+
+function parsePromisedDate(text) {
+  if (!text) return null;
+  // Common formats: "Arriving Monday, Apr 14", "Delivered Apr 8",
+  // "Expected delivery: Apr 14", "Arriving by Wed, Apr 16".
+  const now = new Date();
+  const m = text.match(/([A-Z][a-z]+)\s+(\d{1,2})(?:\s*,\s*(\d{4}))?/);
+  if (!m) return null;
+  const month = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec']
+    .indexOf(m[1].toLowerCase().slice(0, 3));
+  if (month < 0) return null;
+  const day = parseInt(m[2], 10);
+  let year = m[3] ? parseInt(m[3], 10) : now.getFullYear();
+  const d = new Date(year, month, day);
+  // If parsed date is in the past by more than 6 months, assume next year.
+  if ((now - d) > 1000 * 60 * 60 * 24 * 180) d.setFullYear(year + 1);
+  return d;
+}
+
+function getWatchedOrderRetentionTimestamp(rec) {
+  const seenAt = toFiniteTimestamp(rec && rec.seenAt);
+  if (seenAt) return seenAt;
+  const promised = parsePromisedDate(rec && rec.promise);
+  return promised ? promised.getTime() : 0;
+}
+
+async function purgeWatchedOrderRetention(now = Date.now()) {
+  const map = await readWatchedOrders();
+  const cutoff = now - WATCHED_ORDER_RETENTION_MS;
+  let dirty = false;
+
+  for (const [id, rec] of Object.entries(map)) {
+    if (getWatchedOrderRetentionTimestamp(rec) >= cutoff) continue;
+    delete map[id];
+    dirty = true;
+  }
+
+  if (dirty) await writeWatchedOrders(map);
+}
+
+async function purgeReviewCorpusRetention(now = Date.now()) {
+  const cutoff = now - REVIEW_CORPUS_RETENTION_MS;
+  const entries = await idbGetAll('reviewCorpus');
+  await Promise.all(entries
+    .filter(entry => !entry || !entry.updatedAt || entry.updatedAt < cutoff)
+    .map(entry => entry && entry.asin ? idbDelete('reviewCorpus', entry.asin) : null));
+}
+
+async function purgePdpSnapshotRetention(now = Date.now()) {
+  const cutoff = now - PDP_SNAPSHOT_RETENTION_MS;
+  const entries = await idbGetAll('pdpSnapshots');
+  const valid = entries
+    .map(entry => globalThis.AmzePdpDiff && globalThis.AmzePdpDiff.normalizeSnapshot(entry))
+    .filter(entry => entry && entry.updatedAt >= cutoff)
+    .sort((a, b) => b.updatedAt - a.updatedAt);
+  const stale = entries
+    .filter(entry => !entry || !entry.updatedAt || entry.updatedAt < cutoff)
+    .map(entry => entry && entry.asin)
+    .filter(Boolean);
+  const overflow = valid.slice(PDP_SNAPSHOT_MAX).map(entry => entry.asin);
+  await Promise.all([...new Set([...stale, ...overflow])].map(asin => idbDelete('pdpSnapshots', asin)));
+}
+
+async function purgePurchaseSummaryRetention(now = Date.now()) {
+  const cutoff = now - PURCHASE_SUMMARY_RETENTION_MS;
+  const entries = await idbGetAll('purchaseSummary');
+  await Promise.all(entries
+    .filter(entry => !entry || !entry.updatedAt || entry.updatedAt < cutoff)
+    .map(entry => entry && entry.asin ? idbDelete('purchaseSummary', entry.asin) : null));
+}
+
+async function purgeRetainedData(now = Date.now()) {
+  await Promise.all([
+    purgePriceHistoryRetention(now),
+    purgeWatchedOrderRetention(now),
+    purgeReviewCorpusRetention(now),
+    purgePdpSnapshotRetention(now),
+    purgePurchaseSummaryRetention(now)
+  ]);
+}
+
+async function clearLocalDataCaches() {
+  await Promise.all([
+    idbClear('priceHistory'),
+    idbClear('origins'),
+    idbClear('sellerLookups'),
+    idbClear('reviewCorpus'),
+    idbClear('pdpSnapshots'),
+    idbClear('purchaseSummary'),
+    chrome.storage.local.remove([
+      'amzePriceHistory', 'amzeOrigins', 'amzeWatchedOrders',
+      'amzeErrorBuffer', 'amzeHealthState'
+    ])
+  ]);
+}
+
+function scheduleRetentionPurge() {
+  if (!retentionPurgePromise) {
+    retentionPurgePromise = purgeRetainedData()
+      .catch(() => {})
+      .finally(() => { retentionPurgePromise = null; });
+  }
+  return retentionPurgePromise;
+}
+
+async function scanLateOrders() {
+  const { amzeSettings } = await chrome.storage.local.get(['amzeSettings']);
+  if (!amzeSettings || !amzeSettings.flags || !amzeSettings.flags.lateDeliveryWatch) return;
+  const map = await readWatchedOrders();
+  const now = Date.now();
+  const dirty = [];
+  for (const [id, rec] of Object.entries(map)) {
+    if (rec.notified) continue;
+    const promised = parsePromisedDate(rec.promise);
+    if (!promised) continue;
+    // Late if promised +1 day and status doesn't contain "delivered"
+    if (now > promised.getTime() + 86400000 && !/delivered/i.test(rec.status || '')) {
+      rec.notified = true;
+      dirty.push(id);
+      try {
+        chrome.notifications.create('amze-late-' + id, {
+          type: 'basic',
+          iconUrl: 'icons/128.png',
+          title: 'Amazon order is late',
+          message: `Order ${id} was promised by ${rec.promise}. You may be eligible for Prime credit.`,
+          priority: 2
+        });
+      } catch (e) {}
+    }
+  }
+  if (dirty.length) await writeWatchedOrders(map);
+}
+
+// -------------------------------------------------------------------
+// Price alerts — check stored price history against user-set thresholds
+// -------------------------------------------------------------------
+
+async function readPriceAlerts() {
+  const r = await chrome.storage.local.get(['amzePriceAlerts']);
+  return r.amzePriceAlerts || {};
+}
+
+async function writePriceAlerts(map) {
+  await chrome.storage.local.set({ amzePriceAlerts: map });
+}
+
+async function checkPriceAlerts() {
+  const { amzeSettings } = await chrome.storage.local.get(['amzeSettings']);
+  if (!amzeSettings || !amzeSettings.flags || !amzeSettings.flags.priceAlert) return;
+  const alerts = await readPriceAlerts();
+  if (!Object.keys(alerts).length) return;
+
+  for (const [asin, alert] of Object.entries(alerts)) {
+    if (alert.notified) continue;
+    const record = await idbGet('priceHistory', normalizeAsin(asin));
+    if (!record || !Array.isArray(record.points) || !record.points.length) continue;
+    const latest = record.points[record.points.length - 1];
+    if (latest && latest.p <= alert.target) {
+      alert.notified = true;
+      try {
+        chrome.notifications.create('amze-price-' + asin, {
+          type: 'basic',
+          iconUrl: 'icons/128.png',
+          title: 'Price drop alert',
+          message: `${alert.title || asin} is now $${latest.p.toFixed(2)} (target: $${alert.target.toFixed(2)})`,
+          priority: 2
+        });
+      } catch (e) {}
+    }
+  }
+  await writePriceAlerts(alerts);
+}
+
+chrome.alarms.create('amze-late-watch', { periodInMinutes: 60 * 6, delayInMinutes: 5 });
+chrome.alarms.onAlarm.addListener((a) => {
+  if (globalThis.AmzeWarmStart.isWarmStartAlarm(a)) {
+    warmStartServiceWorker().catch(() => {});
+    return;
+  }
+  if (a.name === 'amze-late-watch') {
+    scheduleRetentionPurge()
+      .finally(() => scanLateOrders())
+      .finally(() => checkPriceAlerts());
+  }
+});
+
+chrome.runtime.onStartup.addListener(async () => {
+  globalThis.AmzeWarmStart.scheduleWarmStartAlarm(chrome.alarms);
+  scheduleRetentionPurge();
+  // Restore dynamic URL-cleanup and ad-blocking rules on browser start.
+  const { amzeSettings } = await chrome.storage.local.get(['amzeSettings']);
+  await syncNetworkRules(amzeSettings).catch(() => null);
+});
+
+globalThis.AmzeWarmStart.scheduleWarmStartAlarm(chrome.alarms);
+scheduleRetentionPurge();
+
+// -------------------------------------------------------------------
+// Wishlist import — user-started, visible-control queue
+//
+// Amazon does not provide a stable extension API for importing a wishlist.
+// Each queued ASIN therefore opens in a background tab and lets the content
+// script use the visible Add to List controls. The source wishlist tab stays
+// in charge of the job, and a deliberate delay limits request/navigation rate.
+// -------------------------------------------------------------------
+
+function createWishlistImportJobId() {
+  try {
+    if (globalThis.crypto && typeof globalThis.crypto.randomUUID === 'function') {
+      return globalThis.crypto.randomUUID();
+    }
+  } catch (e) {}
+  return 'wl-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+}
+
+function sendWishlistImportProgress(job, status, extra = {}) {
+  const message = Object.assign({
+    type: 'AMZE_WISHLIST_IMPORT_PROGRESS',
+    jobId: job.id,
+    status,
+    total: job.items.length,
+    completed: job.completed,
+    succeeded: job.succeeded,
+    failed: job.failed
+  }, extra);
+  try {
+    chrome.tabs.sendMessage(job.sourceTabId, message, () => {
+      void chrome.runtime.lastError;
+    });
+  } catch (e) {}
+}
+
+function clearWishlistImportTimers(job) {
+  if (job.dispatchTimer) clearTimeout(job.dispatchTimer);
+  if (job.responseTimer) clearTimeout(job.responseTimer);
+  if (job.advanceTimer) clearTimeout(job.advanceTimer);
+  job.dispatchTimer = null;
+  job.responseTimer = null;
+  job.advanceTimer = null;
+}
+
+function closeWishlistImportTab(job) {
+  const tabId = job.activeTabId;
+  job.activeTabId = null;
+  if (tabId === null || tabId === undefined) return;
+  try { chrome.tabs.remove(tabId, () => { void chrome.runtime.lastError; }); } catch (e) {}
+}
+
+function finishWishlistImportJob(job) {
+  if (wishlistImportJobs.get(job.id) !== job) return;
+  clearWishlistImportTimers(job);
+  closeWishlistImportTab(job);
+  wishlistImportJobs.delete(job.id);
+  sendWishlistImportProgress(job, 'complete');
+}
+
+function recordWishlistImportResult(job, result) {
+  if (wishlistImportJobs.get(job.id) !== job || job.resultHandled) return;
+  job.resultHandled = true;
+  clearWishlistImportTimers(job);
+  const item = job.items[job.index];
+  const ok = !!(result && result.ok && result.asin === item.asin);
+  if (ok) job.succeeded++;
+  else job.failed++;
+  job.completed++;
+  const reason = ok ? (result.reason || '') : (result && result.reason) || 'item_failed';
+  closeWishlistImportTab(job);
+  sendWishlistImportProgress(job, job.completed >= job.items.length ? 'running' : 'running', {
+    asin: item.asin,
+    current: item.title || item.asin,
+    result: ok ? 'added' : 'failed',
+    reason
+  });
+  job.index++;
+  if (job.index >= job.items.length) {
+    finishWishlistImportJob(job);
+    return;
+  }
+  job.advanceTimer = setTimeout(() => advanceWishlistImport(job), WISHLIST_IMPORT_DELAY_MS);
+}
+
+function retryWishlistImportDispatch(job, reason) {
+  if (wishlistImportJobs.get(job.id) !== job || job.resultHandled) return;
+  job.awaitingResponse = false;
+  if (job.dispatchAttempts >= WISHLIST_IMPORT_MAX_DISPATCH_ATTEMPTS) {
+    recordWishlistImportResult(job, { ok: false, asin: job.items[job.index].asin, reason });
+    return;
+  }
+  job.dispatchTimer = setTimeout(() => dispatchWishlistImportItem(job), 900);
+}
+
+function dispatchWishlistImportItem(job) {
+  if (wishlistImportJobs.get(job.id) !== job || job.resultHandled || job.activeTabId === null) return;
+  if (job.awaitingResponse) return;
+  const item = job.items[job.index];
+  job.dispatchAttempts++;
+  job.awaitingResponse = true;
+  const message = {
+    type: 'AMZE_WISHLIST_IMPORT_ITEM',
+    asin: item.asin,
+    targetListId: job.targetListId,
+    targetListName: job.targetListName
+  };
+  const callback = (response) => {
+    const lastError = chrome.runtime.lastError;
+    if (wishlistImportJobs.get(job.id) !== job || job.resultHandled || !job.awaitingResponse) return;
+    if (lastError || !response) {
+      retryWishlistImportDispatch(job, lastError ? 'content_script_unavailable' : 'empty_response');
+      return;
+    }
+    recordWishlistImportResult(job, response);
+  };
+  try {
+    chrome.tabs.sendMessage(job.activeTabId, message, callback);
+  } catch (e) {
+    retryWishlistImportDispatch(job, 'message_failed');
+    return;
+  }
+  job.responseTimer = setTimeout(() => {
+    if (job.awaitingResponse) retryWishlistImportDispatch(job, 'item_timeout');
+  }, WISHLIST_IMPORT_RESPONSE_TIMEOUT_MS);
+}
+
+function advanceWishlistImport(job) {
+  if (wishlistImportJobs.get(job.id) !== job) return;
+  job.advanceTimer = null;
+  if (job.index >= job.items.length) {
+    finishWishlistImportJob(job);
+    return;
+  }
+  job.resultHandled = false;
+  job.awaitingResponse = false;
+  job.dispatchAttempts = 0;
+  const item = job.items[job.index];
+  let productUrl = '';
+  try {
+    productUrl = globalThis.AmzeWishlistImport.buildProductUrl(job.targetHost, item.asin);
+  } catch (e) {}
+  if (!productUrl) {
+    recordWishlistImportResult(job, { ok: false, asin: item.asin, reason: 'invalid_product_url' });
+    return;
+  }
+  sendWishlistImportProgress(job, 'running', { asin: item.asin, current: item.title || item.asin });
+  try {
+    chrome.tabs.create({ url: productUrl, active: false }, (tab) => {
+      const lastError = chrome.runtime.lastError;
+      if (wishlistImportJobs.get(job.id) !== job) {
+        if (tab && tab.id !== undefined) closeWishlistImportTab(Object.assign(job, { activeTabId: tab.id }));
+        return;
+      }
+      if (lastError || !tab || tab.id === undefined) {
+        recordWishlistImportResult(job, { ok: false, asin: item.asin, reason: 'tab_create_failed' });
+        return;
+      }
+      job.activeTabId = tab.id;
+      job.loadDispatchScheduled = false;
+      job.dispatchTimer = setTimeout(() => dispatchWishlistImportItem(job), 6000);
+    });
+  } catch (e) {
+    recordWishlistImportResult(job, { ok: false, asin: item.asin, reason: 'tab_create_failed' });
+  }
+}
+
+function startWishlistImport(msg, sender, sendResponse) {
+  const sourceTab = sender && sender.tab;
+  if (!sourceTab || sourceTab.id === undefined || !sourceTab.url) {
+    sendResponse({ ok: false, reason: 'wishlist_tab_required' });
+    return;
+  }
+  if (Array.from(wishlistImportJobs.values()).some(job => job.sourceTabId === sourceTab.id)) {
+    sendResponse({ ok: false, reason: 'import_already_running' });
+    return;
+  }
+  let sourceUrl;
+  try { sourceUrl = new URL(sourceTab.url); } catch (e) {
+    sendResponse({ ok: false, reason: 'invalid_wishlist_url' });
+    return;
+  }
+  if (!/amazon\./i.test(sourceUrl.hostname)) {
+    sendResponse({ ok: false, reason: 'amazon_wishlist_required' });
+    return;
+  }
+  let items;
+  try {
+    items = globalThis.AmzeWishlistImport.normalizeWishlistItems(msg && msg.items);
+  } catch (e) {
+    sendResponse({ ok: false, reason: e && e.message ? e.message : 'invalid_wishlist_items' });
+    return;
+  }
+  const wishlist = msg && msg.wishlist || {};
+  const job = {
+    id: createWishlistImportJobId(),
+    sourceTabId: sourceTab.id,
+    targetHost: sourceUrl.hostname,
+    targetListId: String(wishlist.listId || '').slice(0, 120),
+    targetListName: String(wishlist.listName || 'Wish List').replace(/\s+/g, ' ').trim().slice(0, 120),
+    items,
+    index: 0,
+    completed: 0,
+    succeeded: 0,
+    failed: 0,
+    activeTabId: null,
+    dispatchAttempts: 0,
+    awaitingResponse: false,
+    resultHandled: false,
+    dispatchTimer: null,
+    responseTimer: null,
+    advanceTimer: null
+  };
+  wishlistImportJobs.set(job.id, job);
+  sendResponse({ ok: true, jobId: job.id, total: items.length });
+  sendWishlistImportProgress(job, 'running', { asin: items[0].asin, current: items[0].title || items[0].asin });
+  advanceWishlistImport(job);
+}
+
+function cancelWishlistImport(job) {
+  clearWishlistImportTimers(job);
+  wishlistImportJobs.delete(job.id);
+  job.completed = Math.min(job.completed, job.items.length);
+  closeWishlistImportTab(job);
+  sendWishlistImportProgress(job, 'canceled');
+}
+
+chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+  if (changeInfo.status !== 'complete') return;
+  for (const job of wishlistImportJobs.values()) {
+    if (job.activeTabId !== tabId || job.resultHandled) continue;
+    if (job.dispatchTimer) clearTimeout(job.dispatchTimer);
+    job.dispatchTimer = setTimeout(() => dispatchWishlistImportItem(job), 700);
+    break;
+  }
+});
+
+chrome.tabs.onRemoved.addListener((tabId) => {
+  for (const job of wishlistImportJobs.values()) {
+    if (job.sourceTabId === tabId) {
+      cancelWishlistImport(job);
+    } else if (job.activeTabId === tabId && !job.resultHandled) {
+      recordWishlistImportResult(job, { ok: false, asin: job.items[job.index].asin, reason: 'tab_closed' });
+    }
+  }
+});
+
+function isTrustedExtensionPage(sender) {
+  const senderUrl = String(sender && sender.url || '');
+  const extensionRoot = chrome.runtime.getURL('');
+  return !sender?.tab && !!senderUrl && senderUrl.startsWith(extensionRoot);
+}
+
+function isTrustedAmazonContentScript(sender) {
+  const senderUrl = String(sender && (sender.url || sender.tab && sender.tab.url) || '');
+  try {
+    const url = new URL(senderUrl);
+    return (url.protocol === 'https:' || url.protocol === 'http:')
+      && globalThis.AmzeNetworkRules
+      && globalThis.AmzeNetworkRules.isAmazonHost(url.hostname);
+  } catch (error) {
+    return false;
+  }
+}
+
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (!msg || !msg.type) return;
+
+  if (msg.type === 'AMZE_REPORT_SELECTOR_HEALTH') {
+    if (!isTrustedAmazonContentScript(sender) || !globalThis.AmzeHealthReport) {
+      sendResponse({ ok: false, error: 'unauthorized' });
+      return false;
+    }
+    globalThis.AmzeHealthReport.writeSelectorSnapshot(chrome.storage.local, msg.snapshot)
+      .then(() => sendResponse({ ok: true }))
+      .catch(error => {
+        reportBackgroundError(error, 'health:selector-write');
+        sendResponse({ ok: false });
+      });
+    return true;
+  }
+
+  if (msg.type === 'AMZE_LOAD_FEATURE_MODULES') {
+    const tabId = sender && sender.tab && sender.tab.id;
+    const active = globalThis.AmzeFeatureModules.getFiles(msg.flags || {});
+    const requestedFiles = globalThis.AmzeFeatureModules.filterAllowedFiles(msg.files);
+    const requested = (requestedFiles.length ? requestedFiles : active).filter(file => active.includes(file));
+    if (tabId === undefined || !requested.length) {
+      sendResponse({ ok: true, files: [] });
+      return false;
+    }
+    try {
+      chrome.scripting.executeScript({ target: { tabId }, files: requested }, () => {
+        if (chrome.runtime.lastError) {
+          sendResponse({ ok: false, files: [], reason: chrome.runtime.lastError.message || 'feature_injection_failed' });
+        } else {
+          sendResponse({ ok: true, files: requested });
+        }
+      });
+    } catch (e) {
+      sendResponse({ ok: false, files: [], reason: 'feature_injection_failed' });
+    }
+    return true;
+  }
+
+  if (msg.type === 'AMZE_START_WISHLIST_IMPORT') {
+    startWishlistImport(msg, sender, sendResponse);
+    return false;
+  }
+
+  if (msg.type === 'AMZE_CANCEL_WISHLIST_IMPORT') {
+    const job = wishlistImportJobs.get(String(msg.jobId || ''));
+    if (!job || !sender.tab || sender.tab.id !== job.sourceTabId) {
+      sendResponse({ ok: false, reason: 'import_job_not_found' });
+      return false;
+    }
+    cancelWishlistImport(job);
+    sendResponse({ ok: true });
+    return false;
+  }
+
+  if (msg.type === 'AMZE_WISHLIST_IMPORT_RESULT') {
+    const job = wishlistImportJobs.get(String(msg.jobId || ''));
+    if (!job || !sender.tab || sender.tab.id !== job.activeTabId || msg.asin !== job.items[job.index].asin) {
+      sendResponse({ ok: false, reason: 'import_result_rejected' });
+      return false;
+    }
+    recordWishlistImportResult(job, msg);
+    sendResponse({ ok: true });
+    return false;
+  }
+
+  if (msg.type === 'AMZE_IDB_GET_ORIGINS') {
+    (async () => {
+      const origins = await readOriginCache();
+      sendResponse({ ok: true, origins });
+    })().catch(() => sendResponse({ ok: false, origins: {} }));
+    return true;
+  }
+
+  if (msg.type === 'AMZE_IDB_PUT_ORIGIN') {
+    (async () => {
+      await writeOriginCache(msg.asin, msg.country);
+      sendResponse({ ok: true });
+    })().catch(() => sendResponse({ ok: false }));
+    return true;
+  }
+
+  if (msg.type === 'AMZE_IDB_GET_PRICE_HISTORY') {
+    (async () => {
+      const points = await readPriceHistory(msg.asin);
+      sendResponse({ ok: true, points });
+    })().catch(() => sendResponse({ ok: false, points: [] }));
+    return true;
+  }
+
+  if (msg.type === 'AMZE_IDB_GET_ALL_PRICE_HISTORY') {
+    (async () => {
+      await migrateLegacyStorageToIndexedDb();
+      const entries = await idbGetAll('priceHistory');
+      sendResponse({ ok: true, entries: entries || [] });
+    })().catch(() => sendResponse({ ok: false, entries: [] }));
+    return true;
+  }
+
+  if (msg.type === 'AMZE_IDB_MERGE_PRICE_HISTORY') {
+    (async () => {
+      await migrateLegacyStorageToIndexedDb();
+      const existing = await idbGetAll('priceHistory');
+      const merged = globalThis.AmzePriceHistoryIO.mergeHistoryEntries(existing, msg.entries);
+      for (const entry of merged) await idbPut('priceHistory', entry);
+      sendResponse({ ok: true, imported: merged.length });
+    })().catch(() => sendResponse({ ok: false, imported: 0 }));
+    return true;
+  }
+
+  if (msg.type === 'AMZE_IDB_PUT_PRICE_HISTORY') {
+    (async () => {
+      await writePriceHistory(msg.asin, msg.points);
+      sendResponse({ ok: true });
+    })().catch(() => sendResponse({ ok: false }));
+    return true;
+  }
+
+  if (msg.type === 'AMZE_IDB_GET_REVIEW_CORPUS') {
+    (async () => {
+      const corpus = await readReviewCorpus(msg.asin);
+      sendResponse({ ok: true, corpus });
+    })().catch(() => sendResponse({ ok: false, corpus: null }));
+    return true;
+  }
+
+  if (msg.type === 'AMZE_IDB_UPSERT_REVIEW_CORPUS') {
+    (async () => {
+      const corpus = await mergeReviewCorpus(msg.asin, msg.reviews);
+      sendResponse({ ok: !!corpus, corpus });
+    })().catch(() => sendResponse({ ok: false, corpus: null }));
+    return true;
+  }
+
+  if (msg.type === 'AMZE_IDB_GET_PDP_SNAPSHOTS') {
+    (async () => {
+      const snapshots = await readPdpSnapshots();
+      sendResponse({ ok: true, snapshots });
+    })().catch(() => sendResponse({ ok: false, snapshots: [] }));
+    return true;
+  }
+
+  if (msg.type === 'AMZE_IDB_PUT_PDP_SNAPSHOT') {
+    (async () => {
+      const snapshots = await writePdpSnapshot(msg.snapshot);
+      sendResponse({ ok: snapshots.length > 0, snapshots });
+    })().catch(() => sendResponse({ ok: false, snapshots: [] }));
+    return true;
+  }
+
+  if (msg.type === 'AMZE_IDB_MERGE_PURCHASE_SUMMARY') {
+    (async () => {
+      const entries = await mergePurchaseSummary(msg.orders);
+      const summary = globalThis.AmzePurchaseSummary
+        ? globalThis.AmzePurchaseSummary.summarizeEntries(entries)
+        : [];
+      sendResponse({ ok: true, entries: summary });
+    })().catch(() => sendResponse({ ok: false, entries: [] }));
+    return true;
+  }
+
+  if (msg.type === 'AMZE_CLEAR_LOCAL_DATA') {
+    (async () => {
+      await clearLocalDataCaches();
+      sendResponse({ ok: true, cleared: ['priceHistory', 'origins', 'sellerLookups', 'reviewCorpus', 'pdpSnapshots', 'purchaseSummary', 'watchedOrders', 'errorBuffer'] });
+    })().catch(() => sendResponse({ ok: false, cleared: [] }));
+    return true;
+  }
+
+  if (msg.type === 'AMZE_GET_SELLER_LOOKUP_TOKEN') {
+    if (!isTrustedExtensionPage(sender)) {
+      sendResponse({ ok: false, token: '', error: 'unauthorized' });
+      return;
+    }
+    readSellerLookupToken()
+      .then(token => sendResponse({ ok: true, token }))
+      .catch(error => {
+        reportBackgroundError(error, 'seller-token:read');
+        sendResponse({ ok: false, token: '' });
+      });
+    return true;
+  }
+
+  if (msg.type === 'AMZE_SET_SELLER_LOOKUP_TOKEN') {
+    if (!isTrustedExtensionPage(sender)) {
+      sendResponse({ ok: false, hasToken: false, error: 'unauthorized' });
+      return;
+    }
+    writeSellerLookupToken(msg.token)
+      .then(token => sendResponse({ ok: true, hasToken: !!token }))
+      .catch(error => {
+        reportBackgroundError(error, 'seller-token:write');
+        sendResponse({ ok: false, hasToken: false });
+      });
+    return true;
+  }
+
+  if (msg.type === 'AMZE_GET_ERROR_REPORT') {
+    (async () => {
+      if (!isTrustedExtensionPage(sender)) {
+        sendResponse({ ok: false, report: null, error: 'unauthorized' });
+        return;
+      }
+      if (!globalThis.AmzeErrorBuffer || !globalThis.AmzeHealthReport) {
+        sendResponse({ ok: false, report: null });
+        return;
+      }
+      const version = (() => {
+        try { return chrome.runtime.getManifest().version; } catch (e) { return ''; }
+      })();
+      const [entries, healthState, defaults, stored] = await Promise.all([
+        globalThis.AmzeErrorBuffer.read(chrome.storage.local),
+        globalThis.AmzeHealthReport.read(chrome.storage.local),
+        getDefaultSettings(),
+        chrome.storage.local.get(['amzeSettings'])
+      ]);
+      const settings = mergeSettings(defaults, stored.amzeSettings);
+      const flags = settings && settings.flags ? settings.flags : {};
+      const expectedRules = globalThis.AmzeNetworkRules.buildDynamicRules({
+        stripAffiliate: !!flags.stripAffiliate,
+        hideSponsored: !!flags.hideSponsored
+      });
+      let requestRules;
+      if (!chrome.declarativeNetRequest || typeof chrome.declarativeNetRequest.getDynamicRules !== 'function') {
+        requestRules = globalThis.AmzeHealthReport.unavailableRequestRuleAudit(
+          healthState.lastRuleSync,
+          'api_unavailable'
+        );
+      } else {
+        try {
+          const installedRules = await chrome.declarativeNetRequest.getDynamicRules();
+          requestRules = globalThis.AmzeHealthReport.auditRequestRules(
+            installedRules,
+            expectedRules,
+            globalThis.AmzeNetworkRules.MANAGED_RULE_IDS,
+            { lastSync: healthState.lastRuleSync }
+          );
+        } catch (error) {
+          reportBackgroundError(error, 'health:rule-read');
+          requestRules = globalThis.AmzeHealthReport.unavailableRequestRuleAudit(
+            healthState.lastRuleSync,
+            'read_failed'
+          );
+        }
+      }
+      const errorReport = globalThis.AmzeErrorBuffer.createReport(entries, { extensionVersion: version });
+      const report = globalThis.AmzeHealthReport.createDiagnosticReport(
+        errorReport,
+        healthState,
+        requestRules,
+        { extensionVersion: version }
+      );
+      sendResponse({ ok: true, report });
+    })().catch(() => sendResponse({ ok: false, report: null }));
+    return true;
+  }
+
+  if (msg.type === 'AMZE_CLEAR_ERROR_BUFFER') {
+    (async () => {
+      if (!isTrustedExtensionPage(sender)) {
+        sendResponse({ ok: false, error: 'unauthorized' });
+        return;
+      }
+      if (!globalThis.AmzeErrorBuffer || !globalThis.AmzeHealthReport) {
+        sendResponse({ ok: false });
+        return;
+      }
+      await Promise.all([
+        globalThis.AmzeErrorBuffer.clear(chrome.storage.local),
+        globalThis.AmzeHealthReport.clear(chrome.storage.local)
+      ]);
+      sendResponse({ ok: true });
+    })().catch(() => sendResponse({ ok: false }));
+    return true;
+  }
+
+  if (msg.type === 'AMZE_GET_PRICE_ALERTS') {
+    (async () => {
+      const alerts = await readPriceAlerts();
+      sendResponse({ ok: true, alerts });
+    })().catch(() => sendResponse({ ok: false, alerts: {} }));
+    return true;
+  }
+
+  if (msg.type === 'AMZE_SET_PRICE_ALERT') {
+    (async () => {
+      const alerts = await readPriceAlerts();
+      const key = normalizeAsin(msg.asin);
+      if (!key) { sendResponse({ ok: false }); return; }
+      if (msg.target === null || msg.target === undefined) {
+        delete alerts[key];
+      } else {
+        alerts[key] = {
+          target: Number(msg.target),
+          title: String(msg.title || key).slice(0, 100),
+          createdAt: Date.now(),
+          notified: false
+        };
+      }
+      await writePriceAlerts(alerts);
+      sendResponse({ ok: true });
+    })().catch(() => sendResponse({ ok: false }));
+    return true;
+  }
+
+  if (msg.type === 'AMZE_LOOKUP_SELLER') {
+    (async () => {
+      const result = await lookupSellerEntity(msg.sellerName);
+      sendResponse(result);
+    })().catch(() => sendResponse({ ok: false, reason: 'lookup_failed' }));
+    return true;
+  }
+
+  if (msg.type === 'AMZE_SEED_ORDERS') {
+    (async () => {
+      const map = await readWatchedOrders();
+      for (const o of (msg.orders || [])) {
+        if (!o.orderId) continue;
+        const existing = map[o.orderId];
+        // Preserve existing notified flag; update promise/status.
+        map[o.orderId] = {
+          promise: o.promise,
+          status: o.status,
+          seenAt: o.seenAt || Date.now(),
+          notified: existing ? existing.notified : false
+        };
+      }
+      await writeWatchedOrders(map);
+      sendResponse({ ok: true, count: (msg.orders || []).length });
+    })();
+    return true;
+  }
+
+  if (msg.type === 'AMZE_BROADCAST_SETTINGS') {
+    // Popup requested broadcast to all Amazon tabs.
+    (async () => {
+      const safeSettings = structuredClone(msg.settings || {});
+      delete safeSettings.openCorporatesToken;
+      let networkError = null;
+      try {
+        await syncNetworkRules(safeSettings);
+      } catch (error) {
+        networkError = error;
+      }
+      const url = await getAmazonUrlPatterns();
+      chrome.tabs.query({ url }, (tabs) => {
+        for (const t of tabs) {
+          chrome.tabs.sendMessage(t.id, { type: 'AMZE_SETTINGS_UPDATED', settings: safeSettings }).catch(() => {});
+        }
+        sendResponse({
+          ok: !networkError,
+          count: tabs.length,
+          error: networkError ? 'network_rules_failed' : null
+        });
+      });
+    })().catch(error => {
+      reportBackgroundError(error, 'settings:broadcast');
+      sendResponse({ ok: false, count: 0, error: 'broadcast_failed' });
+    });
+    return true;
+  }
+});

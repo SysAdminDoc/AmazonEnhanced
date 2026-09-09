@@ -1,0 +1,21 @@
+{
+  "name": "amazonenhanced-build",
+  "private": true,
+  "license": "MIT",
+  "devDependencies": {
+    "esbuild": "0.28.1",
+    "webextension-polyfill": "0.12.0"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "test:browser": "node tests/chromium-smoke.js",
+    "test:edge": "node tests/chromium-smoke.js --edge-package",
+    "test:firefox": "node tests/firefox-smoke.js",
+    "verify:release": "npm run build:release && npm run test:browser",
+    "verify:parity": "npm run build:release && npm run build:edge && npm run build:firefox && npm run test:edge && npm run test:firefox",
+    "build:release": "node build/release.js",
+    "build:crx": "python build/pack-crx.py",
+    "build:firefox": "python build/pack-firefox.py",
+    "build:edge": "python build/pack-edge.py"
+  }
+}

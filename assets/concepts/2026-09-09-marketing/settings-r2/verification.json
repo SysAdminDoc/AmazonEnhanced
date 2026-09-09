@@ -1,0 +1,112 @@
+{
+  "version": "2.0.18",
+  "scenario": "Actual installed extension. Fresh headless profile; no shopping account or external lookup.",
+  "captures": [
+    "ads-dark.png",
+    "declutter-dark.png",
+    "declutter-dark-bottom.png",
+    "reviews-dark.png",
+    "price-dark.png",
+    "price-dark-bottom.png",
+    "cart-dark.png",
+    "cart-dark-bottom.png",
+    "trust-dark.png",
+    "trust-dark-bottom.png",
+    "tools-dark.png",
+    "tools-dark-bottom.png",
+    "brands-dark.png",
+    "brands-dark-bottom.png",
+    "a11y-dark.png",
+    "a11y-dark-bottom.png",
+    "theme-dark.png",
+    "theme-dark-bottom.png",
+    "theme-light-selected.png",
+    "theme-amoled-selected.png",
+    "theme-dark-selected.png",
+    "ads-dark-final.png"
+  ],
+  "checks": [
+    {
+      "tab": "ads",
+      "width": 560,
+      "bodyWidth": 560,
+      "scrollHeight": 540,
+      "clientHeight": 540
+    },
+    {
+      "tab": "declutter",
+      "width": 560,
+      "bodyWidth": 560,
+      "scrollHeight": 1060,
+      "clientHeight": 540
+    },
+    {
+      "tab": "reviews",
+      "width": 560,
+      "bodyWidth": 560,
+      "scrollHeight": 540,
+      "clientHeight": 540
+    },
+    {
+      "tab": "price",
+      "width": 560,
+      "bodyWidth": 560,
+      "scrollHeight": 569,
+      "clientHeight": 540
+    },
+    {
+      "tab": "cart",
+      "width": 560,
+      "bodyWidth": 560,
+      "scrollHeight": 762,
+      "clientHeight": 540
+    },
+    {
+      "tab": "trust",
+      "width": 560,
+      "bodyWidth": 560,
+      "scrollHeight": 962,
+      "clientHeight": 540
+    },
+    {
+      "tab": "tools",
+      "width": 560,
+      "bodyWidth": 560,
+      "scrollHeight": 1207,
+      "clientHeight": 540
+    },
+    {
+      "tab": "brands",
+      "width": 560,
+      "bodyWidth": 560,
+      "scrollHeight": 593,
+      "clientHeight": 540
+    },
+    {
+      "tab": "a11y",
+      "width": 560,
+      "bodyWidth": 560,
+      "scrollHeight": 671,
+      "clientHeight": 540
+    },
+    {
+      "tab": "theme",
+      "width": 560,
+      "bodyWidth": 560,
+      "scrollHeight": 625,
+      "clientHeight": 540
+    },
+    {
+      "hideShadeExclusive": true,
+      "persistedAfterReload": true
+    }
+  ],
+  "browser": {
+    "protocolVersion": "1.3",
+    "product": "Chrome/153.0.8010.12",
+    "revision": "@971a7443b0c9b0a9b2860529b33331b76077ec62",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36",
+    "jsVersion": "15.3.76.4"
+  },
+  "dynamicRules": 27
+}

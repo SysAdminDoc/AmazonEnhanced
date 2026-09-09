@@ -5,6 +5,7 @@ const os = require('node:os');
 const path = require('node:path');
 const networkRules = require('../network-rules.js');
 const crossSiteFixtures = require('./fixtures/cross-site-reviews.json');
+const { matchesExtensionManifest } = require('./extension-identity.js');
 
 const ROOT = path.resolve(__dirname, '..');
 const DIST = path.join(ROOT, 'dist');
@@ -559,18 +560,33 @@ function removeTemporaryTree(target, expectedPrefix) {
   });
 }
 
-async function waitForServiceWorker(client) {
+async function waitForServiceWorker(client, manifest) {
   const started = Date.now();
+  const rejected = new Set();
+  let lastError = '';
   while (Date.now() - started < TIMEOUT_MS) {
     const { targetInfos } = await client.send('Target.getTargets');
-    const target = targetInfos.find(info => (
+    const candidates = targetInfos.filter(info => (
       info.type === 'service_worker'
       && /^chrome-extension:\/\/[^/]+\/background\.js$/.test(info.url)
+      && !rejected.has(info.targetId)
     ));
-    if (target) return target;
+    for (const target of candidates) {
+      let sessionId;
+      try {
+        ({ sessionId } = await client.send('Target.attachToTarget', { targetId: target.targetId, flatten: true }));
+        const actual = await evaluate(client, sessionId, 'chrome.runtime.getManifest()');
+        if (matchesExtensionManifest(actual, manifest)) return target;
+        rejected.add(target.targetId);
+      } catch (error) {
+        lastError = error.message;
+      } finally {
+        if (sessionId) await client.send('Target.detachFromTarget', { sessionId });
+      }
+    }
     await sleep(100);
   }
-  throw new Error('AmazonEnhanced service worker target was not observed');
+  throw new Error(`AmazonEnhanced ${manifest.version} worker was not verified (${rejected.size} unrelated workers rejected). ${lastError}`);
 }
 
 function evaluate(client, sessionId, expression, options = {}) {
@@ -765,7 +781,7 @@ async function main() {
   try {
     runtime = await launchChromium(binary, packageTree.extensionPath);
     await runtime.client.send('Target.setDiscoverTargets', { discover: true });
-    const serviceWorker = await waitForServiceWorker(runtime.client);
+    const serviceWorker = await waitForServiceWorker(runtime.client, manifest);
     const extensionId = new URL(serviceWorker.url).hostname;
     const { sessionId: workerSessionId, rules } = await verifyDynamicRules(runtime.client, serviceWorker);
     const platform = await evaluate(runtime.client, workerSessionId, `(async () => {
@@ -822,11 +838,15 @@ async function main() {
       `chrome-extension://${extensionId}/sidepanel.html`,
       `(() => document.querySelectorAll('.amze-sp-tab').length === 2 ? {
         title: document.title,
+        layout: getComputedStyle(document.body).display,
+        separated: document.querySelector('.amze-sp-header').getBoundingClientRect().bottom <= document.querySelector('.amze-sp-tabs').getBoundingClientRect().top,
         empty: document.querySelector('#sp-empty')?.textContent.trim() || ''
       } : null)()`,
       'side-panel page state'
     );
-    assert.equal(sidePanel.value.title, 'AmazonEnhanced — Price History');
+    assert.equal(sidePanel.value.title, 'AmazonEnhanced Price History');
+    assert.equal(sidePanel.value.layout, 'flex');
+    assert.equal(sidePanel.value.separated, true);
     assert.match(sidePanel.value.empty, /Browse Amazon product pages/);
     const outcomes = [];
     for (const route of ROUTES) outcomes.push(await openFixture(runtime.client, route, adEvidence));

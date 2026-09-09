@@ -1,0 +1,6 @@
+* text=auto
+*.md text eol=lf
+*.json text eol=lf
+*.js text eol=lf
+*.png binary
+assets/concepts/2026-09-09-marketing/originals/** -text -diff

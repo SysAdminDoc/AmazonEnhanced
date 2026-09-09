@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="en" data-amze-theme="dark">
+<head>
+<meta charset="utf-8" />
+<title>AmazonEnhanced</title>
+<link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+
+<header class="amze-head">
+  <div class="amze-logo">
+    <img src="icons/48.png" alt="" width="28" height="28" />
+    <div>
+      <h1>AmazonEnhanced</h1>
+      <span id="amze-version">v2.0.17</span>
+    </div>
+  </div>
+  <div class="amze-head-actions">
+    <span id="amze-save-status" class="amze-save-status" role="status" aria-live="polite">Loading…</span>
+    <button id="amze-reset" title="Restore defaults" class="amze-btn amze-btn-ghost">Reset</button>
+  </div>
+</header>
+
+<nav class="amze-tabs" role="tablist" aria-label="Settings sections" aria-orientation="vertical">
+  <button id="amze-tab-ads" class="amze-tab amze-tab-active" data-tab="ads" role="tab" aria-selected="true" aria-controls="amze-pane-ads" tabindex="0">Ads</button>
+  <button id="amze-tab-declutter" class="amze-tab" data-tab="declutter" role="tab" aria-selected="false" aria-controls="amze-pane-declutter" tabindex="-1">Declutter</button>
+  <button id="amze-tab-reviews" class="amze-tab" data-tab="reviews" role="tab" aria-selected="false" aria-controls="amze-pane-reviews" tabindex="-1">Reviews</button>
+  <button id="amze-tab-price" class="amze-tab" data-tab="price" role="tab" aria-selected="false" aria-controls="amze-pane-price" tabindex="-1">Price</button>
+  <button id="amze-tab-cart" class="amze-tab" data-tab="cart" role="tab" aria-selected="false" aria-controls="amze-pane-cart" tabindex="-1">Cart</button>
+  <button id="amze-tab-trust" class="amze-tab" data-tab="trust" role="tab" aria-selected="false" aria-controls="amze-pane-trust" tabindex="-1">Trust</button>
+  <button id="amze-tab-tools" class="amze-tab" data-tab="tools" role="tab" aria-selected="false" aria-controls="amze-pane-tools" tabindex="-1">Tools</button>
+  <button id="amze-tab-brands" class="amze-tab" data-tab="brands" role="tab" aria-selected="false" aria-controls="amze-pane-brands" tabindex="-1">Brands</button>
+  <button id="amze-tab-a11y" class="amze-tab" data-tab="a11y" role="tab" aria-selected="false" aria-controls="amze-pane-a11y" tabindex="-1">A11y</button>
+  <button id="amze-tab-theme" class="amze-tab" data-tab="theme" role="tab" aria-selected="false" aria-controls="amze-pane-theme" tabindex="-1">Theme</button>
+</nav>
+
+<main class="amze-content">
+
+<section id="amze-pane-ads" class="amze-pane amze-pane-active" data-pane="ads" role="tabpanel" aria-labelledby="amze-tab-ads" tabindex="-1">
+  <h2>Ad &amp; sponsored removal</h2>
+  <p class="amze-lead">Keep paid placements and promotional interruptions out of your shopping flow.</p>
+  <label class="amze-row">
+    <span><strong>Hide sponsored results</strong><small>Removes sponsored tiles in search + PDP carousels.</small></span>
+    <input type="checkbox" data-flag="hideSponsored" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Shade instead of hide<small>Keeps sponsored tiles visible but dimmed with a red dashed outline.</small></span>
+    <input type="checkbox" data-flag="shadeSponsored" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Hide video ads<small>Hides shoppable videos and sponsored video carousels on Amazon, plus Prime Video ad-break overlays.</small></span>
+    <input type="checkbox" data-flag="hideVideoAds" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Hide Prime trial/upsell nags<small>"Try Prime free" popovers, Amazon upsell ads, and Prime Video subscription prompts.</small></span>
+    <input type="checkbox" data-flag="hidePrimeNag" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Hide hero banners &amp; promo strips<small>Top-of-page promo banners, announcement strips.</small></span>
+    <input type="checkbox" data-flag="hideBanners" class="amze-switch">
+  </label>
+</section>
+
+<section id="amze-pane-declutter" class="amze-pane" data-pane="declutter" role="tabpanel" aria-labelledby="amze-tab-declutter" tabindex="-1">
+  <h2>Section declutter</h2>
+  <p class="amze-lead">Choose which recommendation rails and heavy merchandising sections stay visible.</p>
+  <label class="amze-row">
+    <span>"Brands related to this category"<small></small></span>
+    <input type="checkbox" data-flag="hideBrandsRelated" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>"Inspired by your browsing"<small></small></span>
+    <input type="checkbox" data-flag="hideInspired" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>"Customers also bought / viewed"<small></small></span>
+    <input type="checkbox" data-flag="hideAlsoBought" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>"Buy it again" rails<small></small></span>
+    <input type="checkbox" data-flag="hideBuyAgain" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>"Climate Pledge Friendly" widgets<small></small></span>
+    <input type="checkbox" data-flag="hideClimate" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Editorial recommendations<small></small></span>
+    <input type="checkbox" data-flag="hideEditorial" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>"From the manufacturer" A+ content<small>Heavyweight marketing blocks, autoplay videos.</small></span>
+    <input type="checkbox" data-flag="hideManufacturer" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>"Compare with similar items" widget<small></small></span>
+    <input type="checkbox" data-flag="hideCompare" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Hide "Subscribe &amp; Save" default upsell<small>Stops S&amp;S from being pre-selected on PDPs.</small></span>
+    <input type="checkbox" data-flag="hideSubSave" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Cart upsell / saved-for-later clutter<small>"Frequently bought together" noise in cart.</small></span>
+    <input type="checkbox" data-flag="hideCartUpsell" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Homepage clutter (carousels, hero)<small>Strips the cluttered homepage to search + essentials.</small></span>
+    <input type="checkbox" data-flag="hideHomeClutter" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Hide footer<small></small></span>
+    <input type="checkbox" data-flag="hideFooter" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Remove search-result padding/whitespace<small></small></span>
+    <input type="checkbox" data-flag="hidePadding" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Hide Alexa for Shopping<small>Dismisses Amazon's shopping-assistant sidebar and launcher without hiding product content.</small></span>
+    <input type="checkbox" data-flag="hideRufus" class="amze-switch">
+  </label>
+</section>
+
+<section id="amze-pane-reviews" class="amze-pane" data-pane="reviews" role="tabpanel" aria-labelledby="amze-tab-reviews" tabindex="-1">
+  <h2>Reviews &amp; trust</h2>
+  <p class="amze-lead">Make visible review evidence easier to interpret without sending shopping data away.</p>
+  <label class="amze-row">
+    <span><strong>Review-quality scoring</strong><small>Shows adjusted rating + polarization + verified-sample ratio on product pages.</small></span>
+    <input type="checkbox" data-flag="reviewScore" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span><strong>Visible review excerpts</strong><small>Caches up to 20 visible reviews per product locally and shows top/bottom excerpts alongside the review analysis.</small></span>
+    <input type="checkbox" data-flag="reviewCorpus" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span><strong>Trust score badge</strong><small>Shows a 1-10 trust score on search tiles combining star rating and review volume.</small></span>
+    <input type="checkbox" data-flag="trustBadge" class="amze-switch">
+  </label>
+  <p class="amze-info">
+    Computes a quality score from the review histogram: 1★/5★ polarization spike, one-star share,
+    verified-purchase ratio in the visible sample, and total volume. Trust badge combines rating and
+    volume into a quick 1-10 number on search tiles. Heuristic only.
+  </p>
+</section>
+
+<section id="amze-pane-price" class="amze-pane" data-pane="price" role="tabpanel" aria-labelledby="amze-tab-price" tabindex="-1">
+  <h2>Price tools</h2>
+  <p class="amze-lead">Expose unit cost, misleading discounts, clean links, and local price changes.</p>
+  <label class="amze-row">
+    <span><strong>Inline price-per-unit badges</strong><small>Auto-computes $/oz, $/kg, $/ct on search-result tiles when Amazon doesn't show it.</small></span>
+    <input type="checkbox" data-flag="pricePerUnit" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Flag suspicious MSRPs<small>Warns when strikethrough list price is &gt;70% higher than actual.</small></span>
+    <input type="checkbox" data-flag="listPriceWarn" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Normalize fake deal badges<small>Hides "Limited time deal" labels when your local 30-day price history shows no real drop.</small></span>
+    <input type="checkbox" data-flag="dealBadgeNormalizer" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Strip affiliate / tracking URL params<small>Removes tag, ref_, pd_rd_*, pf_rd_*, Honey attribution redirects, and shortens /dp/ links.</small></span>
+    <input type="checkbox" data-flag="stripAffiliate" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Price drop alerts<small>Set a target price on any PDP. You'll get a notification when the price drops below it. Fully local.</small></span>
+    <input type="checkbox" data-flag="priceAlert" class="amze-switch">
+  </label>
+</section>
+
+<section id="amze-pane-brands" class="amze-pane" data-pane="brands" role="tabpanel" aria-labelledby="amze-tab-brands" tabindex="-1">
+  <h2>Brand &amp; seller filters</h2>
+  <p class="amze-lead">Filter brand patterns from Amazon search results using local rules.</p>
+  <label class="amze-row">
+    <span>Hide Amazon in-house brands<small>Amazon Basics, Essentials, Solimo, Pinzon, Goodthreads, etc.</small></span>
+    <input type="checkbox" data-flag="hideAmazonBrands" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Hide "gibberish brand" tiles<small>Heuristic: 5–8 all-caps random letter brand names typical of drop-shippers.</small></span>
+    <input type="checkbox" data-flag="hideCN" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Hide custom brands<small>Enable to use the blocklist below. One regex per line.</small></span>
+    <input type="checkbox" data-flag="hideCustomBrands" class="amze-switch">
+  </label>
+  <div class="amze-field">
+    <label for="amze-brands">Custom brand blocklist (regex, one per line)</label>
+    <textarea id="amze-brands" rows="6" spellcheck="false" placeholder="^AOEUFG$&#10;Brand Name 1&#10;^[A-Z]{5,8}$"></textarea>
+    <small id="amze-brands-help" class="amze-field-help">Enable “Hide custom brands” to edit this list.</small>
+  </div>
+</section>
+
+<section id="amze-pane-cart" class="amze-pane" data-pane="cart" role="tabpanel" aria-labelledby="amze-tab-cart" tabindex="-1">
+  <h2>Cart, checkout &amp; dark patterns</h2>
+  <p class="amze-lead">Reduce surprise upsells, preselected extras, and silent checkout changes.</p>
+  <label class="amze-row">
+    <span><strong>Auto-decline warranty / protection plan</strong><small>Silently selects "No thanks" on SquareTrade/Allstate upsells at PDP, cart, and post-add-to-cart interstitial.</small></span>
+    <input type="checkbox" data-flag="autoDeclineWarranty" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span><strong>Force one-time purchase</strong><small>Catches pre-selected Subscribe &amp; Save radios on product pages and switches back to one-time.</small></span>
+    <input type="checkbox" data-flag="forceOneTimePurchase" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Auto-uncheck gift-receipt &amp; share-info<small>Clears pre-ticked "gift receipt", share-info-with-seller, and add-on checkboxes at checkout.</small></span>
+    <input type="checkbox" data-flag="autoUncheckDarkPatterns" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Skip recommended upgrades<small>Declines explicit "No thanks" / "Continue without upgrade" actions in cart and post-add-to-cart upgrade prompts.</small></span>
+    <input type="checkbox" data-flag="skipRecommendedUpgrade" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Disable Prime free-trial pre-checks<small>Unchecks a pre-selected 30-day Prime trial at checkout, or chooses an explicit no/continue-without-trial option.</small></span>
+    <input type="checkbox" data-flag="disablePrimeTrial" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Warn on silent shipping changes<small>Compares the selected checkout shipping tier and delivery slot after they settle, then warns if Amazon changes either.</small></span>
+    <input type="checkbox" data-flag="warnShippingChange" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Frequently returned warning<small>Flags Amazon's explicit frequently-returned disclosure and lists nearby return reasons when Amazon exposes them.</small></span>
+    <input type="checkbox" data-flag="frequentlyReturnedWarn" class="amze-switch">
+  </label>
+</section>
+
+<section id="amze-pane-trust" class="amze-pane" data-pane="trust" role="tabpanel" aria-labelledby="amze-tab-trust" tabindex="-1">
+  <h2>Transparency &amp; trust</h2>
+  <p class="amze-lead">Understand who is selling and how listings change across products and visits.</p>
+  <label class="amze-row">
+    <span>Country-of-origin badge<small>Pulls "Country of Origin" from the product details table and displays it as a badge on PDP. Caches per-ASIN for later search-page badging.</small></span>
+    <input type="checkbox" data-flag="countryBadge" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Reveal seller on PDP<small>Shows the actual third-party seller name + link near the product title.</small></span>
+    <input type="checkbox" data-flag="revealSeller" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Counterfeit-risk warning<small>Flags product pages where the brand name and marketplace seller name do not resemble each other.</small></span>
+    <input type="checkbox" data-flag="counterfeitWarn" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>OpenCorporates seller lookup<small>Opt-in lookup of marketplace seller names against OpenCorporates using your local API token.</small></span>
+    <input type="checkbox" data-flag="sellerLookup" class="amze-switch">
+  </label>
+  <div class="amze-field">
+    <label for="amze-oc-token">OpenCorporates API token</label>
+    <input id="amze-oc-token" type="password" spellcheck="false" autocomplete="off" placeholder="Stored locally only">
+    <small id="amze-oc-permission-status" class="amze-field-help">Enable seller lookup to grant access to OpenCorporates.</small>
+  </div>
+  <label class="amze-row">
+    <span>Variation bait warning<small>Flags listings where variant prices span more than 3× — a common bait-and-switch pattern.</small></span>
+    <input type="checkbox" data-flag="variationBait" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Variant local price map<small>Shows every color / size option with its lowest price seen in this browser. Uses local price history.</small></span>
+    <input type="checkbox" data-flag="variantPriceMap" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span><strong>Local PDP diff view</strong><small>Compares this listing side by side with previously visited matching listings to expose duplicate or A/B price differences.</small></span>
+    <input type="checkbox" data-flag="pdpDiff" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Local price history<small>Logs each observed price per ASIN to local storage. Renders a sparkline on product pages you've visited more than once.</small></span>
+    <input type="checkbox" data-flag="priceHistory" class="amze-switch">
+  </label>
+</section>
+
+<section id="amze-pane-tools" class="amze-pane" data-pane="tools" role="tabpanel" aria-labelledby="amze-tab-tools" tabindex="-1">
+  <h2>Tools &amp; data</h2>
+  <p class="amze-lead">Use local productivity tools and control the data AmazonEnhanced stores.</p>
+  <label class="amze-row">
+    <span>Copy clean product link<small>Adds a "📋 Copy clean link" button on PDPs that puts a Markdown-formatted link + price on the clipboard.</small></span>
+    <input type="checkbox" data-flag="copyCleanLink" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Order history export<small>On your-orders pages, shows CSV / JSON, calendar, and rate-limited invoice-PDF ZIP export buttons.</small></span>
+    <input type="checkbox" data-flag="orderExport" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span><strong>Bought-too-much summary</strong><small>Counts repeated ASINs across visited order pages and suggests reviewing Subscribe &amp; Save subscriptions.</small></span>
+    <input type="checkbox" data-flag="purchaseSummary" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Wishlist export<small>On wishlist pages, shows CSV / JSON / Markdown export buttons.</small></span>
+    <input type="checkbox" data-flag="wishlistExport" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Wishlist import<small>On a wishlist page, imports an AmazonEnhanced JSON export one item at a time through Amazon's visible Add to List controls.</small></span>
+    <input type="checkbox" data-flag="wishlistImport" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Late-delivery watcher<small>Scans visited orders pages; notifies when a promised delivery date passes without "Delivered" status. Uses the notifications permission.</small></span>
+    <input type="checkbox" data-flag="lateDeliveryWatch" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Extra "Sort by" options<small>Adds "Most reviews", "Newest", and "Best $/unit" to the search sort dropdown. Client-side re-order only.</small></span>
+    <input type="checkbox" data-flag="extraSortOptions" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span><strong>Weighted smart sort</strong><small>Adds live sliders for rating, review count, price, unit price, and trust score on search pages.</small></span>
+    <input type="checkbox" data-flag="weightedSmartSort" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>CPU tamer (experimental)<small>Throttles background setInterval / setTimeout to ≥1s while the tab is hidden. Reduces Amazon's battery/CPU cost.</small></span>
+    <input type="checkbox" data-flag="cpuTamer" class="amze-switch">
+  </label>
+  <div class="amze-privacy">
+    <h3>Privacy</h3>
+    <p>AmazonEnhanced stores settings, price history, PDP snapshots, purchase summaries, seller/origin caches, watched-order dates, structural diagnostic health, custom brand rules, and allergen terms locally in this browser profile. Diagnostic health contains no page text, URLs, or account data. It sends no analytics, telemetry, or shopping data to external services. If OpenCorporates seller lookup is enabled, seller names are sent to OpenCorporates using your local API token.</p>
+  </div>
+  <div class="amze-data-actions">
+    <input id="amze-price-history-import-file" type="file" accept=".json,application/json" hidden>
+    <button id="amze-import-price-history" type="button" class="amze-btn">Import price history JSON</button>
+    <span id="amze-import-status" role="status" aria-live="polite"></span>
+  </div>
+  <div class="amze-data-actions">
+    <button id="amze-clear-data" type="button" class="amze-btn amze-btn-danger">Clear local data</button>
+    <span id="amze-clear-status" role="status" aria-live="polite"></span>
+  </div>
+  <div class="amze-data-actions">
+    <button id="amze-export-errors" type="button" class="amze-btn">Export diagnostic report</button>
+    <button id="amze-clear-errors" type="button" class="amze-btn amze-btn-danger">Clear diagnostics</button>
+    <span id="amze-error-status" role="status" aria-live="polite"></span>
+  </div>
+</section>
+
+<section id="amze-pane-a11y" class="amze-pane" data-pane="a11y" role="tabpanel" aria-labelledby="amze-tab-a11y" tabindex="-1">
+  <h2>Accessibility &amp; safety</h2>
+  <p class="amze-lead">Improve readability, screen-reader labels, and ingredient awareness.</p>
+  <label class="amze-row">
+    <span>Large text mode<small>Bumps body text to 17px, headings scale accordingly.</small></span>
+    <input type="checkbox" data-flag="largeText" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>High-contrast mode<small>Yellow on black with cyan links, green prices. Overrides the theme until toggled off.</small></span>
+    <input type="checkbox" data-flag="highContrast" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>ARIA fixes<small>Adds aria-labels to Amazon's icon-only buttons so screen readers can announce them.</small></span>
+    <input type="checkbox" data-flag="ariaFixes" class="amze-switch">
+  </label>
+  <label class="amze-row">
+    <span>Allergen / ingredient watchlist<small>Scans product title, bullets, description, and A+ content for any of your watchlist terms. Matches show a warning banner on the PDP.</small></span>
+    <input type="checkbox" data-flag="allergenScan" class="amze-switch">
+  </label>
+  <div class="amze-field">
+    <label for="amze-allergens">Allergen / ingredient watchlist (one term per line)</label>
+    <textarea id="amze-allergens" rows="5" spellcheck="false" placeholder="peanut&#10;palm oil&#10;fragrance&#10;parabens"></textarea>
+    <small id="amze-allergens-help" class="amze-field-help">Enable the watchlist to edit these terms.</small>
+  </div>
+</section>
+
+<section id="amze-pane-theme" class="amze-pane" data-pane="theme" role="tabpanel" aria-labelledby="amze-tab-theme" tabindex="-1">
+  <h2>Theme &amp; density</h2>
+  <p class="amze-lead">Tune Amazon’s palette, spacing, and image treatment for desktop browsing.</p>
+  <div class="amze-theme-picker">
+    <label>
+      <input type="radio" name="amze-theme" value="dark" />
+      <span class="amze-swatch amze-swatch-dark"></span>
+      <span>Midnight (default)</span>
+    </label>
+    <label>
+      <input type="radio" name="amze-theme" value="amoled" />
+      <span class="amze-swatch amze-swatch-amoled"></span>
+      <span>AMOLED</span>
+    </label>
+    <label>
+      <input type="radio" name="amze-theme" value="light" />
+      <span class="amze-swatch amze-swatch-light"></span>
+      <span>Light (Amazon native)</span>
+    </label>
+  </div>
+  <div class="amze-field">
+    <label>Density</label>
+    <div class="amze-seg">
+      <button type="button" data-density="comfortable" class="amze-seg-btn">Comfortable</button>
+      <button type="button" data-density="compact" class="amze-seg-btn">Compact</button>
+    </div>
+  </div>
+
+  <div class="amze-field">
+    <label>Image dark-mode handling</label>
+    <div class="amze-seg amze-seg-image">
+      <button type="button" data-image="off" class="amze-seg-btn" title="No change to images">Off</button>
+      <button type="button" data-image="tile" class="amze-seg-btn" title="Wrap images in a light card (no color distortion)">Tile</button>
+      <button type="button" data-image="dim" class="amze-seg-btn" title="Brightness/contrast filter — softens harsh whites">Dim</button>
+      <button type="button" data-image="darken" class="amze-seg-btn" title="Opacity 0.75 — clean reduction without color distortion">Darken</button>
+      <button type="button" data-image="invert" class="amze-seg-btn" title="Flips every image (ruins photos, great for icons/text)">Invert</button>
+      <button type="button" data-image="smart" class="amze-seg-btn" title="Canvas corner-sample — inverts only images with white backgrounds">Smart</button>
+    </div>
+    <p class="amze-info amze-info-small">
+      <strong>Tile</strong> wraps each image in a soft card (default, no color distortion). <strong>Dim</strong> softens via brightness/contrast. <strong>Darken</strong> reduces opacity to 75% (inspired by stonecrusher's userstyle). <strong>Invert</strong> flips every image. <strong>Smart</strong> auto-inverts only white-bg images via canvas sampling.
+    </p>
+  </div>
+  <label class="amze-row">
+    <span>Show toasts on changes<small>Small notification confirming applied settings.</small></span>
+    <input type="checkbox" data-meta="toastsEnabled" class="amze-switch">
+  </label>
+</section>
+
+</main>
+
+<footer class="amze-foot">
+  <span>AmazonEnhanced</span>
+  <a href="https://github.com/SysAdminDoc/AmazonEnhanced" target="_blank" rel="noreferrer noopener">GitHub</a>
+</footer>
+
+<script src="browser-polyfill.min.js"></script>
+<script src="price-history-io.js"></script>
+<script src="error-buffer.js"></script>
+<script src="popup.js"></script>
+</body>
+</html>

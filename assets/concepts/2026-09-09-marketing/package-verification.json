@@ -1,0 +1,38 @@
+{
+  "version": "2.0.18",
+  "historicalIdentity": "8cc004804af4a41ac04ebdebe45adb18",
+  "packages": [
+    {
+      "name": "AmazonEnhanced-v2.0.18-release.zip",
+      "bytes": 919422,
+      "sha256": "6d62cf9a0262fef5166462af4c58b48ceb411fae12336e6a37f9250290f35e05",
+      "files": 53,
+      "signatureVerified": false,
+      "crxIdentity": null
+    },
+    {
+      "name": "AmazonEnhanced-v2.0.18.crx",
+      "bytes": 546035,
+      "sha256": "8073343547961bec1d0383ee0ed16d16a30f610c6d22e6a22f56761852a2b560",
+      "files": 53,
+      "signatureVerified": true,
+      "crxIdentity": "8cc004804af4a41ac04ebdebe45adb18"
+    },
+    {
+      "name": "AmazonEnhanced-v2.0.18-edge.zip",
+      "bytes": 545442,
+      "sha256": "a85ad91889e666fd3682ddb8a539dbcfdd75d49d3f72e94ed96aa0d830788247",
+      "files": 53,
+      "signatureVerified": false,
+      "crxIdentity": null
+    },
+    {
+      "name": "AmazonEnhanced-v2.0.18.xpi",
+      "bytes": 545687,
+      "sha256": "59187dd5f65b8d394c467b713401b9b4dcaa32b7888e1b3b22308b9354bb155c",
+      "files": 53,
+      "signatureVerified": false,
+      "crxIdentity": null
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+AmazonEnhanced includes Mozilla's webextension-polyfill 0.12.0 at
+browser-polyfill.min.js.
+
+Copyright Mozilla contributors. Licensed under the Mozilla Public License
+Version 2.0 (MPL-2.0). The source and license are available at:
+https://github.com/mozilla/webextension-polyfill

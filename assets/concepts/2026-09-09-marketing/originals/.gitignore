@@ -1,0 +1,48 @@
+# Node / build
+node_modules/
+dist/
+*.log
+npm-debug.log*
+__pycache__/
+*.py[cod]
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# Extension packaging — release artifacts, not tracked in-tree
+*.zip
+*.crx
+*.xpi
+*.pem
+
+# Signing key — NEVER commit. Losing this changes the extension ID.
+build/amazonenhanced.pem
+
+# MHTML reference snapshots + debug screenshots
+*.mhtml
+1.png
+2.png
+3.png
+/design/
+
+# Local private settings
+local-settings.json
+CLAUDE.md
+
+# Markdown files local-only (except README)
+*.md
+!README.md
+
+# AI config
+CODEX_CHANGELOG.md
+AGENTS.md
+.claude/
+.codex/
+.ai/
+PROJECT_CONTEXT.md
+CONTINUATION_PROMPT.md

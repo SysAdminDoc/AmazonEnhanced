@@ -1,0 +1,1961 @@
+/*
+ * AmazonEnhanced — theme.css
+ * Injected at document_start. Midnight Gallery dark (default) + AMOLED + light.
+ * All selectors are scoped by a data-amze-theme attribute on <html>.
+ * Declutter rules live here too, gated by data-amze-<flag> attributes.
+ *
+ * CSS namespace: amze-*
+ * Never use backdrop-filter: blur().
+ */
+
+/* ----------------------------------------------------------------------
+ * 1. Color tokens
+ * -------------------------------------------------------------------- */
+
+html[data-amze-theme="dark"] {
+  --amze-bg:            #090d16;
+  --amze-bg-alt:        #0b1220;
+  --amze-bg-raise:      #111827;
+  --amze-bg-elev:       #172033;
+  --amze-surface:       #101827;
+  --amze-surface-strong: #152238;
+  --amze-image-mat:     #f2f4f7;
+  --amze-border:        #334155;
+  --amze-border-soft:   #223047;
+  --amze-text:          #e8eef7;
+  --amze-text-dim:      #c4cedb;
+  --amze-text-muted:    #93a1b4;
+  --amze-accent:        #2f8ef4;
+  --amze-accent-hov:    #60a5fa;
+  --amze-success:       #7edc69;
+  --amze-warn:          #fbbf24;
+  --amze-danger:        #f04461;
+  --amze-link:          #38bdf8;
+  --amze-price:         #7edc69;
+  --amze-cta:           #ffd814;
+  --amze-cta-hov:       #f7ca00;
+  --amze-sponsor-tint:  rgba(240, 68, 97, 0.10);
+  --amze-shadow:        0 18px 48px rgba(2, 6, 23, 0.48);
+  --amze-shadow-soft:   0 10px 28px rgba(2, 6, 23, 0.28);
+  --amze-focus-glow:    rgba(47, 142, 244, 0.35);
+}
+
+html[data-amze-theme="amoled"] {
+  --amze-bg:            #000000;
+  --amze-bg-alt:        #050505;
+  --amze-bg-raise:      #0c0c0f;
+  --amze-bg-elev:       #17171c;
+  --amze-surface:       #09090c;
+  --amze-surface-strong: #111116;
+  --amze-image-mat:     #f2f4f7;
+  --amze-border:        #222227;
+  --amze-border-soft:   #141418;
+  --amze-text:          #e6e6ea;
+  --amze-text-dim:      #c4c4c8;
+  --amze-text-muted:    #8b8b93;
+  --amze-accent:        #7aa2f7;
+  --amze-accent-hov:    #9ab8ff;
+  --amze-success:       #73daca;
+  --amze-warn:          #e0af68;
+  --amze-danger:        #f7768e;
+  --amze-link:          #7dcfff;
+  --amze-price:         #9ece6a;
+  --amze-cta:           #ffd814;
+  --amze-cta-hov:       #f7ca00;
+  --amze-sponsor-tint:  rgba(247, 118, 142, 0.10);
+  --amze-shadow:        0 4px 18px rgba(0,0,0,0.80);
+  --amze-shadow-soft:   0 10px 28px rgba(0,0,0,0.64);
+  --amze-focus-glow:    rgba(122, 162, 247, 0.34);
+}
+
+html[data-amze-theme="light"] {
+  --amze-bg:            #eff1f5;
+  --amze-bg-alt:        #e6e9ef;
+  --amze-bg-raise:      #ffffff;
+  --amze-bg-elev:       #f5f6f9;
+  --amze-surface:       #ffffff;
+  --amze-surface-strong: #f8f9fb;
+  --amze-image-mat:     #f7f8fa;
+  --amze-border:        #bcc0cc;
+  --amze-border-soft:   #dce0e8;
+  --amze-text:          #4c4f69;
+  --amze-text-dim:      #5c5f77;
+  --amze-text-muted:    #6c6f85;
+  --amze-accent:        #1e66f5;
+  --amze-accent-hov:    #04a5e5;
+  --amze-success:       #40a02b;
+  --amze-warn:          #df8e1d;
+  --amze-danger:        #d20f39;
+  --amze-link:          #1e66f5;
+  --amze-price:         #40a02b;
+  --amze-cta:           #ffd814;
+  --amze-cta-hov:       #f7ca00;
+  --amze-sponsor-tint:  rgba(210, 15, 57, 0.06);
+  --amze-shadow:        0 2px 10px rgba(0,0,0,0.10);
+  --amze-shadow-soft:   0 8px 20px rgba(15,23,42,0.10);
+  --amze-focus-glow:    rgba(30, 102, 245, 0.22);
+}
+
+/* ----------------------------------------------------------------------
+ * 2. Dark/AMOLED Amazon re-skin (native-feel, not inverted).
+ *    Only scope to dark + amoled. Light stays Amazon stock.
+ * -------------------------------------------------------------------- */
+
+html[data-amze-theme="dark"] body,
+html[data-amze-theme="amoled"] body,
+html[data-amze-theme="dark"] body #a-page,
+html[data-amze-theme="amoled"] body #a-page {
+  background-color: var(--amze-bg) !important;
+  color: var(--amze-text) !important;
+}
+
+html[data-amze-theme="dark"] body,
+html[data-amze-theme="amoled"] body {
+  color-scheme: dark;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+html[data-amze-theme="dark"] :is(button, input, select, textarea),
+html[data-amze-theme="amoled"] :is(button, input, select, textarea) {
+  font-family: inherit !important;
+}
+
+/* Universal text correction within scoped pages */
+html[data-amze-theme="dark"] body *:not(svg):not(path):not(img):not(video):not(iframe):not(input):not(textarea):not(select):not(button):not(.a-button-inner):not(.a-button-text):not([class*="a-color-price"]):not([class*="a-price"]):not([class*="a-icon"]):not(.a-star-medium-4):not(.a-star-medium-5),
+html[data-amze-theme="amoled"] body *:not(svg):not(path):not(img):not(video):not(iframe):not(input):not(textarea):not(select):not(button):not(.a-button-inner):not(.a-button-text):not([class*="a-color-price"]):not([class*="a-price"]):not([class*="a-icon"]):not(.a-star-medium-4):not(.a-star-medium-5) {
+  /* Scope color overrides only to elements with explicit white or near-white background. Conservative. */
+}
+
+/* Top nav */
+html[data-amze-theme="dark"] #navbar,
+html[data-amze-theme="amoled"] #navbar,
+html[data-amze-theme="dark"] #nav-belt,
+html[data-amze-theme="amoled"] #nav-belt,
+html[data-amze-theme="dark"] #nav-main,
+html[data-amze-theme="amoled"] #nav-main,
+html[data-amze-theme="dark"] #navbar-main,
+html[data-amze-theme="amoled"] #navbar-main {
+  background: var(--amze-bg-alt) !important;
+  border-color: var(--amze-border) !important;
+}
+
+html[data-amze-theme="dark"] #nav-main,
+html[data-amze-theme="amoled"] #nav-main {
+  background: var(--amze-bg-raise) !important;
+  border-top: 1px solid var(--amze-border-soft) !important;
+  border-bottom: 1px solid var(--amze-border) !important;
+}
+
+html[data-amze-theme="dark"] #nav-belt,
+html[data-amze-theme="amoled"] #nav-belt {
+  box-shadow: 0 1px 0 var(--amze-border) !important;
+}
+
+html[data-amze-theme="dark"] #nav-search .nav-search-dropdown,
+html[data-amze-theme="amoled"] #nav-search .nav-search-dropdown,
+html[data-amze-theme="dark"] #nav-search .nav-search-field,
+html[data-amze-theme="amoled"] #nav-search .nav-search-field {
+  background: var(--amze-bg-raise) !important;
+  border-color: var(--amze-border) !important;
+}
+
+html[data-amze-theme="dark"] #nav-search,
+html[data-amze-theme="amoled"] #nav-search {
+  filter: drop-shadow(0 8px 18px rgba(2, 6, 23, 0.26));
+}
+
+html[data-amze-theme="dark"] #nav-search .nav-search-dropdown,
+html[data-amze-theme="amoled"] #nav-search .nav-search-dropdown {
+  border-radius: 8px 0 0 8px !important;
+}
+
+html[data-amze-theme="dark"] #nav-search :is(.nav-search-scope, .nav-search-facade, #nav-search-label-id),
+html[data-amze-theme="amoled"] #nav-search :is(.nav-search-scope, .nav-search-facade, #nav-search-label-id) {
+  background-color: var(--amze-bg-raise) !important;
+  color: var(--amze-text-muted) !important;
+}
+
+html[data-amze-theme="dark"] #nav-search .nav-search-field,
+html[data-amze-theme="amoled"] #nav-search .nav-search-field {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+}
+
+html[data-amze-theme="dark"] #nav-search .nav-search-field input,
+html[data-amze-theme="amoled"] #nav-search .nav-search-field input {
+  background: var(--amze-bg-raise) !important;
+  color: var(--amze-text) !important;
+}
+
+html[data-amze-theme="dark"] #nav-search .nav-search-submit,
+html[data-amze-theme="amoled"] #nav-search .nav-search-submit {
+  background-color: var(--amze-accent) !important;
+  border-radius: 0 8px 8px 0 !important;
+  overflow: hidden;
+  transition: background-color .15s ease, box-shadow .15s ease;
+}
+
+html[data-amze-theme="dark"] #nav-search :is(.nav-search-submit-text, #nav-search-submit-button),
+html[data-amze-theme="amoled"] #nav-search :is(.nav-search-submit-text, #nav-search-submit-button) {
+  background-color: transparent !important;
+  border-radius: 0 8px 8px 0 !important;
+}
+
+html[data-amze-theme="dark"] #nav-search .nav-search-submit:hover,
+html[data-amze-theme="amoled"] #nav-search .nav-search-submit:hover {
+  background-color: var(--amze-accent-hov) !important;
+  box-shadow: 0 0 0 3px var(--amze-focus-glow);
+}
+
+html[data-amze-theme="dark"] #nav-search:focus-within,
+html[data-amze-theme="amoled"] #nav-search:focus-within {
+  border-radius: 8px !important;
+  box-shadow: 0 0 0 3px var(--amze-focus-glow) !important;
+  outline: 0 !important;
+}
+
+html[data-amze-theme="dark"] #nav-search:focus-within :is(.nav-search-dropdown, .nav-search-field, input),
+html[data-amze-theme="amoled"] #nav-search:focus-within :is(.nav-search-dropdown, .nav-search-field, input) {
+  border-color: var(--amze-accent) !important;
+  box-shadow: none !important;
+  outline: 0 !important;
+}
+
+html[data-amze-theme="dark"] a, html[data-amze-theme="amoled"] a { color: var(--amze-link); }
+html[data-amze-theme="dark"] a:hover, html[data-amze-theme="amoled"] a:hover { color: var(--amze-accent-hov); }
+
+html[data-amze-theme="dark"] .a-color-base,
+html[data-amze-theme="amoled"] .a-color-base,
+html[data-amze-theme="dark"] .a-text-normal,
+html[data-amze-theme="amoled"] .a-text-normal,
+html[data-amze-theme="dark"] h1, html[data-amze-theme="amoled"] h1,
+html[data-amze-theme="dark"] h2, html[data-amze-theme="amoled"] h2,
+html[data-amze-theme="dark"] h3, html[data-amze-theme="amoled"] h3,
+html[data-amze-theme="dark"] h4, html[data-amze-theme="amoled"] h4,
+html[data-amze-theme="dark"] h5, html[data-amze-theme="amoled"] h5,
+html[data-amze-theme="dark"] span.a-size-base, html[data-amze-theme="amoled"] span.a-size-base,
+html[data-amze-theme="dark"] span.a-size-medium, html[data-amze-theme="amoled"] span.a-size-medium,
+html[data-amze-theme="dark"] span.a-size-large, html[data-amze-theme="amoled"] span.a-size-large {
+  color: var(--amze-text) !important;
+}
+
+html[data-amze-theme="dark"] .a-color-secondary,
+html[data-amze-theme="amoled"] .a-color-secondary,
+html[data-amze-theme="dark"] .a-color-tertiary,
+html[data-amze-theme="amoled"] .a-color-tertiary {
+  color: var(--amze-text-muted) !important;
+}
+
+html[data-amze-theme="dark"] .a-color-price,
+html[data-amze-theme="amoled"] .a-color-price,
+html[data-amze-theme="dark"] span.a-price .a-offscreen,
+html[data-amze-theme="amoled"] span.a-price .a-offscreen,
+html[data-amze-theme="dark"] .a-price-whole,
+html[data-amze-theme="amoled"] .a-price-whole,
+html[data-amze-theme="dark"] .a-price-fraction,
+html[data-amze-theme="amoled"] .a-price-fraction,
+html[data-amze-theme="dark"] .a-price-symbol,
+html[data-amze-theme="amoled"] .a-price-symbol {
+  color: var(--amze-price) !important;
+}
+
+/* Cards, tiles, panels */
+html[data-amze-theme="dark"] .s-card-container,
+html[data-amze-theme="amoled"] .s-card-container,
+html[data-amze-theme="dark"] .s-result-item,
+html[data-amze-theme="amoled"] .s-result-item,
+html[data-amze-theme="dark"] .a-box,
+html[data-amze-theme="amoled"] .a-box,
+html[data-amze-theme="dark"] .a-box-inner,
+html[data-amze-theme="amoled"] .a-box-inner,
+html[data-amze-theme="dark"] .a-section,
+html[data-amze-theme="amoled"] .a-section,
+html[data-amze-theme="dark"] #centerCol,
+html[data-amze-theme="amoled"] #centerCol,
+html[data-amze-theme="dark"] #leftCol,
+html[data-amze-theme="amoled"] #leftCol,
+html[data-amze-theme="dark"] #rightCol,
+html[data-amze-theme="amoled"] #rightCol {
+  background-color: transparent !important;
+  border-color: var(--amze-border-soft) !important;
+}
+
+html[data-amze-theme="dark"] .s-result-item[data-component-type="s-search-result"],
+html[data-amze-theme="amoled"] .s-result-item[data-component-type="s-search-result"] {
+  background: var(--amze-surface) !important;
+  border: 1px solid var(--amze-border-soft) !important;
+  border-radius: 12px !important;
+  padding: 14px !important;
+  margin-bottom: 12px !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+  transition: transform .15s ease, background-color .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+
+html[data-amze-theme="dark"] .s-result-item[data-component-type="s-search-result"]:hover,
+html[data-amze-theme="amoled"] .s-result-item[data-component-type="s-search-result"]:hover {
+  transform: translateY(-1px);
+  border-color: var(--amze-accent) !important;
+  background: var(--amze-surface-strong) !important;
+  box-shadow: var(--amze-shadow-soft);
+}
+
+/* Inputs, buttons */
+html[data-amze-theme="dark"] input[type="text"],
+html[data-amze-theme="amoled"] input[type="text"],
+html[data-amze-theme="dark"] input[type="email"],
+html[data-amze-theme="amoled"] input[type="email"],
+html[data-amze-theme="dark"] input[type="password"],
+html[data-amze-theme="amoled"] input[type="password"],
+html[data-amze-theme="dark"] input[type="search"],
+html[data-amze-theme="amoled"] input[type="search"],
+html[data-amze-theme="dark"] input[type="number"],
+html[data-amze-theme="amoled"] input[type="number"],
+html[data-amze-theme="dark"] textarea,
+html[data-amze-theme="amoled"] textarea,
+html[data-amze-theme="dark"] select,
+html[data-amze-theme="amoled"] select {
+  background: var(--amze-bg-raise) !important;
+  color: var(--amze-text) !important;
+  border-color: var(--amze-border) !important;
+  border-radius: 8px !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+}
+
+html[data-amze-theme="dark"] .a-button,
+html[data-amze-theme="amoled"] .a-button,
+html[data-amze-theme="dark"] .a-button-inner,
+html[data-amze-theme="amoled"] .a-button-inner {
+  background: var(--amze-bg-raise) !important;
+  border-color: var(--amze-border) !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+}
+
+html[data-amze-theme="dark"] .a-button-primary,
+html[data-amze-theme="amoled"] .a-button-primary,
+html[data-amze-theme="dark"] .a-button-primary .a-button-inner,
+html[data-amze-theme="amoled"] .a-button-primary .a-button-inner {
+  background: var(--amze-cta) !important;
+  border-color: var(--amze-cta) !important;
+}
+
+html[data-amze-theme="dark"] .a-button-primary:hover .a-button-inner,
+html[data-amze-theme="amoled"] .a-button-primary:hover .a-button-inner {
+  background: var(--amze-cta-hov) !important;
+  border-color: var(--amze-cta-hov) !important;
+}
+
+html[data-amze-theme="dark"] .a-button-primary .a-button-text,
+html[data-amze-theme="amoled"] .a-button-primary .a-button-text {
+  color: #111827 !important;
+  font-weight: 650 !important;
+}
+
+html[data-amze-theme="dark"] .a-button-text,
+html[data-amze-theme="amoled"] .a-button-text {
+  color: var(--amze-text) !important;
+}
+
+/* Table rows, shopping cart */
+html[data-amze-theme="dark"] .sc-list-item,
+html[data-amze-theme="amoled"] .sc-list-item,
+html[data-amze-theme="dark"] .sc-list-item-content,
+html[data-amze-theme="amoled"] .sc-list-item-content,
+html[data-amze-theme="dark"] #sc-active-cart,
+html[data-amze-theme="amoled"] #sc-active-cart {
+  background: var(--amze-surface) !important;
+  border-color: var(--amze-border-soft) !important;
+}
+
+html[data-amze-theme="dark"] .sc-proceed-to-checkout,
+html[data-amze-theme="amoled"] .sc-proceed-to-checkout {
+  background: var(--amze-cta) !important;
+  color: #111827 !important;
+}
+
+/* Footer */
+html[data-amze-theme="dark"] #navFooter,
+html[data-amze-theme="amoled"] #navFooter,
+html[data-amze-theme="dark"] #rhf,
+html[data-amze-theme="amoled"] #rhf {
+  background: var(--amze-bg-alt) !important;
+  color: var(--amze-text-dim) !important;
+  border-top: 1px solid var(--amze-border) !important;
+}
+
+/* Scrollbar */
+html[data-amze-theme="dark"] *::-webkit-scrollbar,
+html[data-amze-theme="amoled"] *::-webkit-scrollbar { width: 10px; height: 10px; }
+html[data-amze-theme="dark"] *::-webkit-scrollbar-track,
+html[data-amze-theme="amoled"] *::-webkit-scrollbar-track { background: var(--amze-bg-alt); }
+html[data-amze-theme="dark"] *::-webkit-scrollbar-thumb,
+html[data-amze-theme="amoled"] *::-webkit-scrollbar-thumb {
+  background: var(--amze-border);
+  border: 2px solid var(--amze-bg-alt);
+  border-radius: 6px;
+}
+
+/* ----------------------------------------------------------------------
+ * 2a. Nuclear white-background overrides.
+ *     Amazon inlines style="background:#fff" / background-color:white on
+ *     dozens of widgets that have no distinctive class. Beat inline style
+ *     with !important attribute selectors. Covers the most common forms.
+ * -------------------------------------------------------------------- */
+
+html[data-amze-theme="dark"] [style*="background:#fff"],
+html[data-amze-theme="amoled"] [style*="background:#fff"],
+html[data-amze-theme="dark"] [style*="background: #fff"],
+html[data-amze-theme="amoled"] [style*="background: #fff"],
+html[data-amze-theme="dark"] [style*="background:#FFF"],
+html[data-amze-theme="amoled"] [style*="background:#FFF"],
+html[data-amze-theme="dark"] [style*="background: #FFF"],
+html[data-amze-theme="amoled"] [style*="background: #FFF"],
+html[data-amze-theme="dark"] [style*="background-color:#fff"],
+html[data-amze-theme="amoled"] [style*="background-color:#fff"],
+html[data-amze-theme="dark"] [style*="background-color: #fff"],
+html[data-amze-theme="amoled"] [style*="background-color: #fff"],
+html[data-amze-theme="dark"] [style*="background-color:#FFF"],
+html[data-amze-theme="amoled"] [style*="background-color:#FFF"],
+html[data-amze-theme="dark"] [style*="background-color: #FFF"],
+html[data-amze-theme="amoled"] [style*="background-color: #FFF"],
+html[data-amze-theme="dark"] [style*="background:white"],
+html[data-amze-theme="amoled"] [style*="background:white"],
+html[data-amze-theme="dark"] [style*="background: white"],
+html[data-amze-theme="amoled"] [style*="background: white"],
+html[data-amze-theme="dark"] [style*="background-color:white"],
+html[data-amze-theme="amoled"] [style*="background-color:white"],
+html[data-amze-theme="dark"] [style*="background-color: white"],
+html[data-amze-theme="amoled"] [style*="background-color: white"],
+html[data-amze-theme="dark"] [style*="background-color:rgb(255"],
+html[data-amze-theme="amoled"] [style*="background-color:rgb(255"],
+html[data-amze-theme="dark"] [style*="background-color: rgb(255"],
+html[data-amze-theme="amoled"] [style*="background-color: rgb(255"],
+html[data-amze-theme="dark"] [bgcolor="#FFFFFF"],
+html[data-amze-theme="amoled"] [bgcolor="#FFFFFF"],
+html[data-amze-theme="dark"] [bgcolor="#ffffff"],
+html[data-amze-theme="amoled"] [bgcolor="#ffffff"],
+html[data-amze-theme="dark"] [bgcolor="white"],
+html[data-amze-theme="amoled"] [bgcolor="white"] {
+  background-color: var(--amze-bg-alt) !important;
+  background-image: none !important;
+  color: var(--amze-text) !important;
+}
+
+/* Broader Amazon container IDs / classes that Amazon uses as white canvas. */
+html[data-amze-theme="dark"] #a-page,
+html[data-amze-theme="amoled"] #a-page,
+html[data-amze-theme="dark"] #pageContent,
+html[data-amze-theme="amoled"] #pageContent,
+html[data-amze-theme="dark"] #dp,
+html[data-amze-theme="amoled"] #dp,
+html[data-amze-theme="dark"] #dp-container,
+html[data-amze-theme="amoled"] #dp-container,
+html[data-amze-theme="dark"] #ppd,
+html[data-amze-theme="amoled"] #ppd,
+html[data-amze-theme="dark"] #imageBlock_feature_div,
+html[data-amze-theme="amoled"] #imageBlock_feature_div,
+html[data-amze-theme="dark"] #title_feature_div,
+html[data-amze-theme="amoled"] #title_feature_div,
+html[data-amze-theme="dark"] #centerCol,
+html[data-amze-theme="amoled"] #centerCol,
+html[data-amze-theme="dark"] #leftCol,
+html[data-amze-theme="amoled"] #leftCol,
+html[data-amze-theme="dark"] #rightCol,
+html[data-amze-theme="amoled"] #rightCol,
+html[data-amze-theme="dark"] .a-container,
+html[data-amze-theme="amoled"] .a-container,
+html[data-amze-theme="dark"] .a-padding-none,
+html[data-amze-theme="amoled"] .a-padding-none,
+html[data-amze-theme="dark"] .a-padding-mini,
+html[data-amze-theme="amoled"] .a-padding-mini,
+html[data-amze-theme="dark"] .a-padding-small,
+html[data-amze-theme="amoled"] .a-padding-small,
+html[data-amze-theme="dark"] .a-padding-medium,
+html[data-amze-theme="amoled"] .a-padding-medium,
+html[data-amze-theme="dark"] .a-padding-large,
+html[data-amze-theme="amoled"] .a-padding-large,
+html[data-amze-theme="dark"] .a-fixed-left-grid,
+html[data-amze-theme="amoled"] .a-fixed-left-grid,
+html[data-amze-theme="dark"] .a-fixed-right-grid,
+html[data-amze-theme="amoled"] .a-fixed-right-grid,
+html[data-amze-theme="dark"] .a-fixed-right-grid-col,
+html[data-amze-theme="amoled"] .a-fixed-right-grid-col,
+html[data-amze-theme="dark"] .a-fixed-left-grid-col,
+html[data-amze-theme="amoled"] .a-fixed-left-grid-col,
+html[data-amze-theme="dark"] .a-spacing-none,
+html[data-amze-theme="amoled"] .a-spacing-none {
+  background-color: transparent !important;
+  color: var(--amze-text);
+}
+
+/* Normalized elements marked by JS sweep (see content.js killWhiteBackgrounds). */
+html[data-amze-theme="dark"] [data-amze-kw="1"],
+html[data-amze-theme="amoled"] [data-amze-kw="1"] {
+  background-color: var(--amze-bg-alt) !important;
+  background-image: none !important;
+  color: var(--amze-text) !important;
+}
+
+/* Generic coverage for every Amazon PDP widget id (pattern: *_feature_div).
+ * There are 200+ of these on a typical PDP. Paint them dark on first paint
+ * so we don't flash white before the JS sweep catches them. */
+html[data-amze-theme="dark"] [id$="_feature_div"],
+html[data-amze-theme="amoled"] [id$="_feature_div"] {
+  background-color: transparent !important;
+  color: var(--amze-text) !important;
+  border-color: var(--amze-border-soft) !important;
+}
+
+/* PDP buybox, apex, core-price containers — force dark */
+html[data-amze-theme="dark"] #buybox,
+html[data-amze-theme="amoled"] #buybox,
+html[data-amze-theme="dark"] #buyBoxAccordion,
+html[data-amze-theme="amoled"] #buyBoxAccordion,
+html[data-amze-theme="dark"] #desktop_buybox,
+html[data-amze-theme="amoled"] #desktop_buybox,
+html[data-amze-theme="dark"] #desktop_buybox_group_1,
+html[data-amze-theme="amoled"] #desktop_buybox_group_1,
+html[data-amze-theme="dark"] #desktop_buybox_group_2,
+html[data-amze-theme="amoled"] #desktop_buybox_group_2,
+html[data-amze-theme="dark"] #apex_desktop,
+html[data-amze-theme="amoled"] #apex_desktop,
+html[data-amze-theme="dark"] #apex_desktop_newAccordion,
+html[data-amze-theme="amoled"] #apex_desktop_newAccordion,
+html[data-amze-theme="dark"] #apex_dp_center_column,
+html[data-amze-theme="amoled"] #apex_dp_center_column,
+html[data-amze-theme="dark"] #apex_dp_offer_display,
+html[data-amze-theme="amoled"] #apex_dp_offer_display,
+html[data-amze-theme="dark"] #apex_offerDisplay_desktop,
+html[data-amze-theme="amoled"] #apex_offerDisplay_desktop,
+html[data-amze-theme="dark"] #corePrice_feature_div,
+html[data-amze-theme="amoled"] #corePrice_feature_div,
+html[data-amze-theme="dark"] #corePriceDisplay_desktop_feature_div,
+html[data-amze-theme="amoled"] #corePriceDisplay_desktop_feature_div,
+html[data-amze-theme="dark"] #productOverview_feature_div,
+html[data-amze-theme="amoled"] #productOverview_feature_div,
+html[data-amze-theme="dark"] #featurebullets_feature_div,
+html[data-amze-theme="amoled"] #featurebullets_feature_div,
+html[data-amze-theme="dark"] #productDescription_feature_div,
+html[data-amze-theme="amoled"] #productDescription_feature_div,
+html[data-amze-theme="dark"] #productDetails_feature_div,
+html[data-amze-theme="amoled"] #productDetails_feature_div,
+html[data-amze-theme="dark"] #qualifiedBuybox,
+html[data-amze-theme="amoled"] #qualifiedBuybox,
+html[data-amze-theme="dark"] #offerDisplay_feature_div,
+html[data-amze-theme="amoled"] #offerDisplay_feature_div,
+html[data-amze-theme="dark"] #availability_feature_div,
+html[data-amze-theme="amoled"] #availability_feature_div,
+html[data-amze-theme="dark"] #shippingMessageInsideBuyBox_feature_div,
+html[data-amze-theme="amoled"] #shippingMessageInsideBuyBox_feature_div,
+html[data-amze-theme="dark"] #shipsFromSoldBy_feature_div,
+html[data-amze-theme="amoled"] #shipsFromSoldBy_feature_div,
+html[data-amze-theme="dark"] #HLCXComparisonWidgetContainer,
+html[data-amze-theme="amoled"] #HLCXComparisonWidgetContainer,
+html[data-amze-theme="dark"] #bylineInfo_feature_div,
+html[data-amze-theme="amoled"] #bylineInfo_feature_div,
+html[data-amze-theme="dark"] #averageCustomerReviews_feature_div,
+html[data-amze-theme="amoled"] #averageCustomerReviews_feature_div,
+html[data-amze-theme="dark"] #acBadge_feature_div,
+html[data-amze-theme="amoled"] #acBadge_feature_div,
+html[data-amze-theme="dark"] #title_feature_div,
+html[data-amze-theme="amoled"] #title_feature_div {
+  background-color: var(--amze-bg-alt) !important;
+  color: var(--amze-text) !important;
+  border-color: var(--amze-border-soft) !important;
+}
+
+/* Force text children readable inside these widgets */
+html[data-amze-theme="dark"] [id$="_feature_div"] *:not(a):not(.a-icon):not(.a-price):not(.a-price *):not(img):not(svg):not(path),
+html[data-amze-theme="amoled"] [id$="_feature_div"] *:not(a):not(.a-icon):not(.a-price):not(.a-price *):not(img):not(svg):not(path) {
+  color: inherit !important;
+}
+
+/* ----------------------------------------------------------------------
+ * 2b. Card & widget coverage (homepage feeds, cart upsells, promo strips).
+ *     Amazon's widget markup is inconsistent — hitting class fragments
+ *     matches more variants than exact class names.
+ * -------------------------------------------------------------------- */
+
+/* Homepage feed & cardui cards */
+html[data-amze-theme="dark"] .a-cardui,
+html[data-amze-theme="amoled"] .a-cardui,
+html[data-amze-theme="dark"] .a-cardui-body,
+html[data-amze-theme="amoled"] .a-cardui-body,
+html[data-amze-theme="dark"] .a-cardui-header,
+html[data-amze-theme="amoled"] .a-cardui-header,
+html[data-amze-theme="dark"] .gw-card,
+html[data-amze-theme="amoled"] .gw-card,
+html[data-amze-theme="dark"] #gridItemRoot,
+html[data-amze-theme="amoled"] #gridItemRoot,
+html[data-amze-theme="dark"] .feed-carousel,
+html[data-amze-theme="amoled"] .feed-carousel,
+html[data-amze-theme="dark"] [class*="FluidCard"],
+html[data-amze-theme="amoled"] [class*="FluidCard"],
+html[data-amze-theme="dark"] [class*="fs-desktop-card"],
+html[data-amze-theme="amoled"] [class*="fs-desktop-card"],
+html[data-amze-theme="dark"] [class*="cardRoot"],
+html[data-amze-theme="amoled"] [class*="cardRoot"] {
+  background: var(--amze-bg-alt) !important;
+  color: var(--amze-text) !important;
+  border-color: var(--amze-border-soft) !important;
+  box-shadow: none !important;
+}
+
+/* Text inside hero cards — Amazon sometimes inlines color:#fff for
+   dark-over-image layouts; force readable on our dark bg. */
+html[data-amze-theme="dark"] .a-cardui h2,
+html[data-amze-theme="amoled"] .a-cardui h2,
+html[data-amze-theme="dark"] .a-cardui h3,
+html[data-amze-theme="amoled"] .a-cardui h3,
+html[data-amze-theme="dark"] .a-cardui h4,
+html[data-amze-theme="amoled"] .a-cardui h4,
+html[data-amze-theme="dark"] .a-cardui span,
+html[data-amze-theme="amoled"] .a-cardui span,
+html[data-amze-theme="dark"] .a-cardui p,
+html[data-amze-theme="amoled"] .a-cardui p,
+html[data-amze-theme="dark"] .gw-card span,
+html[data-amze-theme="amoled"] .gw-card span,
+html[data-amze-theme="dark"] [class*="FluidCard"] span,
+html[data-amze-theme="amoled"] [class*="FluidCard"] span,
+html[data-amze-theme="dark"] [class*="FluidCard"] p,
+html[data-amze-theme="amoled"] [class*="FluidCard"] p {
+  color: var(--amze-text) !important;
+}
+
+/* Cart upsells, Prime Visa strip, subtotal buy-box, related-products sidebar */
+html[data-amze-theme="dark"] #hlb-message,
+html[data-amze-theme="amoled"] #hlb-message,
+html[data-amze-theme="dark"] #hlb-subcart,
+html[data-amze-theme="amoled"] #hlb-subcart,
+html[data-amze-theme="dark"] #sw-subtotal,
+html[data-amze-theme="amoled"] #sw-subtotal,
+html[data-amze-theme="dark"] #sw-atc-confirmation,
+html[data-amze-theme="amoled"] #sw-atc-confirmation,
+html[data-amze-theme="dark"] #sw-hsa-rcx-upsell,
+html[data-amze-theme="amoled"] #sw-hsa-rcx-upsell,
+html[data-amze-theme="dark"] #sw-gtc,
+html[data-amze-theme="amoled"] #sw-gtc,
+html[data-amze-theme="dark"] #nav-hsa-rcx-upsell,
+html[data-amze-theme="amoled"] #nav-hsa-rcx-upsell,
+html[data-amze-theme="dark"] .sc-buybox,
+html[data-amze-theme="amoled"] .sc-buybox,
+html[data-amze-theme="dark"] .sc-buybox-ptc-summary,
+html[data-amze-theme="amoled"] .sc-buybox-ptc-summary,
+html[data-amze-theme="dark"] #sc-buy-box,
+html[data-amze-theme="amoled"] #sc-buy-box,
+html[data-amze-theme="dark"] #sc-buy-box-ptc-button,
+html[data-amze-theme="amoled"] #sc-buy-box-ptc-button,
+html[data-amze-theme="dark"] [id*="upsell"],
+html[data-amze-theme="amoled"] [id*="upsell"],
+html[data-amze-theme="dark"] [class*="upsell-widget"],
+html[data-amze-theme="amoled"] [class*="upsell-widget"],
+html[data-amze-theme="dark"] [class*="buy-box"],
+html[data-amze-theme="amoled"] [class*="buy-box"],
+html[data-amze-theme="dark"] #desktop-breadcrumbs_feature_div,
+html[data-amze-theme="amoled"] #desktop-breadcrumbs_feature_div {
+  background: var(--amze-bg-alt) !important;
+  color: var(--amze-text) !important;
+  border-color: var(--amze-border-soft) !important;
+}
+
+/* Cart subtotal "Proceed to checkout" block on the right */
+html[data-amze-theme="dark"] #activeCartViewForm,
+html[data-amze-theme="amoled"] #activeCartViewForm,
+html[data-amze-theme="dark"] .sc-subtotal,
+html[data-amze-theme="amoled"] .sc-subtotal,
+html[data-amze-theme="dark"] #sc-buy-box-ptc-button-announce,
+html[data-amze-theme="amoled"] #sc-buy-box-ptc-button-announce {
+  background: var(--amze-bg-alt) !important;
+  color: var(--amze-text) !important;
+  border-color: var(--amze-border-soft) !important;
+}
+
+/* Related-products sidebar ("Related products with fast delivery") */
+html[data-amze-theme="dark"] #rcx_container,
+html[data-amze-theme="amoled"] #rcx_container,
+html[data-amze-theme="dark"] #rhf-frame,
+html[data-amze-theme="amoled"] #rhf-frame,
+html[data-amze-theme="dark"] .rcx-carousel-card,
+html[data-amze-theme="amoled"] .rcx-carousel-card {
+  background: var(--amze-bg-alt) !important;
+  color: var(--amze-text) !important;
+  border-color: var(--amze-border-soft) !important;
+}
+
+/* Force text readable on all white-intent backgrounds we just overrode */
+html[data-amze-theme="dark"] [id*="upsell"] *,
+html[data-amze-theme="amoled"] [id*="upsell"] *,
+html[data-amze-theme="dark"] #hlb-message *,
+html[data-amze-theme="amoled"] #hlb-message *,
+html[data-amze-theme="dark"] .sc-subtotal *,
+html[data-amze-theme="amoled"] .sc-subtotal * {
+  color: var(--amze-text) !important;
+}
+
+/* But preserve prices and links inside */
+html[data-amze-theme="dark"] [id*="upsell"] .a-price *,
+html[data-amze-theme="amoled"] [id*="upsell"] .a-price *,
+html[data-amze-theme="dark"] .sc-subtotal .a-price *,
+html[data-amze-theme="amoled"] .sc-subtotal .a-price * {
+  color: var(--amze-price) !important;
+}
+
+html[data-amze-theme="dark"] [id*="upsell"] a,
+html[data-amze-theme="amoled"] [id*="upsell"] a {
+  color: var(--amze-link) !important;
+}
+
+/* ----------------------------------------------------------------------
+ * 3. Sponsored/ad removal rules (flag: hideSponsored)
+ *    Covers result tiles, video ads, banner strips.
+ * -------------------------------------------------------------------- */
+
+html[data-amze-hideSponsored="1"] .AdHolder,
+html[data-amze-hideSponsored="1"] .s-sponsored-label-info-icon,
+html[data-amze-hideSponsored="1"] [data-component-type="sp-sponsored-result"],
+html[data-amze-hideSponsored="1"] [data-ad-feedback-container],
+html[data-amze-hideSponsored="1"] [data-cel-widget*="MAIN-SPONSORED"],
+html[data-amze-hideSponsored="1"] [cel_widget_id*="MAIN-SPONSORED"],
+html[data-amze-hideSponsored="1"] [data-cel-widget*="TOP-SLOT_SPONSORED"],
+html[data-amze-hideSponsored="1"] [cel_widget_id*="TOP-SLOT_SPONSORED"],
+html[data-amze-hideSponsored="1"] [data-cel-widget*="LEFT-SAFE-FRAME"],
+html[data-amze-hideSponsored="1"] #sponsoredProducts2_feature_div,
+html[data-amze-hideSponsored="1"] #sims-consolidated-2_feature_div,
+html[data-amze-hideSponsored="1"] #sp_detail,
+html[data-amze-hideSponsored="1"] #sp_detail_thematic,
+html[data-amze-hideSponsored="1"] #sp_detail2,
+html[data-amze-hideSponsored="1"] #sp_hqp_shared_inline,
+html[data-amze-hideSponsored="1"] div[data-csa-c-content-id*="sponsored"],
+html[data-amze-hideSponsored="1"] div[data-csa-c-content-id*="Sponsored"],
+/* Amazon APE / Javelin / SafeFrame ads (homepage & gateway btf/atf cards) */
+html[data-amze-hideSponsored="1"] [cel_widget_id^="adplacements:"],
+html[data-amze-hideSponsored="1"] [data-cel-widget^="adplacements:"],
+html[data-amze-hideSponsored="1"] [cel_widget_id*="adplacements:"],
+html[data-amze-hideSponsored="1"] [data-cel-widget*="adplacements:"],
+html[data-amze-hideSponsored="1"] [id^="ape_"][id$="_placement"],
+html[data-amze-hideSponsored="1"] [id^="ape_"][id$="_iframe"],
+html[data-amze-hideSponsored="1"] [id^="ape_"][id$="_Feedback"],
+html[data-amze-hideSponsored="1"] [id^="ape_"][id$="_ClickTracking"],
+html[data-amze-hideSponsored="1"] [id^="sf-host-load_"],
+html[data-amze-hideSponsored="1"] .ape-placement,
+html[data-amze-hideSponsored="1"] .ape-feedback,
+html[data-amze-hideSponsored="1"] [data-csa-c-painter="JavelinRenderingService"],
+html[data-amze-hideSponsored="1"] [class*="ad-placements"],
+html[data-amze-hideSponsored="1"] [class*="csm-placement-id-"],
+html[data-amze-hideSponsored="1"] [class*="gateway-btf_ad"],
+html[data-amze-hideSponsored="1"] [class*="gateway-atf_ad"],
+html[data-amze-hideSponsored="1"] [id*="desktop-homepage-btf-card"],
+html[data-amze-hideSponsored="1"] [id*="desktop-homepage-atf-card"],
+html[data-amze-hideSponsored="1"] .featured-brand-container,
+html[data-amze-hideSponsored="1"] [id^="featured-brand-"],
+html[data-amze-hideSponsored="1"] #sc-new-upsell,
+html[data-amze-hideSponsored="1"] [data-gwi*="btf-grid"][data-gwi*="active"],
+html[data-amze-hideSponsored="1"] iframe[title="Sponsored ad"],
+html[data-amze-hideSponsored="1"] iframe[src*="amazon-adsystem.com"],
+html[data-amze-hideSponsored="1"] iframe[src*="sash/"][src*=".html"],
+/* Additional sponsored selectors — verified specific-only */
+html[data-amze-hideSponsored="1"] #pdagEncapsulated,
+html[data-amze-hideSponsored="1"] .sponsoredBy,
+html[data-amze-hideSponsored="1"] .adFeedback__text,
+html[data-amze-hideSponsored="1"] .bit-aa-install-widget-contents,
+html[data-amze-hideSponsored="1"] #cs-app-prompt {
+  display: none !important;
+}
+
+/* Shade variants for the APE/Javelin ads */
+html[data-amze-shadeSponsored="1"] [cel_widget_id^="adplacements:"],
+html[data-amze-shadeSponsored="1"] [data-cel-widget^="adplacements:"],
+html[data-amze-shadeSponsored="1"] [data-csa-c-painter="JavelinRenderingService"],
+html[data-amze-shadeSponsored="1"] .ape-placement {
+  background: var(--amze-sponsor-tint) !important;
+  outline: 1px dashed var(--amze-danger) !important;
+  opacity: 0.55 !important;
+}
+
+html[data-amze-shadeSponsored="1"] .s-result-item[data-component-type="sp-sponsored-result"],
+html[data-amze-shadeSponsored="1"] [data-cel-widget*="MAIN-SPONSORED"] {
+  background: var(--amze-sponsor-tint) !important;
+  outline: 1px dashed var(--amze-danger) !important;
+  opacity: 0.55 !important;
+}
+
+/* Video ads on PDP */
+html[data-amze-hideVideoAds="1"] #vse-related-videos_feature_div,
+html[data-amze-hideVideoAds="1"] #vse-vsx_feature_div,
+html[data-amze-hideVideoAds="1"] #videoBlock_feature_div,
+html[data-amze-hideVideoAds="1"] [data-cel-widget*="shoppable-videos"],
+html[data-amze-hideVideoAds="1"] [data-cel-widget*="VIDEOS"] {
+  display: none !important;
+}
+
+/* Prime trial nags */
+html[data-amze-hidePrimeNag="1"] #prime-signup-popover,
+html[data-amze-hidePrimeNag="1"] #rhf-upsell-ad,
+html[data-amze-hidePrimeNag="1"] [data-cel-widget*="prime_signup"],
+html[data-amze-hidePrimeNag="1"] [data-cel-widget*="prime-benefit"],
+html[data-amze-hidePrimeNag="1"] .prime-try-now-hook,
+html[data-amze-hidePrimeNag="1"] #primeTryBeforeYouBuy_feature_div {
+  display: none !important;
+}
+
+/* Banner/billboard strips */
+html[data-amze-hideBanners="1"] #desktop-banner,
+html[data-amze-hideBanners="1"] #nav-upnav,
+html[data-amze-hideBanners="1"] .dp-alert-feature,
+html[data-amze-hideBanners="1"] #desktop-dp-ads_feature_div,
+html[data-amze-hideBanners="1"] [data-cel-widget*="hero-quick-promo"],
+html[data-amze-hideBanners="1"] [data-cel-widget*="Announcement"] {
+  display: none !important;
+}
+
+/* ----------------------------------------------------------------------
+ * 4. Declutter rules (per-section flags).
+ * -------------------------------------------------------------------- */
+
+html[data-amze-hideBrandsRelated="1"] [data-cel-widget*="brands_related"],
+html[data-amze-hideBrandsRelated="1"] [data-cel-widget*="BRANDS_RELATED"],
+html[data-amze-hideBrandsRelated="1"] #hero-quick-promo .hero-widget,
+html[data-amze-hideBrandsRelated="1"] #brandCarousel_feature_div { display: none !important; }
+
+html[data-amze-hideInspired="1"] [data-cel-widget*="inspired"],
+html[data-amze-hideInspired="1"] [data-cel-widget*="RECOMMENDATIONS"],
+html[data-amze-hideInspired="1"] #sims-themis-wbr_feature_div { display: none !important; }
+
+html[data-amze-hideAlsoBought="1"] #purchase-sims-feature,
+html[data-amze-hideAlsoBought="1"] #sims-consolidated-1_feature_div,
+html[data-amze-hideAlsoBought="1"] [data-cel-widget*="sims-feature"] { display: none !important; }
+
+html[data-amze-hideBuyAgain="1"] #rhf,
+html[data-amze-hideBuyAgain="1"] #RhfCart_feature_div,
+html[data-amze-hideBuyAgain="1"] [data-cel-widget*="buy-again"] { display: none !important; }
+
+html[data-amze-hideClimate="1"] #climatePledgeFriendly_feature_div,
+html[data-amze-hideClimate="1"] [data-cel-widget*="climate"],
+html[data-amze-hideClimate="1"] [data-cel-widget*="Climate"] { display: none !important; }
+
+html[data-amze-hideEditorial="1"] #editorial-recommendations_feature_div,
+html[data-amze-hideEditorial="1"] [data-cel-widget*="EditorialReviews"],
+html[data-amze-hideEditorial="1"] [data-cel-widget*="editorial_recommendations"] { display: none !important; }
+
+html[data-amze-hideManufacturer="1"] #aplus,
+html[data-amze-hideManufacturer="1"] #aplus_feature_div,
+html[data-amze-hideManufacturer="1"] #aplusBrandStory_feature_div,
+html[data-amze-hideManufacturer="1"] #aplus3p_feature_div { display: none !important; }
+
+html[data-amze-hideCompare="1"] #HLCXComparisonWidget_feature_div,
+html[data-amze-hideCompare="1"] [data-cel-widget*="CompareWidget"] { display: none !important; }
+
+html[data-amze-hideSubSave="1"] #snsAccordionRowMiddle,
+html[data-amze-hideSubSave="1"] #snsSubPopover,
+html[data-amze-hideSubSave="1"] #rcmBody,
+html[data-amze-hideSubSave="1"] #oneTimePurchase_feature_div + #snsAccordionRow,
+html[data-amze-hideSubSave="1"] input[name="subscribeAndSave"][value="1"] { display: none !important; }
+
+html[data-amze-hideCartUpsell="1"] #sc-upsell,
+html[data-amze-hideCartUpsell="1"] #sc-new-upsell,
+html[data-amze-hideCartUpsell="1"] #sw-pickup-locker-feature,
+html[data-amze-hideCartUpsell="1"] #sc-saved-cart,
+html[data-amze-hideCartUpsell="1"] .sc-badging-widget,
+html[data-amze-hideCartUpsell="1"] #sc-rec-feature,
+html[data-amze-hideCartUpsell="1"] [data-cel-widget*="saved-for-later"] { display: none !important; }
+
+html[data-amze-hideHomeClutter="1"] #gw-desktop-herotator,
+html[data-amze-hideHomeClutter="1"] #gw-card-layout,
+html[data-amze-hideHomeClutter="1"] .GW-DESKTOP #nav-upnav,
+html[data-amze-hideHomeClutter="1"] #desktop-1,
+html[data-amze-hideHomeClutter="1"] #desktop-2,
+html[data-amze-hideHomeClutter="1"] #anonCarousel1,
+html[data-amze-hideHomeClutter="1"] #navCrossshop,
+html[data-amze-hideHomeClutter="1"] #navSwmSlot,
+html[data-amze-hideHomeClutter="1"] #nav-xshop { display: none !important; }
+
+html[data-amze-hideFooter="1"] #navFooter,
+html[data-amze-hideFooter="1"] #navBackToTop { display: none !important; }
+
+/* Alexa for Shopping (formerly Rufus): panel and launcher roots only. */
+html[data-amze-hideRufus="1"] #rufus-chat-widget,
+html[data-amze-hideRufus="1"] #rufus-chat-container,
+html[data-amze-hideRufus="1"] #nav-flyout-rufus,
+html[data-amze-hideRufus="1"] .rufus-panel-container,
+html[data-amze-hideRufus="1"] .rufus-container,
+html[data-amze-hideRufus="1"] .rufus-chat-container,
+html[data-amze-hideRufus="1"] .rufus-conversation-container,
+html[data-amze-hideRufus="1"] .rufus-view-filler,
+html[data-amze-hideRufus="1"] [class*="rufus-panel" i],
+html[data-amze-hideRufus="1"] [class*="rufus-chat" i],
+html[data-amze-hideRufus="1"] .copilot-modal-container,
+html[data-amze-hideRufus="1"] .copilot-chat-root,
+html[data-amze-hideRufus="1"] aside[data-copilot-chat-root],
+html[data-amze-hideRufus="1"] #nav-rufus-disco,
+html[data-amze-hideRufus="1"] .nav-rufus-disco,
+html[data-amze-hideRufus="1"] [data-action*="rufus" i],
+html[data-amze-hideRufus="1"] #ai-shopping-assistant,
+html[data-amze-hideRufus="1"] [class*="ai-shopping-assistant" i],
+html[data-amze-hideRufus="1"] [data-cel-widget*="alexa-shopping" i],
+html[data-amze-hideRufus="1"] #GW-Rufus-container { display: none !important; }
+
+html[data-amze-hideRufus="1"] body {
+  --rufus-docked-panel-width: 0px !important;
+  --total-rufus-panel-full-width: 0px !important;
+  --total-rufus-panel-half-width: 0px !important;
+}
+
+html[data-amze-hideRufus="1"] body.rufus-docked-left,
+html[data-amze-hideRufus="1"] body.rufus-docked-right {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+/* Result padding squeeze */
+html[data-amze-density="compact"] .s-result-item[data-component-type="s-search-result"] {
+  padding: 6px !important;
+  margin-bottom: 4px !important;
+}
+
+html[data-amze-density="compact"] .s-main-slot > .s-result-item .s-card-container {
+  padding: 4px !important;
+}
+
+html[data-amze-hidePadding="1"] .s-result-item.AdHolder,
+html[data-amze-hidePadding="1"] .s-result-item[data-empty="true"],
+html[data-amze-hidePadding="1"] .s-main-slot > div:empty,
+html[data-amze-hidePadding="1"] .s-widget-spacing-small:empty { display: none !important; }
+
+/* ----------------------------------------------------------------------
+ * 5. Injected UI chrome (badges, panels)
+ * -------------------------------------------------------------------- */
+
+.amze-badge {
+  display: inline-block;
+  padding: 2px 7px;
+  margin-left: 6px;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .2px;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  vertical-align: middle;
+  line-height: 1.4;
+}
+.amze-badge-price {
+  background: var(--amze-bg-raise, #313244);
+  color: var(--amze-text, #cdd6f4);
+  border: 1px solid var(--amze-border, #45475a);
+}
+.amze-badge-review-good  { background: #1f3a1f; color: #a6e3a1; border: 1px solid #3d603d; }
+.amze-badge-review-mixed { background: #3a341f; color: #f9e2af; border: 1px solid #5a4d2d; }
+.amze-badge-review-bad   { background: #3a1f2a; color: #f38ba8; border: 1px solid #603d4a; }
+.amze-badge-warn         { background: #3a341f; color: #f9e2af; border: 1px solid #5a4d2d; }
+.amze-badge-trust        { font-weight: 700; }
+.amze-badge-trust-high   { background: #1f3a1f; color: #a6e3a1; border: 1px solid #3d603d; }
+.amze-badge-trust-mid    { background: #3a341f; color: #f9e2af; border: 1px solid #5a4d2d; }
+.amze-badge-trust-low    { background: #3a1f2a; color: #f38ba8; border: 1px solid #603d4a; }
+
+.amze-weighted-sort {
+  max-width: 430px;
+  margin: 8px 0;
+  padding: 8px 10px;
+  border: 1px solid var(--amze-border, #45475a);
+  border-radius: 8px;
+  background: var(--amze-bg-alt, #181825);
+  color: var(--amze-text, #cdd6f4);
+  font: 12px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  box-shadow: var(--amze-shadow, 0 2px 10px rgba(0,0,0,.25));
+}
+
+.amze-sponsored-shaded {
+  position: relative !important;
+  background: var(--amze-sponsor-tint) !important;
+  outline: 1px dashed var(--amze-danger) !important;
+  opacity: 0.55 !important;
+}
+.amze-weighted-sort summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--amze-text, #cdd6f4);
+}
+.amze-weighted-sort-help {
+  margin: 6px 0 8px;
+  color: var(--amze-text-muted, #9399b2);
+  font-size: 11px;
+}
+.amze-weighted-sort-row {
+  display: grid;
+  grid-template-columns: 90px minmax(100px, 1fr) 30px;
+  align-items: center;
+  gap: 8px;
+  margin: 5px 0;
+}
+.amze-weighted-sort-row input[type="range"] { width: 100%; accent-color: var(--amze-accent, #89b4fa); }
+.amze-weighted-sort-value {
+  color: var(--amze-accent, #89b4fa);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.amze-weighted-sort-actions { margin-top: 7px; }
+
+.amze-sponsor-marker {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: var(--amze-danger, #f38ba8);
+  color: #11111b;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.amze-hidden-by-brand {
+  display: none !important;
+}
+
+/* Review panel on PDP */
+#amze-review-panel {
+  background: var(--amze-bg-alt, #181825);
+  border: 1px solid var(--amze-border, #45475a);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin: 12px 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  color: var(--amze-text, #cdd6f4);
+  box-shadow: var(--amze-shadow, 0 2px 10px rgba(0,0,0,0.4));
+}
+#amze-review-panel h3 {
+  margin: 0 0 8px 0 !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  color: var(--amze-text, #cdd6f4) !important;
+  letter-spacing: .2px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+#amze-review-panel .amze-score {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+}
+#amze-review-panel .amze-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px 14px;
+  font-size: 12px;
+  color: var(--amze-text-dim, #bac2de);
+  margin-top: 8px;
+}
+#amze-review-panel .amze-metric strong {
+  color: var(--amze-text, #cdd6f4);
+  font-weight: 600;
+}
+#amze-review-panel .amze-score-good  { color: var(--amze-success, #a6e3a1); }
+#amze-review-panel .amze-score-mixed { color: var(--amze-warn, #f9e2af); }
+#amze-review-panel .amze-score-bad   { color: var(--amze-danger, #f38ba8); }
+
+/* Toast */
+#amze-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--amze-bg-alt, #181825);
+  color: var(--amze-text, #cdd6f4);
+  border: 1px solid var(--amze-accent, #89b4fa);
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  font-size: 13px;
+  z-index: 2147483647;
+  box-shadow: var(--amze-shadow, 0 4px 18px rgba(0,0,0,.5));
+  animation: amze-toast-in .25s ease;
+}
+
+@keyframes amze-toast-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ----------------------------------------------------------------------
+ * 6. Image dark-mode (product photos, thumbnails, hero images).
+ *    Modes: off | tile | dim | invert | smart
+ *    Tile  = image sits on a light off-white card — no distortion
+ *    Dim   = brightness+contrast tweak, softens harsh white
+ *    Invert = Dark Reader-style filter, ruins photos but great on line art
+ *    Smart = invert only images with ~white backgrounds (canvas sampled)
+ * -------------------------------------------------------------------- */
+
+/* Universal image target — any element matching this selector group is
+ * treated as a product image for dark-mode handling. Covers search tiles,
+ * PDP, p13n recommendations, octopus/sims carousels, and all other
+ * Amazon image class variants. */
+html[data-amze-theme="dark"] :is(
+  img.s-image, img.a-dynamic-image, img.sc-product-image,
+  img.p13n-sc-dynamic-image, img.p13n-product-image,
+  img.octopus-sims-img, img.octopus-pc-item-image,
+  img.sims-fbt-image, img.asin-image, img.g-itemImage,
+  img.s-access-image, img.bxc-grid__image, img.coupon-image,
+  img.imageThumbnail, img.octopus-quick-look-product-image,
+  img.recs-carousel-element-img-outer,
+  #landingImage, #imgTagWrapperId img, .imgTagWrapper img,
+  #altImages img, .item-view-left-col-inner img,
+  img.p13n-sc-carousel-image, img.p13n-sc-lazy-loaded
+),
+html[data-amze-theme="amoled"] :is(
+  img.s-image, img.a-dynamic-image, img.sc-product-image,
+  img.p13n-sc-dynamic-image, img.p13n-product-image,
+  img.octopus-sims-img, img.octopus-pc-item-image,
+  img.sims-fbt-image, img.asin-image, img.g-itemImage,
+  img.s-access-image, img.bxc-grid__image, img.coupon-image,
+  img.imageThumbnail, img.octopus-quick-look-product-image,
+  img.recs-carousel-element-img-outer,
+  #landingImage, #imgTagWrapperId img, .imgTagWrapper img,
+  #altImages img, .item-view-left-col-inner img,
+  img.p13n-sc-carousel-image, img.p13n-sc-lazy-loaded
+) {
+  transition: filter .15s ease, background-color .15s ease, opacity .15s ease;
+}
+
+/* ----- Tile mode — wraps image in a soft light card ----- */
+html[data-amze-image-mode="tile"][data-amze-theme="dark"] :is(
+  img.s-image, img.a-dynamic-image, img.sc-product-image,
+  img.p13n-sc-dynamic-image, img.p13n-product-image,
+  img.octopus-sims-img, img.octopus-pc-item-image,
+  img.sims-fbt-image, img.asin-image, img.g-itemImage,
+  img.s-access-image, img.bxc-grid__image,
+  #landingImage, .imgTagWrapper img, #altImages img,
+  img.p13n-sc-carousel-image, img.p13n-sc-lazy-loaded
+),
+html[data-amze-image-mode="tile"][data-amze-theme="amoled"] :is(
+  img.s-image, img.a-dynamic-image, img.sc-product-image,
+  img.p13n-sc-dynamic-image, img.p13n-product-image,
+  img.octopus-sims-img, img.octopus-pc-item-image,
+  img.sims-fbt-image, img.asin-image, img.g-itemImage,
+  img.s-access-image, img.bxc-grid__image,
+  #landingImage, .imgTagWrapper img, #altImages img,
+  img.p13n-sc-carousel-image, img.p13n-sc-lazy-loaded
+) {
+  background: var(--amze-image-mat) !important;
+  border-radius: 12px !important;
+  padding: 10px !important;
+  box-sizing: content-box !important;
+  box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.34), 0 8px 24px rgba(2, 6, 23, 0.18) !important;
+}
+
+/* Larger rounding for the landing image (PDP main photo) */
+html[data-amze-image-mode="tile"][data-amze-theme="dark"] :is(#landingImage, #imgTagWrapperId img),
+html[data-amze-image-mode="tile"][data-amze-theme="amoled"] :is(#landingImage, #imgTagWrapperId img) {
+  border-radius: 14px !important;
+  padding: 10px !important;
+}
+
+/* ----- Dim mode — brightness/contrast ----- */
+html[data-amze-image-mode="dim"][data-amze-theme="dark"] :is(
+  img.s-image, img.a-dynamic-image, img.sc-product-image,
+  img.p13n-sc-dynamic-image, img.p13n-product-image,
+  img.octopus-sims-img, img.octopus-pc-item-image,
+  img.sims-fbt-image, img.asin-image, img.g-itemImage,
+  img.s-access-image, img.bxc-grid__image,
+  #landingImage, .imgTagWrapper img, #altImages img,
+  img.p13n-sc-carousel-image, img.p13n-sc-lazy-loaded
+),
+html[data-amze-image-mode="dim"][data-amze-theme="amoled"] :is(
+  img.s-image, img.a-dynamic-image, img.sc-product-image,
+  img.p13n-sc-dynamic-image, img.p13n-product-image,
+  img.octopus-sims-img, img.octopus-pc-item-image,
+  img.sims-fbt-image, img.asin-image, img.g-itemImage,
+  img.s-access-image, img.bxc-grid__image,
+  #landingImage, .imgTagWrapper img, #altImages img,
+  img.p13n-sc-carousel-image, img.p13n-sc-lazy-loaded
+) {
+  filter: brightness(0.85) contrast(1.05) !important;
+}
+
+/* ----- Darken mode (new, inspired by stonecrusher) — simple opacity + dark bg ----- */
+html[data-amze-image-mode="darken"][data-amze-theme="dark"] :is(
+  img.s-image, img.a-dynamic-image, img.sc-product-image,
+  img.p13n-sc-dynamic-image, img.p13n-product-image,
+  img.octopus-sims-img, img.octopus-pc-item-image,
+  img.sims-fbt-image, img.asin-image, img.g-itemImage,
+  img.s-access-image, img.bxc-grid__image,
+  #landingImage, .imgTagWrapper img, #altImages img,
+  img.p13n-sc-carousel-image, img.p13n-sc-lazy-loaded
+),
+html[data-amze-image-mode="darken"][data-amze-theme="amoled"] :is(
+  img.s-image, img.a-dynamic-image, img.sc-product-image,
+  img.p13n-sc-dynamic-image, img.p13n-product-image,
+  img.octopus-sims-img, img.octopus-pc-item-image,
+  img.sims-fbt-image, img.asin-image, img.g-itemImage,
+  img.s-access-image, img.bxc-grid__image,
+  #landingImage, .imgTagWrapper img, #altImages img,
+  img.p13n-sc-carousel-image, img.p13n-sc-lazy-loaded
+) {
+  opacity: 0.75 !important;
+  background: transparent !important;
+}
+
+/* ----- Invert mode — Dark Reader-style filter ----- */
+html[data-amze-image-mode="invert"][data-amze-theme="dark"] :is(
+  img.s-image, img.a-dynamic-image, img.sc-product-image,
+  img.p13n-sc-dynamic-image, img.p13n-product-image,
+  img.octopus-sims-img, img.octopus-pc-item-image,
+  img.sims-fbt-image, img.asin-image, img.g-itemImage,
+  img.s-access-image, img.bxc-grid__image,
+  img.imageThumbnail, img.coupon-image,
+  img.recs-carousel-element-img-outer,
+  img.octopus-quick-look-product-image,
+  #landingImage, .imgTagWrapper img, #altImages img,
+  .item-view-left-col-inner img,
+  img.p13n-sc-carousel-image, img.p13n-sc-lazy-loaded,
+  img.octopus-pc-item-image-small
+),
+html[data-amze-image-mode="invert"][data-amze-theme="amoled"] :is(
+  img.s-image, img.a-dynamic-image, img.sc-product-image,
+  img.p13n-sc-dynamic-image, img.p13n-product-image,
+  img.octopus-sims-img, img.octopus-pc-item-image,
+  img.sims-fbt-image, img.asin-image, img.g-itemImage,
+  img.s-access-image, img.bxc-grid__image,
+  img.imageThumbnail, img.coupon-image,
+  img.recs-carousel-element-img-outer,
+  img.octopus-quick-look-product-image,
+  #landingImage, .imgTagWrapper img, #altImages img,
+  .item-view-left-col-inner img,
+  img.p13n-sc-carousel-image, img.p13n-sc-lazy-loaded,
+  img.octopus-pc-item-image-small
+) {
+  filter: invert(0.92) hue-rotate(180deg) contrast(1.05) !important;
+  background: transparent !important;
+}
+
+/* Smart mode: content.js marks each image with data-amze-invert.
+ * - "1"    → has near-white background, apply invert
+ * - "0"    → real photo, leave alone
+ * - "cors" → canvas was tainted, fall back to tile
+ * - absent → not yet evaluated, treat as tile (safe default)
+ */
+html[data-amze-image-mode="smart"][data-amze-theme="dark"] img[data-amze-invert="1"],
+html[data-amze-image-mode="smart"][data-amze-theme="amoled"] img[data-amze-invert="1"] {
+  filter: invert(0.92) hue-rotate(180deg) contrast(1.05) !important;
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+html[data-amze-image-mode="smart"][data-amze-theme="dark"] img.s-image:not([data-amze-invert="1"]),
+html[data-amze-image-mode="smart"][data-amze-theme="amoled"] img.s-image:not([data-amze-invert="1"]),
+html[data-amze-image-mode="smart"][data-amze-theme="dark"] .imgTagWrapper img:not([data-amze-invert="1"]),
+html[data-amze-image-mode="smart"][data-amze-theme="amoled"] .imgTagWrapper img:not([data-amze-invert="1"]),
+html[data-amze-image-mode="smart"][data-amze-theme="dark"] #altImages img:not([data-amze-invert="1"]),
+html[data-amze-image-mode="smart"][data-amze-theme="amoled"] #altImages img:not([data-amze-invert="1"]),
+html[data-amze-image-mode="smart"][data-amze-theme="dark"] img.a-dynamic-image:not([data-amze-invert="1"]),
+html[data-amze-image-mode="smart"][data-amze-theme="amoled"] img.a-dynamic-image:not([data-amze-invert="1"]) {
+  background: var(--amze-image-mat) !important;
+  border-radius: 10px !important;
+  padding: 6px !important;
+  box-sizing: content-box !important;
+}
+
+/* CORS-tainted fallback — tile with a subtle tint so user sees it's different */
+html[data-amze-image-mode="smart"][data-amze-theme="dark"] img[data-amze-invert="cors"],
+html[data-amze-image-mode="smart"][data-amze-theme="amoled"] img[data-amze-invert="cors"] {
+  background: var(--amze-image-mat) !important;
+  border-radius: 10px !important;
+  padding: 6px !important;
+  box-sizing: content-box !important;
+}
+
+/* Off mode: no rules — Amazon images stay as-is. */
+
+/* ----------------------------------------------------------------------
+ * 7. Theme polish: autocomplete, modals, stars, selection, tables,
+ *    checkout, account pages, orders list.
+ * -------------------------------------------------------------------- */
+
+/* Search autocomplete dropdown */
+html[data-amze-theme="dark"] .nav-search-dropdown-list,
+html[data-amze-theme="amoled"] .nav-search-dropdown-list,
+html[data-amze-theme="dark"] .s-suggestion-container,
+html[data-amze-theme="amoled"] .s-suggestion-container,
+html[data-amze-theme="dark"] .s-suggestion,
+html[data-amze-theme="amoled"] .s-suggestion,
+html[data-amze-theme="dark"] .auto-complete-list,
+html[data-amze-theme="amoled"] .auto-complete-list {
+  background: var(--amze-bg-alt) !important;
+  color: var(--amze-text) !important;
+  border-color: var(--amze-border) !important;
+}
+
+html[data-amze-theme="dark"] .s-suggestion:hover,
+html[data-amze-theme="amoled"] .s-suggestion:hover,
+html[data-amze-theme="dark"] .s-suggestion-selected,
+html[data-amze-theme="amoled"] .s-suggestion-selected {
+  background: var(--amze-bg-raise) !important;
+  color: var(--amze-accent) !important;
+}
+
+/* Modal / popover dark coverage */
+html[data-amze-theme="dark"] .a-popover,
+html[data-amze-theme="amoled"] .a-popover,
+html[data-amze-theme="dark"] .a-popover-inner,
+html[data-amze-theme="amoled"] .a-popover-inner,
+html[data-amze-theme="dark"] .a-popover-header,
+html[data-amze-theme="amoled"] .a-popover-header,
+html[data-amze-theme="dark"] .a-popover-wrapper,
+html[data-amze-theme="amoled"] .a-popover-wrapper,
+html[data-amze-theme="dark"] .a-modal-scroller,
+html[data-amze-theme="amoled"] .a-modal-scroller,
+html[data-amze-theme="dark"] .a-modal,
+html[data-amze-theme="amoled"] .a-modal,
+html[data-amze-theme="dark"] .a-dropdown,
+html[data-amze-theme="amoled"] .a-dropdown,
+html[data-amze-theme="dark"] .a-list-item,
+html[data-amze-theme="amoled"] .a-list-item {
+  background: var(--amze-bg-alt) !important;
+  color: var(--amze-text) !important;
+  border-color: var(--amze-border) !important;
+  box-shadow: var(--amze-shadow) !important;
+}
+
+/* Star rating — keep warm gold in dark */
+html[data-amze-theme="dark"] .a-icon-star,
+html[data-amze-theme="amoled"] .a-icon-star,
+html[data-amze-theme="dark"] .a-icon-star-medium,
+html[data-amze-theme="amoled"] .a-icon-star-medium,
+html[data-amze-theme="dark"] .a-icon-star-small,
+html[data-amze-theme="amoled"] .a-icon-star-small {
+  filter: brightness(1.15) saturate(1.1);
+}
+
+/* Text selection */
+html[data-amze-theme="dark"] ::selection,
+html[data-amze-theme="amoled"] ::selection {
+  background: var(--amze-accent);
+  color: #11111b;
+}
+
+/* Tables (cart, orders, account) */
+html[data-amze-theme="dark"] table,
+html[data-amze-theme="amoled"] table,
+html[data-amze-theme="dark"] .a-row,
+html[data-amze-theme="amoled"] .a-row {
+  background: transparent !important;
+}
+
+html[data-amze-theme="dark"] .a-table,
+html[data-amze-theme="amoled"] .a-table,
+html[data-amze-theme="dark"] .a-row-padding,
+html[data-amze-theme="amoled"] .a-row-padding {
+  background: var(--amze-bg-alt) !important;
+  border-color: var(--amze-border-soft) !important;
+}
+
+html[data-amze-theme="dark"] tr:nth-child(even),
+html[data-amze-theme="amoled"] tr:nth-child(even) {
+  background: transparent !important;
+}
+
+html[data-amze-theme="dark"] td,
+html[data-amze-theme="amoled"] td,
+html[data-amze-theme="dark"] th,
+html[data-amze-theme="amoled"] th {
+  border-color: var(--amze-border-soft) !important;
+  color: var(--amze-text) !important;
+}
+
+/* Checkout page */
+html[data-amze-theme="dark"] #checkoutDisplayPage,
+html[data-amze-theme="amoled"] #checkoutDisplayPage,
+html[data-amze-theme="dark"] #checkoutDisplayPage .a-box-group,
+html[data-amze-theme="amoled"] #checkoutDisplayPage .a-box-group,
+html[data-amze-theme="dark"] #checkoutDisplayPage .a-box-inner,
+html[data-amze-theme="amoled"] #checkoutDisplayPage .a-box-inner {
+  background: var(--amze-bg-alt) !important;
+  color: var(--amze-text) !important;
+  border-color: var(--amze-border-soft) !important;
+}
+
+/* Account page + orders */
+html[data-amze-theme="dark"] .your-account,
+html[data-amze-theme="amoled"] .your-account,
+html[data-amze-theme="dark"] .ya-card,
+html[data-amze-theme="amoled"] .ya-card,
+html[data-amze-theme="dark"] .order-card,
+html[data-amze-theme="amoled"] .order-card,
+html[data-amze-theme="dark"] .your-account .a-fixed-right-grid,
+html[data-amze-theme="amoled"] .your-account .a-fixed-right-grid,
+html[data-amze-theme="dark"] .order-card .a-fixed-right-grid,
+html[data-amze-theme="amoled"] .order-card .a-fixed-right-grid,
+html[data-amze-theme="dark"] .order,
+html[data-amze-theme="amoled"] .order,
+html[data-amze-theme="dark"] .shipment,
+html[data-amze-theme="amoled"] .shipment {
+  background: var(--amze-bg-alt) !important;
+  border-color: var(--amze-border-soft) !important;
+  color: var(--amze-text) !important;
+}
+
+/* Price variant tiles (size/color swatches) */
+html[data-amze-theme="dark"] .a-button-toggle,
+html[data-amze-theme="amoled"] .a-button-toggle,
+html[data-amze-theme="dark"] .twister-swatch-wrapper,
+html[data-amze-theme="amoled"] .twister-swatch-wrapper {
+  background: var(--amze-bg-raise) !important;
+  border-color: var(--amze-border) !important;
+  color: var(--amze-text) !important;
+}
+
+html[data-amze-theme="dark"] .a-button-selected,
+html[data-amze-theme="amoled"] .a-button-selected {
+  border-color: var(--amze-accent) !important;
+  background: var(--amze-bg-elev) !important;
+}
+
+/* Reviews: review card backgrounds */
+html[data-amze-theme="dark"] [data-hook="review"],
+html[data-amze-theme="amoled"] [data-hook="review"],
+html[data-amze-theme="dark"] .review,
+html[data-amze-theme="amoled"] .review {
+  background: var(--amze-bg-alt) !important;
+  border: 1px solid var(--amze-border-soft) !important;
+  border-radius: 8px !important;
+  padding: 14px !important;
+  margin-bottom: 10px !important;
+}
+
+/* Side panel categories (left filter column) */
+html[data-amze-theme="dark"] #s-refinements,
+html[data-amze-theme="amoled"] #s-refinements,
+html[data-amze-theme="dark"] .s-refinements,
+html[data-amze-theme="amoled"] .s-refinements,
+html[data-amze-theme="dark"] #departments,
+html[data-amze-theme="amoled"] #departments,
+html[data-amze-theme="dark"] .s-navigation-indent-2,
+html[data-amze-theme="amoled"] .s-navigation-indent-2 {
+  background: var(--amze-bg-alt) !important;
+  border-color: var(--amze-border-soft) !important;
+  color: var(--amze-text) !important;
+}
+
+/* Price strikethrough — dim but still legible */
+html[data-amze-theme="dark"] .a-price[data-a-strike="true"] .a-offscreen,
+html[data-amze-theme="amoled"] .a-price[data-a-strike="true"] .a-offscreen,
+html[data-amze-theme="dark"] .a-text-price .a-offscreen,
+html[data-amze-theme="amoled"] .a-text-price .a-offscreen {
+  color: var(--amze-text-muted) !important;
+}
+
+/* Horizontal rules */
+html[data-amze-theme="dark"] hr,
+html[data-amze-theme="amoled"] hr,
+html[data-amze-theme="dark"] .a-divider,
+html[data-amze-theme="amoled"] .a-divider {
+  border-color: var(--amze-border-soft) !important;
+  background: var(--amze-border-soft) !important;
+}
+
+/* Focus ring — more visible on dark */
+html[data-amze-theme="dark"] *:focus-visible,
+html[data-amze-theme="amoled"] *:focus-visible {
+  outline: 2px solid var(--amze-accent) !important;
+  outline-offset: 2px !important;
+}
+
+/* Badges / labels (Bestseller, Amazon's Choice, etc.) */
+html[data-amze-theme="dark"] .a-badge,
+html[data-amze-theme="amoled"] .a-badge,
+html[data-amze-theme="dark"] .a-badge-text,
+html[data-amze-theme="amoled"] .a-badge-text {
+  background: var(--amze-bg-raise) !important;
+  color: var(--amze-warn) !important;
+  border-color: var(--amze-border) !important;
+}
+
+/* ----------------------------------------------------------------------
+ * 7a. Midnight Gallery premium surface system.
+ *     Uses stable route/container hooks and preserves Amazon's layout.
+ * -------------------------------------------------------------------- */
+
+html:is([data-amze-theme="dark"], [data-amze-theme="amoled"]) :is(h1, h2, h3, h4),
+html:is([data-amze-theme="dark"], [data-amze-theme="amoled"]) #productTitle {
+  color: var(--amze-text) !important;
+  font-weight: 650 !important;
+  letter-spacing: -0.015em;
+}
+
+html:is([data-amze-theme="dark"], [data-amze-theme="amoled"]) :is(#nav-subnav, .nav-subnav) {
+  background: var(--amze-bg-alt) !important;
+  border-top: 1px solid var(--amze-border-soft) !important;
+  border-bottom: 1px solid var(--amze-border) !important;
+  box-shadow: none !important;
+}
+
+html:is([data-amze-theme="dark"], [data-amze-theme="amoled"]) :is(#nav-subnav, .nav-subnav) a {
+  color: var(--amze-text-dim) !important;
+  font-weight: 550;
+}
+
+html:is([data-amze-theme="dark"], [data-amze-theme="amoled"]) :is(#nav-subnav, .nav-subnav) a:hover {
+  color: var(--amze-text) !important;
+}
+
+/* Account and navigation flyouts retain Amazon's structure on a premium layer. */
+html:is([data-amze-theme="dark"], [data-amze-theme="amoled"]) :is(#nav-al-container, .nav-flyout) {
+  background: var(--amze-surface-strong) !important;
+  color: var(--amze-text) !important;
+  border: 1px solid var(--amze-border) !important;
+  border-radius: 12px !important;
+  box-shadow: var(--amze-shadow) !important;
+}
+
+html:is([data-amze-theme="dark"], [data-amze-theme="amoled"]) :is(#nav-al-container, .nav-flyout) :is(
+  .nav-flyout-content, .nav-template, .nav-panel, .nav-al-column,
+  #nav-al-wishlist, #nav-al-your-account
+) {
+  background: transparent !important;
+  border-color: var(--amze-border-soft) !important;
+}
+
+html:is([data-amze-theme="dark"], [data-amze-theme="amoled"]) :is(#nav-al-container, .nav-flyout) :is(
+  .nav-title, .nav-text, .nav-line-1, .nav-line-2
+) {
+  color: var(--amze-text) !important;
+}
+
+html:is([data-amze-theme="dark"], [data-amze-theme="amoled"]) :is(#nav-al-container, .nav-flyout) a {
+  color: var(--amze-text-dim) !important;
+}
+
+html:is([data-amze-theme="dark"], [data-amze-theme="amoled"]) :is(#nav-al-container, .nav-flyout) a:hover {
+  color: var(--amze-accent-hov) !important;
+  text-decoration-color: currentColor !important;
+}
+
+html:is([data-amze-theme="dark"], [data-amze-theme="amoled"]) :is(#nav-al-container, .nav-flyout) .nav-divider {
+  background-color: var(--amze-border-soft) !important;
+  border-color: var(--amze-border-soft) !important;
+}
+
+html:is([data-amze-theme="dark"], [data-amze-theme="amoled"]) :is(#nav-al-container, .nav-flyout) :is(
+  .nav-action-signin-text, .nav-action-signin-text span
+),
+html:is([data-amze-theme="dark"], [data-amze-theme="amoled"]) #nav-flyout-ya-newCust {
+  color: var(--amze-text-muted) !important;
+}
+
+html:is([data-amze-theme="dark"], [data-amze-theme="amoled"]) #nav-cover {
+  background: rgba(2, 6, 23, 0.48) !important;
+}
+
+/* Search canvas and toolbar. Amazon sometimes paints these white after load. */
+html:is([data-amze-theme="dark"], [data-amze-theme="amoled"]) #search,
+html:is([data-amze-theme="dark"], [data-amze-theme="amoled"]) #search :is(
+  .s-desktop-content, .s-desktop-width-max, .s-main-slot, .s-result-list,
+  .sg-row, .sg-col-inner
+) {
+  background-color: transparent !important;
+  color: var(--amze-text) !important;
+}
+
+html:is([data-amze-theme="dark"], [data-amze-theme="amoled"]) #search .s-desktop-toolbar {
+  background: var(--amze-bg-alt) !important;
+  border-top: 1px solid var(--amze-border-soft) !important;
+  border-bottom: 1px solid var(--amze-border) !important;
+  box-shadow: none !important;
+}
+
+html:is([data-amze-theme="dark"], [data-amze-theme="amoled"]) #search :is(.s-result-info-bar, .s-breadcrumbs) {
+  color: var(--amze-text-muted) !important;
+}
+
+html:is([data-amze-theme="dark"], [data-amze-theme="amoled"]) #search .s-result-item[data-component-type="s-search-result"] .s-card-container,
+html:is([data-amze-theme="dark"], [data-amze-theme="amoled"]) #search .s-result-item[data-component-type="s-search-result"] :is(.a-section, .a-row) {
+  background: transparent !important;
+}
+
+html:is([data-amze-theme="dark"], [data-amze-theme="amoled"]) #search .s-result-item[data-component-type="s-search-result"] .a-text-normal {
+  line-height: 1.38 !important;
+}
+
+html:is([data-amze-theme="dark"], [data-amze-theme="amoled"]) #search .s-result-item[data-component-type="s-search-result"] h2 :is(a, span) {
+  color: var(--amze-text) !important;
+  font-weight: 580 !important;
+  letter-spacing: -0.01em;
+}
+
+html:is([data-amze-theme="dark"], [data-amze-theme="amoled"]) #search .s-result-item[data-component-type="s-search-result"] h2 a:hover span {
+  color: var(--amze-accent-hov) !important;
+}
+
+html:is([data-amze-theme="dark"], [data-amze-theme="amoled"]) #search :is(.s-product-image-container, .s-image-square-aspect) {
+  border-radius: 12px !important;
+  overflow: hidden;
+}
+
+html:is([data-amze-theme="dark"], [data-amze-theme="amoled"]) #s-refinements {
+  background: transparent !important;
+  border: 0 !important;
+  border-right: 1px solid var(--amze-border-soft) !important;
+  padding-right: 18px !important;
+}
+
+html:is([data-amze-theme="dark"], [data-amze-theme="amoled"]) #s-refinements :is(.a-section, .a-spacing-base) {
+  background: transparent !important;
+}
+
+html:is([data-amze-theme="dark"], [data-amze-theme="amoled"]) #s-refinements :is(h2, .a-size-base, .a-text-bold) {
+  color: var(--amze-text) !important;
+}
+
+html:is([data-amze-theme="dark"], [data-amze-theme="amoled"]) #s-refinements .a-divider-normal {
+  border-color: var(--amze-border-soft) !important;
+}
+
+/* Product detail: keep the content column calm and elevate only commerce. */
+html:is([data-amze-theme="dark"], [data-amze-theme="amoled"]) :is(#dp, #dp-container, #ppd) {
+  background: var(--amze-bg) !important;
+}
+
+html:is([data-amze-theme="dark"], [data-amze-theme="amoled"]) #centerCol [id$="_feature_div"],
+html:is([data-amze-theme="dark"], [data-amze-theme="amoled"]) :is(
+  #imageBlock_feature_div, #desktop-breadcrumbs_feature_div,
+  #title_feature_div, #bylineInfo_feature_div, #averageCustomerReviews_feature_div,
+  #acBadge_feature_div, #corePrice_feature_div, #corePriceDisplay_desktop_feature_div,
+  #productOverview_feature_div, #featurebullets_feature_div
+) {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html:is([data-amze-theme="dark"], [data-amze-theme="amoled"]) #productTitle {
+  font-size: clamp(24px, 2vw, 30px) !important;
+  line-height: 1.24 !important;
+}
+
+html:is([data-amze-theme="dark"], [data-amze-theme="amoled"]) :is(#buybox, #desktop_buybox) {
+  background: var(--amze-surface) !important;
+  border: 1px solid var(--amze-border) !important;
+  border-radius: 14px !important;
+  box-shadow: var(--amze-shadow-soft) !important;
+  overflow: hidden;
+}
+
+html:is([data-amze-theme="dark"], [data-amze-theme="amoled"]) :is(#buybox, #desktop_buybox) :is(.a-box, .a-box-inner, [id$="_feature_div"]) {
+  background: transparent !important;
+  border-color: var(--amze-border-soft) !important;
+  box-shadow: none !important;
+}
+
+html:is([data-amze-theme="dark"], [data-amze-theme="amoled"]) :is(#buybox, #desktop_buybox) :is(
+  #buyBoxAccordion, .a-accordion-row, .a-accordion-inner,
+  .a-accordion-row-a11y, .accordion-header, .accordion-row-content
+) {
+  background: transparent !important;
+  color: var(--amze-text) !important;
+  border-color: var(--amze-border-soft) !important;
+  box-shadow: none !important;
+}
+
+html:is([data-amze-theme="dark"], [data-amze-theme="amoled"]) #altImages :is(.a-button, .a-button-inner) {
+  background: var(--amze-surface) !important;
+  border-color: var(--amze-border) !important;
+  border-radius: 10px !important;
+}
+
+/* Cart, checkout, account, and order surfaces share one restrained elevation. */
+html:is([data-amze-theme="dark"], [data-amze-theme="amoled"]) :is(
+  #sc-active-cart, #sc-buy-box, .sc-buybox, .sc-list-item,
+  #checkoutDisplayPage .a-box-group, .your-account .ya-card,
+  .order-card, .order, .shipment
+) {
+  background: var(--amze-surface) !important;
+  border-color: var(--amze-border-soft) !important;
+}
+
+html:is([data-amze-theme="dark"], [data-amze-theme="amoled"]) :is(#sc-active-cart, #sc-buy-box, .sc-buybox) {
+  border: 1px solid var(--amze-border-soft) !important;
+  border-radius: 14px !important;
+  box-shadow: var(--amze-shadow-soft) !important;
+}
+
+html:is([data-amze-theme="dark"], [data-amze-theme="amoled"]) .sc-list-item {
+  border-radius: 10px !important;
+}
+
+html:is([data-amze-theme="dark"], [data-amze-theme="amoled"]) :is(.your-account .ya-card, .order-card, .order, .shipment) {
+  border: 1px solid var(--amze-border-soft) !important;
+  border-radius: 12px !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+}
+
+html:is([data-amze-theme="dark"], [data-amze-theme="amoled"]) :is(#navBackToTop, .navFooterBackToTop) {
+  background: var(--amze-bg-raise) !important;
+  border-top: 1px solid var(--amze-border) !important;
+  border-bottom: 1px solid var(--amze-border-soft) !important;
+}
+
+html:is([data-amze-theme="dark"], [data-amze-theme="amoled"]) #navFooter .navFooterColHead {
+  color: var(--amze-text) !important;
+  font-weight: 650 !important;
+}
+
+/* Menus and dialogs use a stronger layer so they remain distinct from pages. */
+html:is([data-amze-theme="dark"], [data-amze-theme="amoled"]) :is(.a-popover, .a-popover-wrapper, .a-modal) {
+  background: var(--amze-surface-strong) !important;
+  border: 1px solid var(--amze-border) !important;
+  border-radius: 12px !important;
+  box-shadow: var(--amze-shadow) !important;
+  overflow: hidden;
+}
+
+html:is([data-amze-theme="dark"], [data-amze-theme="amoled"]) :is(
+  .a-popover-inner, .a-popover-header, .a-modal-scroller, .a-dropdown, .a-list-item
+) {
+  background: var(--amze-surface-strong) !important;
+  border-color: var(--amze-border-soft) !important;
+  box-shadow: none !important;
+}
+
+html:is([data-amze-theme="dark"], [data-amze-theme="amoled"]) :is(.a-dropdown-link, .a-list-item a):hover {
+  background: var(--amze-bg-elev) !important;
+  color: var(--amze-text) !important;
+}
+
+html:is([data-amze-theme="dark"], [data-amze-theme="amoled"]) *:focus-visible {
+  box-shadow: 0 0 0 4px var(--amze-focus-glow) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:is([data-amze-theme="dark"], [data-amze-theme="amoled"]) *,
+  html:is([data-amze-theme="dark"], [data-amze-theme="amoled"]) *::before,
+  html:is([data-amze-theme="dark"], [data-amze-theme="amoled"]) *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+/* ----------------------------------------------------------------------
+ * 8. v2.0 feature chrome — PDP badges, action buttons, export panels.
+ * -------------------------------------------------------------------- */
+
+.amze-pdp-badge {
+  display: block;
+  background: var(--amze-bg-alt, #181825);
+  color: var(--amze-text, #cdd6f4);
+  border: 1px solid var(--amze-border-soft, #313244);
+  border-left: 3px solid var(--amze-accent, #89b4fa);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin: 10px 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+  box-shadow: var(--amze-shadow, 0 2px 10px rgba(0,0,0,.4));
+}
+.amze-pdp-badge strong { color: var(--amze-text, #cdd6f4); font-weight: 600; }
+.amze-pdp-warn {
+  border-left-color: var(--amze-warn, #f9e2af);
+  background: linear-gradient(90deg, rgba(249,226,175,0.06), var(--amze-bg-alt, #181825) 30%);
+}
+
+.amze-seller-lookup {
+  margin-top: 6px;
+  color: var(--amze-text-muted, #9399b2);
+  font-size: 12px;
+}
+.amze-seller-lookup[data-tone="ok"] { color: var(--amze-success, #a6e3a1); }
+.amze-seller-lookup[data-tone="warn"] { color: var(--amze-warn, #f9e2af); }
+
+.amze-badge-country {
+  background: var(--amze-bg-raise, #313244);
+  color: var(--amze-success, #a6e3a1);
+  border: 1px solid var(--amze-border, #45475a);
+}
+
+.amze-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--amze-bg-raise, #313244);
+  color: var(--amze-text, #cdd6f4);
+  border: 1px solid var(--amze-border, #45475a);
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  margin: 4px 4px 4px 0;
+  transition: background .15s, border-color .15s, transform .1s;
+}
+.amze-action-btn:hover {
+  background: var(--amze-bg-elev, #45475a);
+  border-color: var(--amze-accent, #89b4fa);
+}
+.amze-action-btn:active { transform: scale(0.97); }
+.amze-sparkline-ranges {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-top: 5px;
+  color: var(--amze-text-muted, #9399b2);
+  font-size: 10px;
+}
+.amze-sparkline-range {
+  padding: 2px 6px;
+  margin: 0;
+  font-size: 10px;
+}
+.amze-sparkline-range-active {
+  color: var(--amze-accent, #89b4fa);
+  border-color: var(--amze-accent, #89b4fa);
+  background: var(--amze-bg-elev, #45475a);
+}
+.amze-variant-price-map-note {
+  color: var(--amze-text-muted, #9399b2);
+  font-size: 11px;
+  margin-top: 2px;
+}
+.amze-variant-price-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 7px;
+  font-size: 12px;
+}
+.amze-variant-price-table th,
+.amze-variant-price-table td {
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--amze-border-soft, #313244);
+  text-align: left;
+}
+.amze-variant-price-table thead th {
+  color: var(--amze-text-muted, #9399b2);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .25px;
+}
+.amze-variant-price-table tbody th { font-weight: 500; }
+.amze-variant-price-table tbody td { color: var(--amze-success, #a6e3a1); font-weight: 600; }
+.amze-variant-price-table .amze-variant-current { background: rgba(137, 180, 250, .08); }
+.amze-variant-price-table .amze-variant-no-history { color: var(--amze-text-muted, #9399b2); font-weight: 400; }
+.amze-pdp-badge#amze-shipping-change-warn { border-left-color: var(--amze-danger, #f38ba8); }
+.amze-return-reasons {
+  margin: 5px 0 0 18px;
+  padding: 0;
+}
+.amze-return-reasons li { margin: 2px 0; }
+
+.amze-export-wrap {
+  background: var(--amze-bg-alt, #181825);
+  color: var(--amze-text, #cdd6f4);
+  border: 1px solid var(--amze-border-soft, #313244);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin: 10px 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+}
+.amze-export-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--amze-text-muted, #9399b2);
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  margin-bottom: 6px;
+}
+.amze-bought-too-much-note {
+  color: var(--amze-text-muted, #9399b2);
+  font-size: 11px;
+  line-height: 1.4;
+  margin-bottom: 5px;
+}
+.amze-bought-too-much-list {
+  margin: 5px 0 8px 18px;
+  padding: 0;
+  font-size: 12px;
+}
+.amze-bought-too-much-list li { margin: 4px 0; }
+.amze-bought-too-much-list small {
+  display: block;
+  color: var(--amze-text-muted, #9399b2);
+  font-size: 11px;
+}
+.amze-bought-too-much-summary a { color: var(--amze-link, #89dceb); font-size: 11px; }
+.amze-invoice-export-status {
+  color: var(--amze-text-muted, #9399b2);
+  font-size: 11px;
+  line-height: 1.4;
+  margin-top: 6px;
+  max-width: 620px;
+}
+.amze-order-receipt-md { margin: 4px 6px 0 0; }
+.amze-wl-import-box {
+  border-top: 1px solid var(--amze-border-soft, #313244);
+  margin-top: 8px;
+  padding-top: 8px;
+}
+.amze-wl-import-target {
+  color: var(--amze-text, #cdd6f4);
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 3px;
+}
+.amze-wl-import-help,
+.amze-wl-import-status {
+  color: var(--amze-text-muted, #9399b2);
+  font-size: 11px;
+  line-height: 1.4;
+  margin: 3px 0 6px;
+  max-width: 560px;
+}
+.amze-wl-import-status { color: var(--amze-text, #cdd6f4); }
+
+/* Accessibility: large-text mode */
+html[data-amze-large-text] body {
+  font-size: 17px !important;
+}
+html[data-amze-large-text] #productTitle,
+html[data-amze-large-text] h1 { font-size: 28px !important; line-height: 1.35 !important; }
+html[data-amze-large-text] h2 { font-size: 22px !important; }
+html[data-amze-large-text] h3 { font-size: 18px !important; }
+html[data-amze-large-text] .a-size-small,
+html[data-amze-large-text] .a-size-mini { font-size: 14px !important; }
+html[data-amze-large-text] .s-result-item { line-height: 1.55 !important; }
+
+/* Accessibility: high-contrast PDP */
+html[data-amze-high-contrast][data-amze-theme="dark"] body,
+html[data-amze-high-contrast][data-amze-theme="amoled"] body {
+  background: #000 !important;
+  color: #ffff00 !important;
+}
+html[data-amze-high-contrast][data-amze-theme="dark"] *,
+html[data-amze-high-contrast][data-amze-theme="amoled"] * {
+  color: #ffff00 !important;
+  border-color: #ffff00 !important;
+}
+html[data-amze-high-contrast][data-amze-theme="dark"] a,
+html[data-amze-high-contrast][data-amze-theme="amoled"] a { color: #00ffff !important; }
+html[data-amze-high-contrast][data-amze-theme="dark"] .a-price *,
+html[data-amze-high-contrast][data-amze-theme="amoled"] .a-price * { color: #00ff00 !important; }
+html[data-amze-high-contrast][data-amze-theme="dark"] button,
+html[data-amze-high-contrast][data-amze-theme="amoled"] button,
+html[data-amze-high-contrast][data-amze-theme="dark"] .a-button,
+html[data-amze-high-contrast][data-amze-theme="amoled"] .a-button {
+  background: #000 !important;
+  color: #ffff00 !important;
+  border: 2px solid #ffff00 !important;
+}
+
+/* Hide page until theme is applied, anti-FOUC. */
+html[data-amze-theme="dark"][data-amze-ready="0"] body,
+html[data-amze-theme="amoled"][data-amze-ready="0"] body {
+  opacity: 0;
+}
+
+html[data-amze-ready="1"] body {
+  opacity: 1;
+  transition: opacity .15s ease;
+}

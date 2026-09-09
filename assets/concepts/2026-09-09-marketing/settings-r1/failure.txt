@@ -1,0 +1,5 @@
+Error: {"exceptionId":1,"text":"Uncaught","lineNumber":0,"columnNumber":0,"scriptId":"3","exception":{"type":"object","subtype":"error","className":"ReferenceError","description":"ReferenceError: chrome is not defined\n    at <anonymous>:1:1","objectId":"-6546790377270168006.1.2"}}
+    at Object.evaluate (local-review/cdp.cjs:54:40)
+    at async local-review/capture.cjs:18:18
+    at async Object.waitFor (local-review/cdp.cjs:61:21)
+    at async local-review/capture.cjs:15:16

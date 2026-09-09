@@ -18,6 +18,7 @@ Thumbs.db
 *.zip
 *.crx
 *.xpi
+/SHA256SUMS.txt
 *.pem
 
 # Signing key — NEVER commit. Losing this changes the extension ID.
@@ -37,6 +38,8 @@ CLAUDE.md
 # Markdown files local-only (except README)
 *.md
 !README.md
+!docs/**/*.md
+!assets/concepts/**/*.md
 
 # AI config
 CODEX_CHANGELOG.md

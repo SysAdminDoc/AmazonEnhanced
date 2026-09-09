@@ -5,6 +5,26 @@ const path = require('node:path');
 
 const themeCss = fs.readFileSync(path.join(__dirname, '..', 'theme.css'), 'utf8');
 
+test('side panel owns its layout and uses defined popup palette variables', () => {
+  const panel = fs.readFileSync(path.join(__dirname, '..', 'sidepanel.html'), 'utf8');
+  const popup = fs.readFileSync(path.join(__dirname, '..', 'popup.css'), 'utf8');
+  assert.match(panel, /body\s*\{\s*display:\s*flex;/);
+  for (const [, token] of panel.matchAll(/var\((--[\w-]+)\)/g)) {
+    assert.ok(popup.includes(token + ':'), `undefined palette token ${token}`);
+  }
+  assert.match(panel, /min-height:\s*0;\s*overflow:\s*auto/);
+});
+
+test('side-panel observations are not presented as live USD quotes', () => {
+  const panel = fs.readFileSync(path.join(__dirname, '..', 'sidepanel.html'), 'utf8');
+  const source = fs.readFileSync(path.join(__dirname, '..', 'sidepanel.js'), 'utf8');
+  assert.match(panel, /Currency isn't stored/);
+  assert.match(source, /addStat\('Last seen'/);
+  assert.doesNotMatch(source, /addStat\('Now:'/);
+  assert.doesNotMatch(source, /'\$'\s*\+\s*(current|min|max)/);
+  assert.match(source, /chrome\.storage\.onChanged\.addListener/);
+});
+
 test('Alexa for Shopping rules target panel roots without broad Rufus wildcards', () => {
   assert.match(themeCss, /#nav-flyout-rufus/);
   assert.match(themeCss, /\.copilot-chat-root/);

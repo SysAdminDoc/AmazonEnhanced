@@ -230,7 +230,7 @@ async function waitForDriver(client, child) {
 
 async function startWebDriver(firefox, geckodriver, proxyPort) {
   const port = await getFreePort();
-  const child = spawn(geckodriver, ['--port', String(port), '--log', 'warn'], {
+  const child = spawn(geckodriver, ['--host', '127.0.0.1', '--port', String(port), '--log', 'warn', '--allow-system-access'], {
     cwd: os.tmpdir(),
     windowsHide: true,
     stdio: ['ignore', 'pipe', 'pipe']
@@ -386,10 +386,14 @@ async function inspectExtension(driver, uuid) {
   const sidePanel = await waitForValue(driver, `
     return document.querySelectorAll('.amze-sp-tab').length === 2 ? {
       title: document.title,
+      layout: getComputedStyle(document.body).display,
+      separated: document.querySelector('.amze-sp-header').getBoundingClientRect().bottom <= document.querySelector('.amze-sp-tabs').getBoundingClientRect().top,
       empty: document.querySelector('#sp-empty')?.textContent.trim() || ''
     } : null;
   `, 'Firefox sidebar page state');
-  assert.equal(sidePanel.title, 'AmazonEnhanced — Price History');
+  assert.equal(sidePanel.title, 'AmazonEnhanced Price History');
+  assert.equal(sidePanel.layout, 'flex');
+  assert.equal(sidePanel.separated, true);
   assert.match(sidePanel.empty, /Browse Amazon product pages/);
   return platform;
 }

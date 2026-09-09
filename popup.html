@@ -12,7 +12,7 @@
     <img src="icons/48.png" alt="" width="28" height="28" />
     <div>
       <h1>AmazonEnhanced</h1>
-      <span id="amze-version">v2.0.17</span>
+      <span id="amze-version">v2.0.18</span>
     </div>
   </div>
   <div class="amze-head-actions">
@@ -164,7 +164,7 @@
     <input type="checkbox" data-flag="stripAffiliate" class="amze-switch">
   </label>
   <label class="amze-row">
-    <span>Price drop alerts<small>Set a target price on any PDP. You'll get a notification when the price drops below it. Fully local.</small></span>
+    <span>Price drop alerts<small>Set a target on a product page. A notification appears when a price observed in this browser falls below it. Not a background price feed.</small></span>
     <input type="checkbox" data-flag="priceAlert" class="amze-switch">
   </label>
 </section>
@@ -177,7 +177,7 @@
     <input type="checkbox" data-flag="hideAmazonBrands" class="amze-switch">
   </label>
   <label class="amze-row">
-    <span>Hide "gibberish brand" tiles<small>Heuristic: 5–8 all-caps random letter brand names typical of drop-shippers.</small></span>
+    <span>Hide all-caps brand patterns<small>Matches names with 5 to 8 capital letters. This can hide legitimate brands too.</small></span>
     <input type="checkbox" data-flag="hideCN" class="amze-switch">
   </label>
   <label class="amze-row">
@@ -236,7 +236,7 @@
     <input type="checkbox" data-flag="revealSeller" class="amze-switch">
   </label>
   <label class="amze-row">
-    <span>Counterfeit-risk warning<small>Flags product pages where the brand name and marketplace seller name do not resemble each other.</small></span>
+    <span>Brand and seller mismatch<small>Flags names that don't resemble each other. A mismatch isn't proof of a counterfeit or an untrustworthy seller.</small></span>
     <input type="checkbox" data-flag="counterfeitWarn" class="amze-switch">
   </label>
   <label class="amze-row">
@@ -249,7 +249,7 @@
     <small id="amze-oc-permission-status" class="amze-field-help">Enable seller lookup to grant access to OpenCorporates.</small>
   </div>
   <label class="amze-row">
-    <span>Variation bait warning<small>Flags listings where variant prices span more than 3× — a common bait-and-switch pattern.</small></span>
+    <span>Large variant price spread<small>Flags listings where variant prices span more than 3×. Compare the selected size or option before buying.</small></span>
     <input type="checkbox" data-flag="variationBait" class="amze-switch">
   </label>
   <label class="amze-row">
@@ -341,7 +341,7 @@
     <input type="checkbox" data-flag="ariaFixes" class="amze-switch">
   </label>
   <label class="amze-row">
-    <span>Allergen / ingredient watchlist<small>Scans product title, bullets, description, and A+ content for any of your watchlist terms. Matches show a warning banner on the PDP.</small></span>
+    <span>Allergen / ingredient watchlist<small>Matches your terms against visible listing text. Missing text can mean a missed match. Check the product label; this isn't an allergy safety check.</small></span>
     <input type="checkbox" data-flag="allergenScan" class="amze-switch">
   </label>
   <div class="amze-field">
@@ -384,10 +384,10 @@
     <div class="amze-seg amze-seg-image">
       <button type="button" data-image="off" class="amze-seg-btn" title="No change to images">Off</button>
       <button type="button" data-image="tile" class="amze-seg-btn" title="Wrap images in a light card (no color distortion)">Tile</button>
-      <button type="button" data-image="dim" class="amze-seg-btn" title="Brightness/contrast filter — softens harsh whites">Dim</button>
-      <button type="button" data-image="darken" class="amze-seg-btn" title="Opacity 0.75 — clean reduction without color distortion">Darken</button>
+      <button type="button" data-image="dim" class="amze-seg-btn" title="Brightness/contrast filter to soften harsh whites">Dim</button>
+      <button type="button" data-image="darken" class="amze-seg-btn" title="Opacity 0.75 reduces brightness without inverting colors">Darken</button>
       <button type="button" data-image="invert" class="amze-seg-btn" title="Flips every image (ruins photos, great for icons/text)">Invert</button>
-      <button type="button" data-image="smart" class="amze-seg-btn" title="Canvas corner-sample — inverts only images with white backgrounds">Smart</button>
+      <button type="button" data-image="smart" class="amze-seg-btn" title="Canvas corner sampling selects images with white backgrounds for inversion">Smart</button>
     </div>
     <p class="amze-info amze-info-small">
       <strong>Tile</strong> wraps each image in a soft card (default, no color distortion). <strong>Dim</strong> softens via brightness/contrast. <strong>Darken</strong> reduces opacity to 75% (inspired by stonecrusher's userstyle). <strong>Invert</strong> flips every image. <strong>Smart</strong> auto-inverts only white-bg images via canvas sampling.

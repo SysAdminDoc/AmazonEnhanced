@@ -1,0 +1,33 @@
+{
+  "version": "2.0.18",
+  "logo": {
+    "decision": "retain",
+    "file": "icon.png",
+    "sha256": "2834642047e0edab4f5e0415b42b4af4ae71d80ebfde91afbaa5e978c9ff6d17",
+    "reason": "Existing shield remains recognizable on light and dark backgrounds. Keep the established blue/green identity; an enlarged raster is not a new high-resolution design.",
+    "newImagesGenerated": 0
+  },
+  "screenshots": [
+    {
+      "file": "assets/screenshots/settings-ads.png",
+      "source": "assets/concepts/2026-09-09-marketing/settings-r3/ads-dark-final.png",
+      "sha256": "d7d16b63dfffb49d25b2a3c79b87cbdb54dbcfb52bd881ebb21436f1f2982918"
+    },
+    {
+      "file": "assets/screenshots/settings-theme.png",
+      "source": "assets/concepts/2026-09-09-marketing/settings-r3/theme-dark-selected.png",
+      "sha256": "4ea7a67a2c52809f734974eb31abbb25681ce71b8940a8b030ba31485639a055"
+    },
+    {
+      "file": "assets/screenshots/price-history.png",
+      "source": "assets/concepts/2026-09-09-marketing/sidepanel-r3/history-dark.png",
+      "sha256": "872a2804f2b1d1e34c120f1060fec292e360ae309bfcb45faf45499be50fdd15"
+    }
+  ],
+  "rejected": [
+    "settings-r1: worker context was not ready; no selected screenshot",
+    "sidepanel-r1: overlapping header and inherited grid",
+    "baseline/wrong-worker-diagnostic.png: browser component error, not product imagery"
+  ],
+  "privacy": "No signed-in browser, actual order details, optional API credential or personal MHTMLs were used."
+}

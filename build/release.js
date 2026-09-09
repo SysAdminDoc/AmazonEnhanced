@@ -110,6 +110,13 @@ async function writeReleaseZip(manifest) {
 }
 
 async function build() {
+  const existing = await fs.lstat(DIST).catch(error => {
+    if (error.code === 'ENOENT') return null;
+    throw error;
+  });
+  if (existing && (existing.isSymbolicLink() || !existing.isDirectory() || await fs.realpath(DIST) !== path.join(await fs.realpath(ROOT), 'dist'))) {
+    throw new Error('Refusing to replace a dist path that is not the project-owned output directory');
+  }
   await fs.rm(DIST, { recursive: true, force: true });
   await fs.mkdir(DIST, { recursive: true });
   await esbuild.build({
@@ -117,7 +124,7 @@ async function build() {
     outdir: DIST,
     outbase: ROOT,
     bundle: false,
-    minify: true,
+    minify: false,
     target: 'es2020',
     logLevel: 'warning'
   });
@@ -126,7 +133,7 @@ async function build() {
     outdir: DIST,
     outbase: ROOT,
     bundle: false,
-    minify: true,
+    minify: false,
     logLevel: 'warning'
   });
   await copyStaticFiles();

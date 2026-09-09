@@ -22,7 +22,6 @@ Reuses build/amazonenhanced.pem to preserve extension ID across releases.
 import hashlib
 import io
 import json
-import os
 import struct
 import sys
 import zipfile
@@ -82,6 +81,7 @@ INCLUDE_FILES = [
     "sidepanel.html",
     "sidepanel.js",
     "THIRD_PARTY_NOTICES.txt",
+    "LICENSE",
 ]
 INCLUDE_DIRS = ["icons", "_locales"]
 
@@ -134,21 +134,13 @@ def length_delimited(field_number: int, data: bytes) -> bytes:
     return varint(tag) + varint(len(data)) + data
 
 
-def load_or_create_key() -> rsa.RSAPrivateKey:
-    if KEY_PATH.exists():
-        with open(KEY_PATH, "rb") as f:
-            return serialization.load_pem_private_key(f.read(), password=None)
-    key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
-    KEY_PATH.parent.mkdir(parents=True, exist_ok=True)
-    with open(KEY_PATH, "wb") as f:
-        f.write(
-            key.private_bytes(
-                encoding=serialization.Encoding.PEM,
-                format=serialization.PrivateFormat.PKCS8,
-                encryption_algorithm=serialization.NoEncryption(),
-            )
-        )
-    print(f"generated new key: {KEY_PATH}")
+def load_signing_key() -> rsa.RSAPrivateKey:
+    if not KEY_PATH.is_file():
+        raise FileNotFoundError("Existing signing key is required. Restore it before packaging; generating a replacement changes the extension identity.")
+    with open(KEY_PATH, "rb") as f:
+        key = serialization.load_pem_private_key(f.read(), password=None)
+    if not isinstance(key, rsa.RSAPrivateKey):
+        raise ValueError("CRX3 packaging requires the existing RSA signing key")
     return key
 
 
@@ -158,16 +150,15 @@ def zip_extension() -> bytes:
         for name in INCLUDE_FILES:
             p = REPO / name
             if not p.exists():
-                print(f"WARN: missing {p}")
-                continue
+                raise FileNotFoundError(p)
             if name == "manifest.json":
                 zf.writestr(name, _build_manifest())
                 continue
             zf.write(p, name)
         for d in INCLUDE_DIRS:
             root = REPO / d
-            if not root.exists():
-                continue
+            if not root.is_dir():
+                raise FileNotFoundError(root)
             for sub in sorted(root.rglob("*")):
                 if sub.is_file():
                     rel = sub.relative_to(REPO).as_posix()
@@ -179,7 +170,7 @@ def main() -> int:
     version = _read_version()
     out_crx = REPO / f"AmazonEnhanced-v{version}.crx"
 
-    key = load_or_create_key()
+    key = load_signing_key()
     pub_der = key.public_key().public_bytes(
         encoding=serialization.Encoding.DER,
         format=serialization.PublicFormat.SubjectPublicKeyInfo,

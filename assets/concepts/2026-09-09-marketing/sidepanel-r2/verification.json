@@ -1,0 +1,26 @@
+{
+  "version": "2.0.18",
+  "scenario": "Actual installed side panel with three invented USD histories imported into an empty owned profile. Not live Amazon data.",
+  "captures": [
+    "history-sample.png"
+  ],
+  "checks": [],
+  "browser": {
+    "protocolVersion": "1.3",
+    "product": "Chrome/153.0.8010.12",
+    "revision": "@971a7443b0c9b0a9b2860529b33331b76077ec62",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36",
+    "jsVersion": "15.3.76.4"
+  },
+  "layout": {
+    "width": 420,
+    "bodyWidth": 420,
+    "display": "flex",
+    "columns": "132px minmax(0px, 1fr)",
+    "variables": {
+      "border": "",
+      "surface": ""
+    },
+    "text": "AmazonEnhanced\n\nPrices you've recorded in this browser. Currency isn't stored, so compare within one marketplace.\n\nPrice History\nAlerts\nDEMO000001\nLast seen\n27.99\nLow\n27.99\nHigh\n34.99\nObservations\n6\nLast recorded 9/8/2026\nDEMO000002\nLast seen\n37.99\nLow\n37.99\nHigh\n44.99\nObservations\n6\nLast recorded 9/8/2026\nDEMO000003\nLast seen\n52.99\nLow\n52.99\nHigh\n59.99\nObservations\n6\nLast recorded 9/8/2026"
+  }
+}
